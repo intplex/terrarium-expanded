@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "com.github.intplex.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "minVersion": "0.8",
+  "client": [
+    "client.DebugScreenOverlayMixin",
+    "client.WorldCreationUiStateMixin"
+  ],
+  "mixins": [
+    "ChunkGeneratorMixin",
+    "NoiseBasedChunkGeneratorMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

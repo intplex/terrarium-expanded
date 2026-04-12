@@ -1,0 +1,51 @@
+Biome Name,Description
+Auroral Garden,A biome full of rainbow birch and fir trees with frosted grass and icy irises where no hostile mobs spawn.
+Bayou,A murky wetland biome with willow trees, cattails along the shore, and dense ground ferns inspired by southern USA swamps.
+Bamboo Grove,A lush jungle-like biome filled with bamboo and dense vegetation.
+Bog,A damp, muddy biome with dark water, thick vegetation, and a swamp-like atmosphere.
+Boreal Forest,A cold forest biome dominated by coniferous trees and sparse undergrowth.
+Cherry Blossom Grove,A peaceful biome filled with cherry blossom trees and pink petals covering the ground.
+Clover Patch,A grassy biome featuring abundant clover plants and gentle terrain.
+Cold Desert,A barren, sandy biome with little vegetation and a colder climate than typical deserts.
+Coniferous Forest,A dense forest of evergreen trees with darker tones and cooler climate.
+Crag,A rocky biome with steep cliffs, jagged terrain, and minimal vegetation.
+Crystalline Chasm,A dramatic biome with crystalline formations embedded in rocky terrain.
+Dead Forest,A lifeless forest biome filled with dead trees and a bleak atmosphere.
+Dryland,A dry, grassy biome with sparse vegetation and warm conditions.
+Dune Beach,A sandy biome with dunes and coastal features.
+Eucalyptus Forest,A warm biome featuring tall eucalyptus trees and sparse undergrowth.
+Fen,A wetland biome similar to a swamp with shallow water and plant life.
+Flower Meadow,A vibrant meadow filled with a variety of colorful flowers.
+Garden,A decorative biome featuring cultivated-looking vegetation and flowers.
+Grove,A lightly wooded biome with scattered trees and open grassy areas.
+Heathland,A shrub-dominated biome with rolling terrain and sparse trees.
+Highland,A hilly biome with elevated terrain and scattered vegetation.
+Jade Cliffs,A mountainous biome with steep cliffs and lush greenery.
+Land of Lakes,A biome filled with numerous lakes and water features surrounded by greenery.
+Lavender Fields,A biome covered in purple lavender flowers creating a distinct landscape.
+Lush Swamp,A wetter and greener variation of a swamp biome with dense vegetation.
+Maple Woods,A forest biome dominated by maple trees with autumn-like colors.
+Marsh,A flat wetland biome with shallow water and abundant plant life.
+Meadow,A simple grassy biome with flowers and gentle terrain.
+Mystic Grove,A magical biome with glowing trees and mystical atmosphere.
+Ominous Woods,A dark forest biome with eerie lighting and dense tree coverage.
+Orchard,A biome filled with fruit-bearing trees arranged in a structured manner.
+Origin Valley,A rare biome with dramatic terrain and unique vegetation.
+Outback,A dry, rugged biome inspired by Australian landscapes.
+Overgrown Beach,A coastal biome with dense vegetation overtaking sandy shores.
+Prairie,A wide, open grassy biome with minimal trees and rolling plains.
+Rainforest,A dense tropical biome with thick vegetation and high rainfall.
+Redwood Forest,A biome with towering redwood trees and shaded forest floor.
+Sacred Springs,A serene biome with water features and unique vegetation.
+Seasonal Forest,A forest biome with trees that reflect seasonal color changes.
+Shield,A biome with rocky terrain and sparse vegetation resembling shield landscapes.
+Shrubland,A dry biome dominated by shrubs and low vegetation.
+Silkglades,A bright biome with glowing features and silk-like vegetation.
+Sludgepit,A swampy biome with thick sludge and hazardous terrain.
+Snowy Coniferous Forest,A cold forest biome with snow-covered conifer trees.
+Temperate Rainforest,A dense forest biome with high rainfall and rich vegetation.
+Tropical Rainforest,A hot, dense jungle biome with thick foliage and biodiversity.
+Tropics,A vibrant tropical biome with beaches, palms, and lush vegetation.
+Volcano,A dramatic biome featuring volcanic terrain and lava flows.
+Volcanic Plains,A flat biome influenced by volcanic activity and dark soil.
+Woodland,A mixed forest biome with a variety of tree types and moderate density.

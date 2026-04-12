@@ -1,0 +1,54 @@
+{
+  "dimensions": {
+    "minecraft:overworld": {
+      "type": "minecraft:overworld",
+      "generator": {
+        "type": "minecraft:noise",
+        "biome_source": {
+          "type": "terrarium_expanded:ecoregion_tiles",
+          "zoom": 8,
+          "max_mountain_y": 256,
+          "ocean_floor_y": 0,
+          "terrain_base_url": "https://elevation-tiles-prod.s3.amazonaws.com/terrarium",
+          "biomes_base_url": "https://d127t6piqu53ls.cloudfront.net/tiles-reduced",
+          "surface_water_base_url": "https://storage.googleapis.com/global-surface-water/tiles2021/seasonality",
+          "terrain_fixes": "none",
+          "world_border": false,
+          "spawn_latitude": 0.442221,
+          "spawn_longitude": 33.150150,
+          "biome_integration": "auto",
+          "generation": {
+            "caves": false,
+            "canyons": false,
+            "extra_underground": false,
+            "aquifers": false,
+            "lava_aquifers": false,
+            "villages": false
+          }
+        },
+        "settings": "terrarium_expanded:earth_overworld"
+      }
+    },
+    "minecraft:the_end": {
+      "type": "minecraft:the_end",
+      "generator": {
+        "type": "minecraft:noise",
+        "biome_source": {
+          "type": "minecraft:the_end"
+        },
+        "settings": "minecraft:end"
+      }
+    },
+    "minecraft:the_nether": {
+      "type": "minecraft:the_nether",
+      "generator": {
+        "type": "minecraft:noise",
+        "biome_source": {
+          "type": "minecraft:multi_noise",
+          "preset": "minecraft:nether"
+        },
+        "settings": "minecraft:nether"
+      }
+    }
+  }
+}

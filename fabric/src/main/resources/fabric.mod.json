@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "terrarium_expanded",
+  "version": "${version}",
+  "name": "terrarium_expanded",
+  "description": "",
+  "authors": [
+    ""
+  ],
+  "contact": {
+    "homepage": ""
+  },
+  "license": "MIT",
+  "icon": "assets/terrarium_expanded/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.github.intplex.fabric.TerrariumExpandedFabric"
+    ],
+    "client": [
+      "com.github.intplex.fabric.client.TerrariumExpandedFabricClient"
+    ]
+  },
+  "mixins": [
+    "terrarium_expanded.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.5",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=21",
+    "architectury": ">=13.0.8",
+    "fabric-api": "*"
+  },
+  "recommends": {
+    "biomesoplenty": "*"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}

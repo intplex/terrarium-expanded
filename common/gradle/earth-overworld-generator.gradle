@@ -1,0 +1,72 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+import java.nio.charset.StandardCharsets
+import java.util.zip.ZipFile
+
+def earthOverworldPatchFile = layout.projectDirectory.file(
+    "src/main/templates/worldgen/noise_settings/earth_overworld.patch.json"
+)
+def generatedEarthOverworldFile = layout.buildDirectory.file(
+    "generated/resources/main/data/terrarium_expanded/worldgen/noise_settings/earth_overworld.json"
+)
+def vanillaOverworldPath = "data/minecraft/worldgen/noise_settings/overworld.json"
+
+Map<String, Object> deepMergeMaps(Map<String, Object> base, Map<String, Object> patch) {
+    patch.each { key, patchValue ->
+        def baseValue = base.get(key)
+        if (baseValue instanceof Map && patchValue instanceof Map) {
+            base.put(key, deepMergeMaps(new LinkedHashMap<>(baseValue as Map<String, Object>), patchValue as Map<String, Object>))
+        } else {
+            base.put(key, patchValue)
+        }
+    }
+    return base
+}
+
+tasks.register("generateEarthOverworldNoiseSettings") {
+    group = "worldgen"
+    description = "Generates Terrarium Earth noise settings by patching vanilla overworld noise settings."
+
+    inputs.file(earthOverworldPatchFile)
+    outputs.file(generatedEarthOverworldFile)
+
+    doLast {
+        def minecraftArtifact = configurations.minecraftNamedCompile
+            .resolvedConfiguration
+            .resolvedArtifacts
+            .find { artifact -> artifact.moduleVersion.id.group == "net.minecraft" }
+
+        if (minecraftArtifact == null) {
+            throw new GradleException("Unable to locate resolved net.minecraft artifact from 'minecraftNamedCompile'.")
+        }
+
+        File minecraftJar = minecraftArtifact.file
+        if (!minecraftJar.exists()) {
+            throw new GradleException("Minecraft jar was not resolved: ${minecraftJar}")
+        }
+
+        String vanillaJsonText
+        ZipFile zipFile = new ZipFile(minecraftJar)
+        try {
+            def vanillaEntry = zipFile.getEntry(vanillaOverworldPath)
+            if (vanillaEntry == null) {
+                throw new GradleException("Missing '${vanillaOverworldPath}' in ${minecraftJar}")
+            }
+            vanillaJsonText = new String(zipFile.getInputStream(vanillaEntry).bytes, StandardCharsets.UTF_8)
+        } finally {
+            zipFile.close()
+        }
+
+        String patchJsonText = earthOverworldPatchFile.asFile.getText("UTF-8")
+
+        def slurper = new JsonSlurper()
+        Map<String, Object> vanillaJson = slurper.parseText(vanillaJsonText) as Map<String, Object>
+        Map<String, Object> patchJson = slurper.parseText(patchJsonText) as Map<String, Object>
+        Map<String, Object> mergedJson = deepMergeMaps(new LinkedHashMap<>(vanillaJson), patchJson)
+
+        File outputFile = generatedEarthOverworldFile.get().asFile
+        outputFile.parentFile.mkdirs()
+        outputFile.setText(JsonOutput.prettyPrint(JsonOutput.toJson(mergedJson)) + System.lineSeparator(), "UTF-8")
+    }
+}

@@ -1,0 +1,848 @@
+UNIQUE_ECOREGION_COLOR,ECO_NAME,BIOME_NAME,REALM,BIOMES_O_PLENTY_BIOME,MINECRAFT_BIOME
+#004928,Changjiang Plain evergreen forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:orchard,minecraft:forest
+#004B34,Rodope montane mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#004E33,Central Korean deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:aspen_glade,minecraft:forest
+#005040,Pyrenees conifer and mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#005340,Central China Loess Plateau mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:aspen_glade,minecraft:forest
+#005542,Eastern Canadian Forest-Boreal transition,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:maple_woods,minecraft:forest
+#00554D,Pannonian mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:forested_field,minecraft:forest
+#00584D,Celtic broadleaf forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:old_growth_woodland,minecraft:forest
+#00585A,North Atlantic moist mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#005A4F,Appalachian-Blue Ridge forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:maple_woods,minecraft:forest
+#005C28,Western Siberian hemiboreal forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#005F27,Nihonkai evergreen forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:orchard,minecraft:forest
+#005F5E,Appalachian mixed mesophytic forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:maple_woods,minecraft:forest
+#00603E,Juan Fernández Islands temperate forests,Temperate Broadleaf & Mixed Forests,Neotropic,biomesoplenty:woodland,minecraft:forest
+#006127,Southern Great Lakes forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:maple_woods,minecraft:forest
+#006128,Western Great Lakes forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:maple_woods,minecraft:forest
+#006135,Ussuri broadleaf and mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:maple_woods,minecraft:forest
+#006635,Ozark Highlands mixed forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:woodland,minecraft:forest
+#006725,Western Himalayan broadleaf forests,Temperate Broadleaf & Mixed Forests,Indomalayan,biomesoplenty:woodland,minecraft:forest
+#006A3D,Tasmanian temperate rain forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:rainforest,minecraft:forest
+#006C33,Eastern Himalayan broadleaf forests,Temperate Broadleaf & Mixed Forests,Indomalayan,biomesoplenty:woodland,minecraft:forest
+#00745C,Tasmanian Central Highland forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#007564,New England-Acadian forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:maple_woods,minecraft:forest
+#00796E,Richmond temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#007A76,Interior Plateau US Hardwood Forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:woodland,minecraft:forest
+#007C7E,Northland temperate kauri forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#007F2D,Eastern Great Lakes lowland forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:maple_woods,minecraft:forest
+#008336,New Zealand North Island temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#00874E,Central European mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:old_growth_woodland,minecraft:forest
+#008847,Fiordland temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:rainforest,minecraft:forest
+#008A84,Valdivian temperate forests,Temperate Broadleaf & Mixed Forests,Neotropic,biomesoplenty:rainforest,minecraft:forest
+#008C61,Central Anatolian steppe and woodlands,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#008D59,Chatham Island temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#008E75,Huang He Plain mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#008E76,Manchurian mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:maple_woods,minecraft:forest
+#009174,Caucasus mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:old_growth_woodland,minecraft:forest
+#00938A,Euxine-Colchic broadleaf forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#009535,Tarim Basin deciduous forests and steppe,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#009689,Cantabrian mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#009832,English Lowlands beech forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#009A48,Taiheiyo evergreen forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:orchard,minecraft:forest
+#009B2F,Balkan mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#009D44,Daba Mountains evergreen forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#009D45,East European forest steppe,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:forested_field,minecraft:forest
+#009F5C,Sichuan Basin evergreen broadleaf forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#00A042,Appenine deciduous montane forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#00B500,Southern New Guinea freshwater swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,biomesoplenty:floodplain,minecraft:swamp
+#00D101,Palau tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#015035,Gulf of St. Lawrence lowland forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:maple_woods,minecraft:forest
+#025B32,San Félix-San Ambrosio Islands temperate forests,Temperate Broadleaf & Mixed Forests,Neotropic,biomesoplenty:woodland,minecraft:forest
+#025E58,Eastern Australian temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#034B2B,Mississippi lowland forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:bayou,minecraft:forest
+#037D00,Tenasserim-South Thailand semi-evergreen rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#03823F,Changbai Mountains mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#038963,Nihonkai montane deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:cherry_grove
+#03908B,Western European broadleaf forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#04594A,Nelson Coast temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#058D00,Uatumã-Trombetas moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#05BE02,Northern Thailand-Laos moist deciduous forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#06543E,New Zealand South Island temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#067D31,Crimean Submediterranean forest complex,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#068000,Peninsular Malaysian rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#068452,Northeast China Plain deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#068B78,Zagros Mountains forest steppe,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#06B100,Ethiopian montane forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#06CD00,Northeast Brazil restingas,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#074F33,Rakiura Island temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#079676,Northern Triangle temperate forests,Temperate Broadleaf & Mixed Forests,Indomalayan,biomesoplenty:woodland,minecraft:forest
+#07CB07,Southern Andean Yungas,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#088F00,Pernambuco interior forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#08C000,Luang Prabang montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#094A29,Southeast Australia temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#097874,Dinaric Mountains mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#097F43,Po Basin mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#098200,Mindanao montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#09B700,Araucaria moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#0AA04B,Northeast US Coastal forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:woodland,minecraft:forest
+#0AA800,Xingu-Tocantins-Araguaia moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#0ABB0B,Sumatran freshwater swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:floodplain,minecraft:swamp
+#0B7364,Eastern Anatolian deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#0B7A36,Qin Ling Mountains deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#0BD000,Guianan piedmont moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#0C6739,Azores temperate mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#0C9200,Japurá-Solimões-Negro moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#0CA50A,Hainan Island monsoon rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:tropics,minecraft:jungle
+#0CB507,Cuban moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#0D6E55,European Atlantic mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:old_growth_woodland,minecraft:forest
+#0D8500,Christmas and Cocos Islands tropical forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#0D9400,Northern New Guinea montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#0D960C,Congolian coastal forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:tropics,minecraft:jungle
+#0D9B3B,Ozark Mountain forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:woodland,minecraft:forest
+#0DC300,Borneo montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#0DCC00,Maputaland coastal forests and woodlands,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:tropics,minecraft:jungle
+#0E622E,Baltic mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#0E7574,Sarmatic mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#0EB100,Fiji tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#0F6948,Hokkaido deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:snowblossom_grove,minecraft:forest
+#0FB20F,Magdalena-Urabá moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#105D5C,Caspian Hyrcanian mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#10643C,Madeira evergreen forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#107065,Southern Korea evergreen forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:orchard,minecraft:forest
+#108E67,Allegheny Highlands forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:woodland,minecraft:forest
+#10968D,Upper Midwest US forest-savanna transition,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:woodland,minecraft:forest
+#10D300,Catatumbo moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#116B57,Taiheiyo montane deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:cherry_grove
+#11A312,Nansei Islands subtropical evergreen forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:tropics,minecraft:jungle
+#129314,Niger Delta swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:bayou,minecraft:swamp
+#129315,Northeast Congolian lowland forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#138800,Venezuelan Andes montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#138957,Appalachian Piedmont forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:maple_woods,minecraft:forest
+#147B00,South China Sea Islands,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#14B000,Sulawesi lowland rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#158449,East Central Texas forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:woodland,minecraft:forest
+#158A17,Chao Phraya lowland moist deciduous forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#159312,Western Polynesian tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#159A15,Chiapas montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#169312,Tuamotu tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#169E4A,Tasmanian temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#16CC00,Samoan tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#177D00,Mindoro rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#178A00,Petén-Veracruz moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#178F41,Magellanic subpolar forests,Temperate Broadleaf & Mixed Forests,Neotropic,biomesoplenty:woodland,minecraft:forest
+#199998,Westland temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:rainforest,minecraft:forest
+#19B200,Biak-Numfoor rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#1AAC01,Guinean montane forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#1B8000,Eastern Java-Bali montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#1B8D00,Leeward Islands moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#1BD310,Lord Howe Island subtropical forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#1C9600,Sri Lanka lowland rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#1CD100,Tonle Sap-Mekong peat swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:bog,minecraft:swamp
+#1D8F01,Seram rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#1DB906,Northern Vietnam lowland rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#1DBB00,Luzon rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#1E910F,Cross-Sanaga-Bioko coastal forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:tropics,minecraft:jungle
+#1EC802,Oaxacan montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#1F9000,Cordillera La Costa montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#1FB60E,Sumatran montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#1FD019,Vogelkop-Aru lowland rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#208E15,Northwest Congolian lowland forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#20A00D,Irrawaddy freshwater swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:floodplain,minecraft:swamp
+#20B204,Bahia coastal forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:tropics,minecraft:jungle
+#20C60B,Talamancan montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#218300,Veracruz montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#21B00B,Eastern Panamanian montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#21CB00,Hispaniolan moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#229E14,North Western Ghats moist deciduous forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#22AC02,Kermadec Islands subtropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#22BE00,Brahmaputra Valley semi-evergreen forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jacaranda_glade,minecraft:jungle
+#23A909,Yunnan Plateau subtropical evergreen forests,Tropical & Subtropical Moist Broadleaf Forests,Palearctic,biomesoplenty:jade_cliffs,minecraft:jungle
+#23C700,Mount Cameroon and Bioko montane forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#249B1A,Southern Annamites montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#24AD13,Marajó várzea,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:floodplain,minecraft:jungle
+#24B720,Admiralty Islands lowland rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#258500,Purus várzea,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:floodplain,minecraft:jungle
+#259518,Chocó-Darién moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:rainforest,minecraft:jungle
+#26AB00,Trobriand Islands rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#26AB1A,Santa Marta montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#277B00,Greater Negros-Panay rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#27CE00,Cayos Miskitos-San Andrés and Providencia moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#28CA00,Cameroon Highlands forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#298800,Magdalena Valley montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#2A8400,Western Guinean lowland forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#2B9100,Sulu Archipelago rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#2BC700,Tongan tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#2C6D40,Caledon conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#2C7249,Alps conifer and mixed forests,Temperate Conifer Forests,Palearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#2C8479,Khangai Mountains conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_spruce_taiga
+#2D5E4F,Hengduan Mountains subalpine conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_pine_taiga
+#2D6358,Elburz Range forest steppe,Temperate Conifer Forests,Palearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#2D6863,Da Hinggan-Dzhagdy Mountains conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_spruce_taiga
+#2D7F6C,Northeast Himalayan subalpine conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_pine_taiga
+#2D8B04,Southeast Papuan rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#2D8C12,Eastern Arc forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#2E7A60,Nujiang Langcang Gorge alpine conifer and mixed forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_pine_taiga
+#2E8917,Southern Swahili coastal forests and woodlands,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:tropics,minecraft:jungle
+#2E8B00,Costa Rican seasonal moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#2F7555,Qionglai-Minshan conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#2F7E01,Windward Islands moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#30704B,Scandinavian coastal conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_spruce_taiga
+#317873,Western Himalayan subalpine conifer forests,Temperate Conifer Forests,Indomalayan,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_pine_taiga
+#319B11,Jian Nan subtropical evergreen forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:orchard,minecraft:jungle
+#328000,Rio Negro campinarana,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:rainforest,minecraft:jungle
+#329917,Northern Annamites rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#32B602,Maldives-Lakshadweep-Chagos Archipelago tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:tropics,minecraft:jungle
+#338C12,Central Polynesian tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#33B40A,Palawan rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#33CC01,Western Java montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#349D70,British Columbia coastal conifer forests,Temperate Conifer Forests,Nearctic,biomesoplenty:redwood_forest,minecraft:old_growth_spruce_taiga
+#34B111,Sundaland heath forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:rainforest,minecraft:jungle
+#34CE15,New Britain-New Ireland lowland rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#368300,Marañón dry forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#369863,Central Pacific Northwest coastal forests,Temperate Conifer Forests,Nearctic,biomesoplenty:redwood_forest,minecraft:old_growth_spruce_taiga
+#36A490,Puget lowland forests,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#36A816,Monte Alegre várzea,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:floodplain,minecraft:jungle
+#36B900,Chao Phraya freshwater swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:floodplain,minecraft:swamp
+#36C307,Pantanos de Centla,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#379357,Colorado Rockies forests,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_spruce_taiga
+#37C10F,Tocantins/Pindare moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#37C200,Nigerian lowland forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#37C600,Isthmian-Atlantic moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:rainforest,minecraft:jungle
+#385F4D,Great Basin montane forests,Temperate Conifer Forests,Nearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_spruce_taiga
+#386455,Eastern Cascades forests,Temperate Conifer Forests,Nearctic,biomesoplenty:redwood_forest,minecraft:old_growth_spruce_taiga
+#387750,Arizona Mountains forests,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_spruce_taiga
+#389F81,Sierra Nevada forests,Temperate Conifer Forests,Nearctic,biomesoplenty:redwood_forest,minecraft:taiga
+#38A61D,Sierra de los Tuxtlas,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#38CF00,South Taiwan monsoon rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:tropics,minecraft:jungle
+#39695D,Central-Southern Cascades Forests,Temperate Conifer Forests,Nearctic,biomesoplenty:redwood_forest,minecraft:old_growth_spruce_taiga
+#396D67,Central British Columbia Mountain forests,Temperate Conifer Forests,Nearctic,biomesoplenty:redwood_forest,minecraft:old_growth_spruce_taiga
+#397272,Blue Mountains forests,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_spruce_taiga
+#398C00,Sumatran lowland rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#398E8A,Fraser Plateau and Basin conifer forests,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#3A897D,Klamath-Siskiyou forests,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#3A9A73,Wasatch and Uinta montane forests,Temperate Conifer Forests,Nearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_spruce_taiga
+#3B8600,Eastern Cordillera Real montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#3B8714,Eastern Guinean forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#3C6B66,South Central Rockies forests,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_spruce_taiga
+#3C704B,Queen Charlotte Islands conifer forests,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#3C7553,Piney Woods,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_pine_taiga
+#3C7A5C,Northern Rockies conifer forests,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_spruce_taiga
+#3C7F00,Guizhou Plateau broadleaf and mixed forests,Tropical & Subtropical Moist Broadleaf Forests,Palearctic,,minecraft:jungle
+#3C7F66,Northern California coastal forests,Temperate Conifer Forests,Nearctic,biomesoplenty:redwood_forest,minecraft:old_growth_spruce_taiga
+#3C8607,Southern New Guinea lowland rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#3CC900,Central American montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#3D8801,Banda Sea Islands moist deciduous forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#3DC500,Comoros forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#3E7B00,Serra do Mar coastal forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:tropics,minecraft:jungle
+#3E8F00,Northern Triangle subtropical forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#3ED200,Myanmar coastal rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#3F8800,Atlantic Coast restingas,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:rainforest,minecraft:jungle
+#408714,Eastern Micronesia tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#40C200,Tubuai tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#418D17,Alto Paraná Atlantic forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:rainforest,minecraft:jungle
+#419419,Northern Khorat Plateau moist deciduous forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#419613,Lower Gangetic Plains moist deciduous forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#41990D,Borneo lowland rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#427E00,Mato Grosso tropical dry forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#467D00,Knysna-Amatole montane forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#468700,Sumatran peat swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:bog,minecraft:swamp
+#469E00,Northwest Andean montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#46AC15,Taiwan subtropical evergreen forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jacaranda_glade,minecraft:jungle
+#46AF0E,Peninsular Malaysian peat swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:bog,minecraft:swamp
+#478100,Fernando de Noronha-Atol das Rocas moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#478216,Granitic Seychelles forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:tropics,minecraft:jungle
+#47A319,Negro-Branco moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#47A612,Guianan freshwater swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:floodplain,minecraft:swamp
+#47A90B,Caqueta moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#47B206,Mentawai Islands rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#48A100,Vogelkop montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#48A209,Ogasawara subtropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#48A90B,Bolivian Yungas,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#48B400,Chin Hills-Arakan Yoma montane forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#49810A,Sulawesi montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#4AC919,New Caledonia rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#4B8304,Buru rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#4B8A00,Orissa semi-evergreen forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:woodland,minecraft:jungle
+#4BBD00,Northern Swahili coastal forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:tropics,minecraft:jungle
+#4C7D00,Marquesas tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#4C8216,Hawai'i tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#4C8300,Bahia interior forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#4CBC13,Trinidad and Tobago moist forest,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#4CBF0B,Pernambuco coastal forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:tropics,minecraft:jungle
+#4CC103,Jamaican moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#4DA300,Huon Peninsula montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#4DCA00,South Western Ghats montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#4EA300,Central Range Papuan montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#4F9116,Luzon montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#508C00,Malabar Coast moist forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#509410,Borneo peat swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:bog,minecraft:swamp
+#509700,Southwest Amazon moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#50A151,Luzon tropical pine forests,Tropical & Subtropical Coniferous Forests,Indomalayan,biomesoplenty:coniferous_forest,minecraft:plains
+#50C400,Chimalapas montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#519700,Solimões-Japurá moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#51C000,Cross-Niger transition forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#51C8F7,Okhotsk-Manchurian taiga,Boreal Forests/Taiga,Palearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#527C00,Guianan Highlands moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#528200,Sundarbans freshwater swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:floodplain,minecraft:swamp
+#529D0C,Kwazulu Natal-Cape coastal forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:tropics,minecraft:jungle
+#537C0C,Vanuatu rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#53A005,Albertine Rift montane forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#53CD00,Nicobar Islands rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#54D7F2,Scandinavian and Russian taiga,Boreal Forests/Taiga,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:taiga
+#559900,Orinoco Delta swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:bayou,minecraft:swamp
+#567E07,Halmahera rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#56CA56,Sierra de la Laguna pine-oak forests,Tropical & Subtropical Coniferous Forests,Neotropic,biomesoplenty:coniferous_forest,minecraft:plains
+#577E00,Caatinga Enclaves moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#578500,Peninsular Malaysian montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#579C00,Yapen rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#57A115,Guianan lowland moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#57A718,Tonle Sap freshwater swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:floodplain,minecraft:swamp
+#5873FF,Northwest Territories taiga,Boreal Forests/Taiga,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#5879ED,Urals montane forest and taiga,Boreal Forests/Taiga,Palearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_spruce_taiga
+#589D0C,Rapa Nui and Sala y Gómez subtropical forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#58A40F,Cauca Valley montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#58AA11,Red River freshwater swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:floodplain,minecraft:swamp
+#599C89,Altai montane forest and forest steppe,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_spruce_taiga
+#59AD0A,Mindanao-Eastern Visayas rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#59B38C,Honshu alpine conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_pine_taiga
+#59CF00,Himalayan subtropical broadleaf forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#5A9376,East Afghan montane conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_spruce_taiga
+#5A987F,Carpathian montane forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_spruce_taiga
+#5B8988,Hokkaido montane conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_spruce_taiga
+#5B8E6E,Helanshan montane conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_spruce_taiga
+#5BAE81,Mediterranean conifer and mixed forests,Temperate Conifer Forests,Palearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#5BAF03,East Deccan moist deciduous forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#5C8700,Meghalaya subtropical forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#5C9E00,New Britain-New Ireland montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#5CA977,Northern Anatolian conifer and deciduous forests,Temperate Conifer Forests,Palearctic,biomesoplenty:coniferous_forest,minecraft:snowy_taiga
+#5D8AFF,Watson Highlands taiga,Boreal Forests/Taiga,Nearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_spruce_taiga
+#5D8F13,Cardamom Mountains rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#5D9200,Trindade-Martin Vaz Islands tropical forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#5D9E00,Louisiade Archipelago rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#5DA4A1,Qilian Mountains conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_spruce_taiga
+#5E9200,Tapajós-Xingu moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#5E9A8A,Tian Shan montane conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_spruce_taiga
+#5E9F95,Sayan montane conifer forests,Temperate Conifer Forests,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_spruce_taiga
+#5EB800,"São Tomé, Príncipe, and Annobón forests",Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#5EC41D,Northern New Guinea lowland rain and freshwater swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,biomesoplenty:floodplain,minecraft:swamp
+#5FB717,Ucayali moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#5FBFD7,East Siberian taiga,Boreal Forests/Taiga,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:taiga
+#60980F,Mascarene forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#60A78D,Eastern Himalayan subalpine conifer forests,Temperate Conifer Forests,Indomalayan,biomesoplenty:snowy_coniferous_forest,minecraft:old_growth_pine_taiga
+#60BA0F,Peruvian Yungas,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#61980F,Madagascar subhumid forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#61BC07,Juruá-Purus moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#6277D2,Kamchatka taiga,Boreal Forests/Taiga,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:taiga
+#629B09,Central Congolian lowland forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#62C501,Southwest Borneo freshwater swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:floodplain,minecraft:swamp
+#639400,Pantepui forests & shrublands,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#63BB00,East African montane forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#6484CD,Northeast Siberian taiga,Boreal Forests/Taiga,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:taiga
+#64BF00,Cocos Island moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#64C558,Sierra Madre del Sur pine-oak forests,Tropical & Subtropical Coniferous Forests,Neotropic,biomesoplenty:coniferous_forest,minecraft:plains
+#64C6FF,Central Canadian Shield forests,Boreal Forests/Taiga,Nearctic,biomesoplenty:fir_clearing,minecraft:taiga
+#659C18,Gurupa várzea,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:floodplain,minecraft:jungle
+#65B1AE,Interior Yukon-Alaska alpine tundra,Tundra,Nearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#65B1AF,Pacific Coastal Mountain icefields and tundra,Tundra,Nearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#66980F,Society Islands tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#66A21B,Upper Gangetic Plains moist deciduous forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#66ACA2,Kalaallit Nunaat High Arctic tundra,Tundra,Nearctic,biomesoplenty:cold_desert,minecraft:snowy_plains
+#679F12,Central American Atlantic moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:rainforest,minecraft:jungle
+#67C800,North Western Ghats montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#67D206,Yucatán moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#689700,Isthmian-Pacific moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#689D00,Western Java rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#68A514,South China-Vietnam subtropical evergreen forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:orchard,minecraft:jungle
+#699700,Iquitos várzea,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,biomesoplenty:floodplain,minecraft:jungle
+#69D6FC,Copper Plateau taiga,Boreal Forests/Taiga,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#6A9900,Norfolk Island subtropical forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#6AA79A,Alberta-British Columbia foothills forests,Temperate Conifer Forests,Nearctic,biomesoplenty:redwood_forest,minecraft:old_growth_spruce_taiga
+#6AA80E,Mizoram-Manipur-Kachin rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#6BA290,Atlantic coastal pine barrens,Temperate Conifer Forests,Nearctic,biomesoplenty:fir_clearing,minecraft:old_growth_pine_taiga
+#6BA55D,Central American pine-oak forests,Tropical & Subtropical Coniferous Forests,Neotropic,biomesoplenty:coniferous_forest,minecraft:plains
+#6C7FF7,Eastern Canadian Shield taiga,Boreal Forests/Taiga,Nearctic,biomesoplenty:fir_clearing,minecraft:taiga
+#6CBB00,Carolines tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#6DAA06,Eastern Java-Bali rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#6DB38B,North Cascades conifer forests,Temperate Conifer Forests,Nearctic,biomesoplenty:redwood_forest,minecraft:old_growth_spruce_taiga
+#6EAE83,Northern Pacific Alaskan coastal forests,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_spruce_taiga
+#6ECA00,Irrawaddy moist deciduous forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#6FA9A5,Okanogan dry forests,Temperate Conifer Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#6FB21A,Veracruz moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#6FB301,Western Congolian swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:floodplain,minecraft:swamp
+#7090F2,Mid-Canada Boreal Plains forests,Boreal Forests/Taiga,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#70BF20,Queensland tropical rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#71B513,Puerto Rican moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#72BA00,Solomon Islands rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
+#739EED,Muskwa-Slave Lake taiga,Boreal Forests/Taiga,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#74B70B,Madeira-Tapajós moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#75A017,South Western Ghats moist deciduous forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#75B600,Eastern Congolian swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:floodplain,minecraft:swamp
+#76ABE8,Northern Cordillera forests,Boreal Forests/Taiga,Nearctic,biomesoplenty:coniferous_forest,minecraft:snowy_taiga
+#76C006,Sri Lanka montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#778CD7,Alaska Peninsula montane taiga,Boreal Forests/Taiga,Nearctic,biomesoplenty:coniferous_forest,minecraft:old_growth_spruce_taiga
+#77BA03,Cordillera Oriental montane forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#78B6E3,Southern Hudson Bay taiga,Boreal Forests/Taiga,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#7997D2,Cook Inlet taiga,Boreal Forests/Taiga,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#7AC300,Northern Indochina subtropical forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#7B9FCD,Eastern Canadian forests,Boreal Forests/Taiga,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#7BCC44,Northeast India-Myanmar pine forests,Tropical & Subtropical Coniferous Forests,Indomalayan,biomesoplenty:coniferous_forest,minecraft:plains
+#7DB600,Cook Islands tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
+#7DE0C2,East Antarctic tundra,Tundra,Antarctica,biomesoplenty:cold_desert,minecraft:snowy_plains
+#7EAD1D,Western Ecuador moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#80D002,Sierra Madre de Chiapas moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#80DBB5,Ellsworth Mountains tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_slopes
+#81B016,Purus-Madeira moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#81C500,Kayah-Karen montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
+#82D6A9,Marie Byrd Land tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_plains
+#83BB9F,Adelie Land tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_plains
+#83D19F,Northeast Antarctic Peninsula tundra,Tundra,Antarctica,biomesoplenty:cold_desert,minecraft:snowy_plains
+#84ACA7,Enderby Land tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_plains
+#84B190,Ellsworth Land tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_plains
+#84B697,Dronning Maud Land tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_plains
+#85CCCA,Prince Charles Mountains tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_slopes
+#86C7BE,South Antarctic Peninsula tundra,Tundra,Antarctica,biomesoplenty:cold_desert,minecraft:snowy_plains
+#86D200,Napo moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
+#87C2B3,South Victoria Land tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_plains
+#88BDAA,Transantarctic Mountains tundra,Tundra,Antarctica,biomesoplenty:cold_desert,minecraft:snowy_slopes
+#88C44E,Bermuda subtropical conifer forests,Tropical & Subtropical Coniferous Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:plains
+#88C800,Andaman Islands rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
+#89C7FF,Sakhalin Island taiga,Boreal Forests/Taiga,Palearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#8BF1C4,Novosibirsk Islands Arctic desert,Tundra,Palearctic,biomesoplenty:cold_desert,minecraft:snowy_plains
+#8BF67F,Sumatran tropical pine forests,Tropical & Subtropical Coniferous Forests,Indomalayan,biomesoplenty:coniferous_forest,minecraft:plains
+#8CAFA9,Beringia lowland tundra,Tundra,Nearctic,biomesoplenty:muskeg,minecraft:snowy_plains
+#8CC8F2,Makgadikgadi halophytics,Flooded Grasslands & Savannas,Afrotropic,biomesoplenty:marsh,minecraft:swamp
+#8DD100,Madagascar humid forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,,minecraft:jungle
+#8DECB8,Russian Bering tundra,Tundra,Palearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#8FAD5A,Tumbes-Piura dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:dryland,minecraft:forest
+#8FB3A2,Yamal-Gydan tundra,Tundra,Palearctic,biomesoplenty:muskeg,minecraft:snowy_plains
+#8FD1ED,Zambezian coastal flooded savanna,Flooded Grasslands & Savannas,Afrotropic,biomesoplenty:wetland,minecraft:swamp
+#8FD6FF,Trans-Baikal conifer forests,Boreal Forests/Taiga,Palearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#90B4B2,Arctic coastal tundra,Tundra,Nearctic,biomesoplenty:muskeg,minecraft:snowy_plains
+#90E7AD,Taimyr-Central Siberian tundra,Tundra,Palearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#91B053,Cuban dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#91D1AF,Chukchi Peninsula tundra,Tundra,Palearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#92B69F,Canadian Middle Arctic Tundra,Tundra,Nearctic,biomesoplenty:muskeg,minecraft:snowy_plains
+#92CCA7,Kola Peninsula tundra,Tundra,Palearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#92D450,Bahamian pineyards,Tropical & Subtropical Coniferous Forests,Neotropic,biomesoplenty:coniferous_forest,minecraft:plains
+#92E2DE,Wrangel Island Arctic desert,Tundra,Palearctic,biomesoplenty:cold_desert,minecraft:snowy_plains
+#93B8AB,Trans-Baikal Bald Mountain tundra,Tundra,Palearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#93BF50,Sierra Madre Oriental pine-oak forests,Tropical & Subtropical Coniferous Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:plains
+#93C7C6,Northwest Russian-Novaya Zemlya tundra,Tundra,Palearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#93FFE2,Brooks-British Range tundra,Tundra,Nearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#94B9A0,Alaska-St. Elias Range tundra,Tundra,Nearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#94BDB3,Scandinavian Montane Birch forest and grasslands,Tundra,Palearctic,biomesoplenty:snowy_maple_woods,minecraft:snowy_plains
+#94C2BC,Russian Arctic desert,Tundra,Palearctic,biomesoplenty:cold_desert,minecraft:snowy_plains
+#94E4FF,West Siberian taiga,Boreal Forests/Taiga,Palearctic,biomesoplenty:snowy_coniferous_forest,minecraft:taiga
+#95A85B,Yucatán dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#96BBA7,Canadian High Arctic tundra,Tundra,Nearctic,biomesoplenty:cold_desert,minecraft:snowy_plains
+#97C8FF,Tigris-Euphrates alluvial salt marsh,Flooded Grasslands & Savannas,Palearctic,biomesoplenty:marsh,minecraft:swamp
+#97C9FF,Saharan halophytics,Flooded Grasslands & Savannas,Palearctic,biomesoplenty:marsh,minecraft:swamp
+#98AB55,Hispaniolan dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#98FED7,Canadian Low Arctic tundra,Tundra,Nearctic,biomesoplenty:muskeg,minecraft:snowy_plains
+#99F7FF,Enriquillo wetlands,Flooded Grasslands & Savannas,Neotropic,biomesoplenty:wetland,minecraft:swamp
+#9ABE44,Central Indochina dry forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:orchard,minecraft:forest
+#9AC0B0,Beringia upland tundra,Tundra,Nearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#9AF9CA,Davis Highlands tundra,Tundra,Nearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#9BE8D5,Ahklun and Kilbuck Upland Tundra,Tundra,Nearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#9DA656,Jalisco dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#9DBEE9,Rann of Kutch seasonal salt marsh,Flooded Grasslands & Savannas,Indomalayan,biomesoplenty:marsh,minecraft:swamp
+#9DF4BF,Kalaallit Nunaat Arctic steppe,Tundra,Nearctic,biomesoplenty:cold_desert,minecraft:snowy_plains
+#9EC5B9,Arctic foothills tundra,Tundra,Nearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#9EEE8B,Sierra Madre Occidental pine-oak forests,Tropical & Subtropical Coniferous Forests,Nearctic,biomesoplenty:coniferous_forest,minecraft:plains
+#9FBDFF,Guayaquil flooded grasslands,Flooded Grasslands & Savannas,Neotropic,biomesoplenty:wetland,minecraft:swamp
+#9FC7B1,Antipodes Subantarctic Islands tundra,Tundra,Australasia,biomesoplenty:cold_desert,minecraft:snowy_plains
+#9FCF53,Cuban pine forests,Tropical & Subtropical Coniferous Forests,Neotropic,biomesoplenty:coniferous_forest,minecraft:plains
+#9FD18A,Himalayan subtropical pine forests,Tropical & Subtropical Coniferous Forests,Indomalayan,biomesoplenty:coniferous_forest,minecraft:plains
+#9FD4FF,Interior Alaska-Yukon lowland taiga,Boreal Forests/Taiga,Nearctic,biomesoplenty:coniferous_forest,minecraft:taiga
+#9FEFB6,Ogilvie-MacKenzie alpine tundra,Tundra,Nearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#A03D40,South Iran Nubo-Sindian desert and semi-desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:desert
+#A05635,Sechura desert,Deserts & Xeric Shrublands,Neotropic,,minecraft:badlands
+#A1533B,Chihuahuan desert,Deserts & Xeric Shrublands,Nearctic,,minecraft:desert
+#A1A157,Lara-Falcón dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:woodland,minecraft:forest
+#A1CFFF,Iceland boreal birch forests and alpine tundra,Boreal Forests/Taiga,Palearctic,biomesoplenty:snowy_maple_woods,minecraft:taiga
+#A1D4B1,Aleutian Islands tundra,Tundra,Nearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#A1EAE2,Torngat Mountain tundra,Tundra,Nearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#A33738,Nullarbor Plains xeric shrublands,Deserts & Xeric Shrublands,Australasia,biomesoplenty:dryland,minecraft:savanna
+#A3373C,East Sahara Desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:wasteland,minecraft:desert
+#A3373D,Central Persian desert basins,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:wasteland,minecraft:desert
+#A36451,Namibian savanna woodlands,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#A4B946,East Deccan dry-evergreen forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:jacaranda_glade,minecraft:forest
+#A4CB4D,Lesser Antillean dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#A5443B,Saharan Atlantic coastal desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:wasteland,minecraft:desert
+#A56C7D,Paraguaná xeric scrub,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:dryland,minecraft:savanna
+#A58E4E,Sri Lanka dry-zone dry evergreen forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:jacaranda_glade,minecraft:forest
+#A59C3B,Madagascar dry deciduous forests,Tropical & Subtropical Dry Broadleaf Forests,Afrotropic,biomesoplenty:orchard,minecraft:forest
+#A5CBFF,Pantanal,Flooded Grasslands & Savannas,Neotropic,biomesoplenty:wetland,minecraft:swamp
+#A5DAFC,Kamchatka-Kurile meadows and sparse forests,Boreal Forests/Taiga,Palearctic,biomesoplenty:snowy_fir_clearing,minecraft:taiga
+#A5E1FF,Midwest Canadian Shield forests,Boreal Forests/Taiga,Nearctic,biomesoplenty:fir_clearing,minecraft:taiga
+#A65E39,Baja California desert,Deserts & Xeric Shrublands,Nearctic,,minecraft:desert
+#A6CCEA,Bohai Sea saline meadow,Flooded Grasslands & Savannas,Palearctic,biomesoplenty:marsh,minecraft:swamp
+#A7545F,Thar desert,Deserts & Xeric Shrublands,Indomalayan,,minecraft:desert
+#A7B473,Hawai'i tropical dry forests,Tropical & Subtropical Dry Broadleaf Forests,Oceania,biomesoplenty:orchard,minecraft:forest
+#A86E50,Namaqualand-Richtersveld steppe,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#A8736F,Central Asian riparian woodlands,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:dryland,minecraft:savanna
+#A8756F,Great Sandy-Tanami desert,Deserts & Xeric Shrublands,Australasia,,minecraft:desert
+#A8D1E5,Nile Delta flooded savanna,Flooded Grasslands & Savannas,Palearctic,biomesoplenty:floodplain,minecraft:swamp
+#A9D4E0,Suiphun-Khanka meadows and forest meadows,Flooded Grasslands & Savannas,Palearctic,biomesoplenty:wetland,minecraft:swamp
+#AA4F39,Red Sea-Arabian Desert shrublands,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:desert
+#AA6C77,Malpelo Island xeric scrub,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:dryland,minecraft:savanna
+#AA9A88,Papuan Central Range sub-alpine grasslands,Montane Grasslands & Shrublands,Australasia,biomesoplenty:highland,minecraft:snowy_slopes
+#AA9C4C,Southeast Indochina dry evergreen forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:jacaranda_glade,minecraft:forest
+#AAAF74,Yap tropical dry forests,Tropical & Subtropical Dry Broadleaf Forests,Oceania,biomesoplenty:orchard,minecraft:forest
+#AAD8FF,Southern Cone Mesopotamian savanna,Flooded Grasslands & Savannas,Neotropic,biomesoplenty:wetland,minecraft:swamp
+#AB9489,Western Himalayan alpine shrub and meadows,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:snowy_slopes
+#AB9F79,Southern Rift Montane forest-grassland,Montane Grasslands & Shrublands,Afrotropic,biomesoplenty:highland,minecraft:meadow
+#ABD6DB,Yellow Sea saline meadow,Flooded Grasslands & Savannas,Palearctic,biomesoplenty:marsh,minecraft:swamp
+#ABECFF,Northern Canadian Shield taiga,Boreal Forests/Taiga,Nearctic,biomesoplenty:fir_clearing,minecraft:snowy_taiga
+#AC5255,Godavari-Krishna mangroves,Deserts & Xeric Shrublands,Indomalayan,biomesoplenty:wetland,minecraft:desert
+#ACAB8A,Central Andean wet puna,Montane Grasslands & Shrublands,Neotropic,biomesoplenty:highland,minecraft:meadow
+#AD4E68,Madagascar succulent woodlands,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#AD796F,Central Afghan Mountains xeric woodlands,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#AD7C6F,Central Ranges xeric scrub,Deserts & Xeric Shrublands,Australasia,biomesoplenty:dryland,minecraft:savanna
+#ADAD89,Central Tibetan Plateau alpine steppe,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#ADB448,Khathiar-Gir dry deciduous forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:woodland,minecraft:forest
+#AF6B70,Guajira-Barranquilla xeric scrub,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:dryland,minecraft:savanna
+#AF8674,Qaidam Basin semi-desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:cold_desert,minecraft:desert
+#AFA28C,Australian Alps montane grasslands,Montane Grasslands & Shrublands,Australasia,biomesoplenty:highland,minecraft:meadow
+#AFAB4A,North Deccan dry deciduous forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:field,minecraft:forest
+#AFC650,Maracaibo dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:woodland,minecraft:forest
+#B09C8D,Tian Shan montane steppe and meadows,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:meadow
+#B0A978,Nyanga-Chimanimani Montane forest-grassland,Montane Grasslands & Shrublands,Afrotropic,biomesoplenty:highland,minecraft:meadow
+#B15951,Aravalli west thorn scrub forests,Deserts & Xeric Shrublands,Indomalayan,biomesoplenty:dryland,minecraft:savanna
+#B19A8E,Central Andean dry puna,Montane Grasslands & Shrublands,Neotropic,biomesoplenty:highland,minecraft:meadow
+#B24C5C,Kaokoveld desert,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:rocky_shrubland,minecraft:desert
+#B2816E,Baluchistan xeric woodlands,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#B29C58,Southern Pacific dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#B2D46F,Cape Verde Islands dry forests,Tropical & Subtropical Dry Broadleaf Forests,Afrotropic,biomesoplenty:orchard,minecraft:forest
+#B2F992,Hispaniolan pine forests,Tropical & Subtropical Coniferous Forests,Neotropic,biomesoplenty:coniferous_forest,minecraft:plains
+#B3C948,Apure-Villavicencio dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:woodland,minecraft:forest
+#B3D8DF,Paraná flooded savanna,Flooded Grasslands & Savannas,Neotropic,biomesoplenty:wetland,minecraft:swamp
+#B3D965,Kazakh forest steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#B46D6A,Cuban cactus scrub,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:dryland,minecraft:savanna
+#B47387,North Saharan Xeric Steppe and Woodland,Deserts & Xeric Shrublands,Palearctic,,minecraft:desert
+#B59A51,Chiapas Depression dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#B5A38E,Southeast Tibet shrublands and meadows,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:meadow
+#B5B477,Madagascar ericoid thickets,Montane Grasslands & Shrublands,Afrotropic,biomesoplenty:highland,minecraft:meadow
+#B6D2EE,Cuban wetlands,Flooded Grasslands & Savannas,Neotropic,biomesoplenty:wetland,minecraft:swamp
+#B74A4F,Ile Europa and Bassas da India xeric scrub,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#B76D85,Azerbaijan shrub desert and steppe,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:desert
+#B77C76,Tamaulipan mezquital,Deserts & Xeric Shrublands,Nearctic,,minecraft:desert
+#B7AA56,Sinaloan dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#B7D6E9,Everglades flooded grasslands,Flooded Grasslands & Savannas,Neotropic,biomesoplenty:wetland,minecraft:swamp
+#B7D8E4,Orinoco wetlands,Flooded Grasslands & Savannas,Neotropic,biomesoplenty:wetland,minecraft:swamp
+#B7E5DC,Central South Antarctic Peninsula tundra,Tundra,Antarctica,biomesoplenty:cold_desert,minecraft:snowy_plains
+#B8C152,Panamanian dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#B97280,North Arabian desert,Deserts & Xeric Shrublands,Palearctic,,minecraft:desert
+#B97468,Atacama desert,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:wasteland,minecraft:desert
+#BA9076,Highveld grasslands,Montane Grasslands & Shrublands,Afrotropic,biomesoplenty:highland,minecraft:meadow
+#BAA94F,Cauca Valley dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#BAAA8E,Qilian Mountains subalpine meadows,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:snowy_slopes
+#BACF71,Zambezian evergreen dry forests,Tropical & Subtropical Dry Broadleaf Forests,Afrotropic,biomesoplenty:jacaranda_glade,minecraft:forest
+#BC5048,Gariep Karoo,Deserts & Xeric Shrublands,Afrotropic,,minecraft:desert
+#BC6B7D,Arabian sand desert,Deserts & Xeric Shrublands,Palearctic,,minecraft:desert
+#BC8375,Sonoran desert,Deserts & Xeric Shrublands,Nearctic,,minecraft:desert
+#BCBA54,Puerto Rican dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#BCD467,Kazakh upland steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#BD9E5E,Timor and Wetar deciduous forests,Tropical & Subtropical Dry Broadleaf Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#BDC44B,Balsas dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#BDECCD,Southern Indian Ocean Islands tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_plains
+#BDF495,Sierra Madre de Oaxaca pine-oak forests,Tropical & Subtropical Coniferous Forests,Neotropic,biomesoplenty:coniferous_forest,minecraft:plains
+#BDF8FF,Etosha Pan halophytics,Flooded Grasslands & Savannas,Afrotropic,biomesoplenty:marsh,minecraft:swamp
+#BE7177,Kopet Dag semi-desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:desert
+#BF9975,Ethiopian montane grasslands and woodlands,Montane Grasslands & Shrublands,Afrotropic,biomesoplenty:highland,minecraft:meadow
+#BFB38D,Ordos Plateau steppe,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:meadow
+#BFB94D,Brazilian Atlantic dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:jacaranda_glade,minecraft:forest
+#C06C87,St. Peter and St. Paul Rocks,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:wasteland,minecraft:desert
+#C06C88,San Lucan xeric scrub,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:dryland,minecraft:savanna
+#C0DE7B,Central Tallgrass prairie,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#C15B45,Djibouti xeric shrublands,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#C16A73,Alashan Plateau semi-desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:desert
+#C17A76,West Saharan montane xeric woodlands,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#C18C73,Mojave desert,Deserts & Xeric Shrublands,Nearctic,biomesoplenty:rocky_shrubland,minecraft:badlands
+#C1F1D6,South Orkney Islands tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_plains
+#C2AC5C,New Caledonia dry forests,Tropical & Subtropical Dry Broadleaf Forests,Australasia,biomesoplenty:woodland,minecraft:forest
+#C3726F,Junggar Basin semi-desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:cold_desert,minecraft:desert
+#C3BB9B,Santa Marta páramo,Montane Grasslands & Shrublands,Neotropic,biomesoplenty:highland,minecraft:meadow
+#C3D4FF,Lake Chad flooded savanna,Flooded Grasslands & Savannas,Afrotropic,biomesoplenty:floodplain,minecraft:swamp
+#C3DA85,South Deccan Plateau dry deciduous forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:orchard,minecraft:forest
+#C3FF57,Southeast US mixed woodlands and savannas,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:forested_field,minecraft:savanna
+#C4704A,Southwest Arabian highland xeric scrub,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#C4A474,Angolan montane forest-grassland,Montane Grasslands & Shrublands,Afrotropic,biomesoplenty:highland,minecraft:meadow
+#C4BD8C,North Tibetan Plateau-Kunlun Mountains alpine desert,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#C56A7E,Motagua Valley thornscrub,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:dryland,minecraft:savanna
+#C5F6E0,Scotia Sea Islands tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_plains
+#C5F6E6,Northeast Siberian coastal tundra,Tundra,Palearctic,biomesoplenty:muskeg,minecraft:snowy_plains
+#C5F869,Espinal,"Temperate Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:pasture,minecraft:plains
+#C6728B,Gulf of California xeric scrub,Deserts & Xeric Shrublands,Nearctic,,minecraft:desert
+#C68274,Tibesti-Jebel Uweinat montane xeric woodlands,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#C6EF97,Trans-Mexican Volcanic Belt pine-oak forests,Tropical & Subtropical Coniferous Forests,Neotropic,biomesoplenty:coniferous_forest,minecraft:plains
+#C6F45A,South Siberian forest steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#C87A6D,Gobi Lakes Valley desert steppe,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:cold_desert,minecraft:desert
+#C87E6D,Tirari-Sturt stony desert,Deserts & Xeric Shrublands,Australasia,biomesoplenty:rocky_shrubland,minecraft:desert
+#C8D97D,Cross-Timbers savanna-woodland,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:forested_field,minecraft:savanna
+#C9476E,Southwest Arabian coastal xeric shrublands,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#C9C88B,Kuh Rud and Eastern Iran montane woodlands,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:meadow
+#C9D587,Southern Vietnam lowland dry forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:orchard,minecraft:forest
+#C9EE87,Bolivian montane dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:woodland,minecraft:forest
+#C9FBEA,Northwest Antarctic Peninsula tundra,Tundra,Antarctica,biomesoplenty:cold_desert,minecraft:snowy_plains
+#C9FBF0,Kamchatka tundra,Tundra,Palearctic,biomesoplenty:tundra,minecraft:snowy_plains
+#CA8B73,South Sahara desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:wasteland,minecraft:desert
+#CADCFC,Inner Niger Delta flooded savanna,Flooded Grasslands & Savannas,Afrotropic,biomesoplenty:floodplain,minecraft:swamp
+#CAFFF3,North Victoria Land tundra,Tundra,Antarctica,biomesoplenty:tundra,minecraft:snowy_plains
+#CB7081,Colorado Plateau shrublands,Deserts & Xeric Shrublands,Nearctic,,minecraft:badlands
+#CCA999,High Monte,Montane Grasslands & Shrublands,Neotropic,biomesoplenty:highland,minecraft:meadow
+#CCD751,Tristan Da Cunha-Gough Islands shrub and grasslands,"Temperate Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:prairie,minecraft:savanna
+#CCDFFF,Nenjiang River grassland,Flooded Grasslands & Savannas,Palearctic,biomesoplenty:wetland,minecraft:swamp
+#CCF2FF,Sudd flooded grasslands,Flooded Grasslands & Savannas,Afrotropic,biomesoplenty:floodplain,minecraft:swamp
+#CCF7FF,Zambezian flooded grasslands,Flooded Grasslands & Savannas,Afrotropic,biomesoplenty:wetland,minecraft:swamp
+#CCF8FF,Amur meadow steppe,Flooded Grasslands & Savannas,Palearctic,biomesoplenty:wetland,minecraft:swamp
+#CCFEFF,East African halophytics,Flooded Grasslands & Savannas,Afrotropic,biomesoplenty:marsh,minecraft:swamp
+#CCFFFA,Cherskii-Kolyma mountain tundra,Tundra,Palearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#CD846B,East Saharan montane xeric woodlands,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#CD886B,Pilbara shrublands,Deserts & Xeric Shrublands,Australasia,biomesoplenty:dryland,minecraft:savanna
+#CDD47F,Flint Hills tallgrass prairie,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#CE445E,Socotra Island xeric shrublands,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#CEA38A,Khangai Mountains alpine meadow,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:snowy_slopes
+#CF7190,South Arabian plains and plateau desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:desert
+#CFE792,Sierra de la Laguna dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:woodland,minecraft:forest
+#D005D4,Indus River Delta-Arabian Sea mangroves,Mangroves,Indomalayan,biomesoplenty:wetland,minecraft:mangrove_swamp
+#D06E75,Central Mexican matorral,Deserts & Xeric Shrublands,Nearctic,,minecraft:desert
+#D0A84A,Jamaican dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#D1B098,Central Andean puna,Montane Grasslands & Shrublands,Neotropic,biomesoplenty:highland,minecraft:meadow
+#D1B198,Cordillera Central páramo,Montane Grasslands & Shrublands,Neotropic,biomesoplenty:highland,minecraft:meadow
+#D1E98A,Caatinga,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:dryland,minecraft:forest
+#D2698A,Great Victoria desert,Deserts & Xeric Shrublands,Australasia,,minecraft:desert
+#D2698F,East Arabian fog shrublands and sand desert,Deserts & Xeric Shrublands,Palearctic,,minecraft:desert
+#D2B118,Llanos,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:shrubland,minecraft:savanna
+#D2F36C,Low Monte,"Temperate Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:pasture,minecraft:plains
+#D32243,Southwest Iberian Mediterranean sclerophyllous and mixed forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#D37F00,Northern Acacia-Commiphora bushlands and thickets,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:shrubland,minecraft:savanna
+#D38B90,Namib Desert,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:wasteland,minecraft:desert
+#D3AD89,Hindu Kush alpine meadow,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:snowy_slopes
+#D46E85,Registan-North Pakistan sandy desert,Deserts & Xeric Shrublands,Palearctic,,minecraft:desert
+#D4DD49,Trinidad and Tobago dry forest,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#D4EF5E,Tian Shan foothill arid steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#D4F972,Nebraska Sand Hills mixed grasslands,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#D51941,Anatolian conifer and deciduous mixed forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#D5BA47,Islas Revillagigedo dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#D5BA8E,Yarlung Zanbo arid steppe,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:meadow
+#D5DD7D,Eastern Australia mulga shrublands,"Temperate Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:pasture,minecraft:savanna
+#D5E294,Sinú Valley dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#D6A28F,Indus Valley desert,Deserts & Xeric Shrublands,Indomalayan,,minecraft:desert
+#D6F287,Sonoran-Sinaloan subtropical dry forest,Tropical & Subtropical Dry Broadleaf Forests,Nearctic,biomesoplenty:dryland,minecraft:forest
+#D7667D,Gibson desert,Deserts & Xeric Shrublands,Australasia,,minecraft:desert
+#D76782,Central Asian southern desert,Deserts & Xeric Shrublands,Palearctic,,minecraft:desert
+#D7CA14,Guianan savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#D7FF5C,Western shortgrass prairie,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#D7FF8E,Altai steppe and semi-desert,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#D81E2C,Southeast Iberian shrubs and woodlands,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:shrubland,minecraft:savanna
+#D88C89,Nama Karoo shrublands,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#D89A00,Mandara Plateau woodlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:rocky_shrubland,minecraft:meadow
+#D8B787,Eastern Himalayan alpine shrub and meadows,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:snowy_slopes
+#D8D04C,Veracruz dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#D8E48C,Central American dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#D8F254,Alai-Western Tian Shan steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#D96C78,Red Sea coastal desert,Deserts & Xeric Shrublands,Palearctic,,minecraft:desert
+#D97D61,La Costa xeric shrublands,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:dryland,minecraft:savanna
+#D9D69A,New Zealand South Island montane grasslands,Montane Grasslands & Shrublands,Australasia,biomesoplenty:highland,minecraft:meadow
+#DAC3AF,Rwenzori-Virunga montane moorlands,Montane Grasslands & Shrublands,Afrotropic,biomesoplenty:moor,minecraft:snowy_slopes
+#DAC58D,Tibetan Plateau alpine shrublands and meadows,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#DAD490,Ecuadorian dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#DB8D00,Hawai'i tropical low shrublands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Oceania,biomesoplenty:shrubland,minecraft:savanna
+#DB8DA7,Deccan thorn scrub forests,Deserts & Xeric Shrublands,Indomalayan,biomesoplenty:dryland,minecraft:savanna
+#DBBA00,Zambezian-Limpopo mixed woodlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#DC0FF2,Mesoamerican Gulf-Caribbean mangroves,Mangroves,Neotropic,biomesoplenty:bayou,minecraft:mangrove_swamp
+#DC520F,Clipperton Island shrub and grasslands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:prairie,minecraft:savanna
+#DC646F,Carnarvon xeric shrublands,Deserts & Xeric Shrublands,Australasia,biomesoplenty:dryland,minecraft:savanna
+#DC6474,Central Asian northern desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:cold_desert,minecraft:desert
+#DD201A,Pindus Mountains mixed forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#DD2455,California montane chaparral and woodlands,"Mediterranean Forests, Woodlands & Scrub",Nearctic,biomesoplenty:highland,minecraft:savanna
+#DD9488,Madagascar spiny thickets,Deserts & Xeric Shrublands,Afrotropic,,minecraft:desert
+#DDB700,Kalahari Acacia woodlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#DDC385,Altai alpine meadow and tundra,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#DDDF8E,Chiquitano dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:woodland,minecraft:forest
+#DE6A69,Paropamisus xeric woodlands,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#DE8A5E,Galápagos Islands xeric scrub,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:dryland,minecraft:savanna
+#DEBB62,Faroe Islands boreal grasslands,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:plains
+#DEC66A,Marianas tropical dry forests,Tropical & Subtropical Dry Broadleaf Forests,Oceania,biomesoplenty:orchard,minecraft:forest
+#DF0CFF,Sunda Shelf mangroves,Mangroves,Indomalayan,biomesoplenty:wetland,minecraft:mangrove_swamp
+#DFBF83,Narmada Valley dry deciduous forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:woodland,minecraft:forest
+#DFCCB3,Mulanje Montane forest-grassland,Montane Grasslands & Shrublands,Afrotropic,biomesoplenty:highland,minecraft:meadow
+#DFD28B,Sulaiman Range alpine meadows,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:snowy_slopes
+#DFF199,Lesser Sundas deciduous forests,Tropical & Subtropical Dry Broadleaf Forests,Australasia,biomesoplenty:orchard,minecraft:forest
+#E0D700,Zambezian Baikiaea woodlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#E0F475,Northern Tallgrass prairie,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#E16164,Caspian lowland desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:cold_desert,minecraft:desert
+#E1680B,Campos Rupestres montane savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:lush_savanna,minecraft:meadow
+#E16C92,Wyoming Basin shrub steppe,Deserts & Xeric Shrublands,Nearctic,,minecraft:badlands
+#E1C416,Victoria Plains tropical savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:lush_savanna,minecraft:savanna
+#E2203E,California coastal sage and chaparral,"Mediterranean Forests, Woodlands & Scrub",Nearctic,biomesoplenty:mediterranean_forest,minecraft:savanna
+#E23315,Northeast Spain and Southern France Mediterranean forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:lavender_field,minecraft:forest
+#E29D85,Kalahari xeric savanna,Deserts & Xeric Shrublands,Afrotropic,,minecraft:badlands
+#E2D400,Horn of Africa xeric bushlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#E35B7F,Caribbean shrublands,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:dryland,minecraft:savanna
+#E37567,North Arabian highland shrublands,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#E3C278,Canadian Aspen forests and parklands,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:forested_field,minecraft:plains
+#E3CD5F,Eastern Anatolian montane steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#E3D767,Fiji tropical dry forests,Tropical & Subtropical Dry Broadleaf Forests,Oceania,biomesoplenty:orchard,minecraft:forest
+#E45B1A,Southwest Australia woodlands,"Mediterranean Forests, Woodlands & Scrub",Australasia,biomesoplenty:mediterranean_forest,minecraft:forest
+#E4CC80,Irrawaddy dry forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:orchard,minecraft:forest
+#E4D6B7,Jos Plateau forest-grassland,Montane Grasslands & Shrublands,Afrotropic,biomesoplenty:highland,minecraft:meadow
+#E4E089,Sayan alpine meadows and tundra,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#E55000,West Sudanian savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#E5EC9C,Sumba deciduous forests,Tropical & Subtropical Dry Broadleaf Forests,Australasia,biomesoplenty:orchard,minecraft:forest
+#E5ED58,Al-Hajar montane woodlands and shrublands,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:forested_field,minecraft:savanna
+#E5FF94,Daurian forest steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#E64710,Mediterranean dry woodlands and steppe,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:shrubland,minecraft:forest
+#E66984,Tamaulipan matorral,Deserts & Xeric Shrublands,Nearctic,,minecraft:desert
+#E66A5E,Badghyz and Karabil semi-desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:desert
+#E68006,Belizian pine savannas,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#E6D47E,Willamette Valley oak savanna,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:forested_field,minecraft:savanna
+#E6DF11,Mitchell Grass Downs,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:prairie,minecraft:savanna
+#E700B7,Red Sea mangroves,Mangroves,Afrotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
+#E76627,East Sudanian savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,,minecraft:desert
+#E7730E,Western Gulf coastal grasslands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:savanna
+#E783A6,Hobyo grasslands and shrublands,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#E81994,Southern Mesoamerican Pacific mangroves,Mangroves,Neotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
+#E8586E,Araya and Paria xeric scrub,Deserts & Xeric Shrublands,Neotropic,biomesoplenty:dryland,minecraft:savanna
+#E88164,Mesopotamian shrub desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:desert
+#E8E05B,Central Anatolian steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#E91551,Naracoorte woodlands,"Mediterranean Forests, Woodlands & Scrub",Australasia,biomesoplenty:mediterranean_forest,minecraft:forest
+#E91CFF,Madagascar mangroves,Mangroves,Afrotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
+#E9A886,Pamir alpine desert and tundra,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#E9DB7E,Chhota-Nagpur dry deciduous forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:woodland,minecraft:forest
+#E9DFBB,Ethiopian montane moorlands,Montane Grasslands & Shrublands,Afrotropic,biomesoplenty:moor,minecraft:snowy_slopes
+#E9F079,Southeast US conifer savannas,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:grassland,minecraft:savanna
+#EA6C00,St. Helena scrub and woodlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#EAD0BB,Kinabalu montane alpine meadows,Montane Grasslands & Shrublands,Indomalayan,biomesoplenty:highland,minecraft:snowy_slopes
+#EB0B5A,Italian sclerophyllous and semi-deciduous forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#EB5C0C,Einasleigh upland savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:lush_savanna,minecraft:savanna
+#EB6673,Snake-Columbia shrub steppe,Deserts & Xeric Shrublands,Nearctic,biomesoplenty:dryland,minecraft:savanna
+#EB775B,Arabian-Persian Gulf coastal plain desert,Deserts & Xeric Shrublands,Palearctic,,minecraft:desert
+#EBE47B,Texas blackland prairies,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#EC00A0,Guinean mangroves,Mangroves,Afrotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
+#EC7B23,Drakensberg grasslands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:prairie,minecraft:savanna
+#EC809A,Eritrean coastal desert,Deserts & Xeric Shrublands,Afrotropic,,minecraft:desert
+#ECCD90,Patía valley dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:dryland,minecraft:forest
+#ED147D,South American Pacific mangroves,Mangroves,Neotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
+#ED8F60,Kazakh semi-desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:desert
+#EDEC7B,Central Deccan Plateau dry deciduous forests,Tropical & Subtropical Dry Broadleaf Forests,Indomalayan,biomesoplenty:woodland,minecraft:forest
+#EDFF57,California Central Valley grasslands,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#EE1036,Jarrah-Karri forest and shrublands,"Mediterranean Forests, Woodlands & Scrub",Australasia,biomesoplenty:shrubland,minecraft:savanna
+#EE8691,Succulent Karoo xeric shrublands,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#EED4BE,Northwestern Himalayan alpine shrub and meadows,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:snowy_slopes
+#EEE9B9,East African montane moorlands,Montane Grasslands & Shrublands,Afrotropic,biomesoplenty:moor,minecraft:snowy_slopes
+#EF4509,Chilean Matorral,"Mediterranean Forests, Woodlands & Scrub",Neotropic,biomesoplenty:mediterranean_forest,minecraft:savanna
+#EF9A28,Southern Congolian forest-savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#F0063E,Iberian sclerophyllous and semi-deciduous forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#F06463,Meseta Central matorral,Deserts & Xeric Shrublands,Nearctic,,minecraft:badlands
+#F06688,West Sahara desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:wasteland,minecraft:desert
+#F07406,Cape York Peninsula tropical savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:lush_savanna,minecraft:savanna
+#F08657,Arabian desert,Deserts & Xeric Shrublands,Palearctic,,minecraft:desert
+#F10089,Central African mangroves,Mangroves,Afrotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
+#F17E8C,Aldabra Island xeric scrub,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#F1921E,Central Zambezian wet miombo woodlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:woodland,minecraft:savanna
+#F1DB8D,Maranhão Babaçu forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#F1FF9A,Emin Valley steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#F25C7F,Western Australian Mulga shrublands,Deserts & Xeric Shrublands,Australasia,biomesoplenty:dryland,minecraft:savanna
+#F25D86,Great Lakes Basin desert steppe,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:cold_desert,minecraft:desert
+#F2FF82,Pontic steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#F30A19,Flinders-Lofty montane woodlands,"Mediterranean Forests, Woodlands & Scrub",Australasia,biomesoplenty:highland,minecraft:forest
+#F38584,Southwest Arabian Escarpment shrublands and woodlands,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#F3D884,Bajío dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#F3DEC2,Mediterranean High Atlas juniper steppe,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:meadow
+#F400E5,Sundarbans mangroves,Mangroves,Indomalayan,biomesoplenty:wetland,minecraft:mangrove_swamp
+#F400E6,Myanmar Coast mangroves,Mangroves,Indomalayan,biomesoplenty:wetland,minecraft:mangrove_swamp
+#F47656,Tehuacán Valley matorral,Deserts & Xeric Shrublands,Neotropic,,minecraft:badlands
+#F4B123,Serengeti volcanic grasslands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:prairie,minecraft:savanna
+#F4B223,"South Arabian fog woodlands, shrublands, and dune","Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#F50020,Eastern Mediterranean conifer-broadleaf forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#F50021,Crete Mediterranean forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#F511B0,New Guinea mangroves,Mangroves,Australasia,biomesoplenty:wetland,minecraft:mangrove_swamp
+#F55384,Afghan Mountains semi-desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:rocky_shrubland,minecraft:desert
+#F56277,Taklimakan desert,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:cold_desert,minecraft:desert
+#F5715F,Great Basin shrub steppe,Deserts & Xeric Shrublands,Nearctic,,minecraft:badlands
+#F58F01,Arnhem Land tropical savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:lush_savanna,minecraft:savanna
+#F6AB19,Ascension scrub and grasslands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:prairie,minecraft:savanna
+#F6EA8B,Magdalena Valley dry forests,Tropical & Subtropical Dry Broadleaf Forests,Neotropic,biomesoplenty:orchard,minecraft:forest
+#F70AF3,Amazon-Orinoco-Southern Caribbean mangroves,Mangroves,Neotropic,biomesoplenty:bayou,minecraft:mangrove_swamp
+#F7596C,Simpson desert,Deserts & Xeric Shrublands,Australasia,,minecraft:desert
+#F75973,Eastern Gobi desert steppe,Deserts & Xeric Shrublands,Palearctic,biomesoplenty:cold_desert,minecraft:desert
+#F7D090,Southern Andean steppe,Montane Grasslands & Shrublands,Neotropic,biomesoplenty:highland,minecraft:meadow
+#F81105,Esperance mallee,"Mediterranean Forests, Woodlands & Scrub",Australasia,biomesoplenty:shrubland,minecraft:savanna
+#F84800,Renosterveld shrubland,"Mediterranean Forests, Woodlands & Scrub",Afrotropic,biomesoplenty:shrubland,minecraft:savanna
+#F88F81,Somali montane xeric woodlands,Deserts & Xeric Shrublands,Afrotropic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#F8E8C6,Kopet Dag woodlands and forest steppe,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:meadow
+#F9C756,Sayan Intermontane steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#F9CC1E,Northern Congolian Forest-Savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#FAFF47,Gissaro-Alai open woodlands,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:forested_field,minecraft:plains
+#FB00FF,Southern Atlantic Brazilian mangroves,Mangroves,Neotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
+#FBC614,Angolan scarp savanna and woodlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#FBFF13,Limpopo lowveld,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:shrubland,minecraft:savanna
+#FC6500,Dry Chaco,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:shrubland,minecraft:savanna
+#FC6600,Miskito pine forests,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:shrubland,minecraft:savanna
+#FCDE8D,Northern Andean páramo,Montane Grasslands & Shrublands,Neotropic,biomesoplenty:highland,minecraft:meadow
+#FD1D00,Tyrrhenian-Adriatic sclerophyllous and mixed forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#FD286D,Albany thickets,"Mediterranean Forests, Woodlands & Scrub",Afrotropic,biomesoplenty:shrubland,minecraft:forest
+#FDF2CA,Karakoram-West Tibetan Plateau alpine steppe,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:tundra,minecraft:snowy_slopes
+#FECE6E,Mid-Atlantic US coastal savannas,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:grassland,minecraft:savanna
+#FEDC52,Mongolian-Manchurian grassland,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:plains
+#FEE819,Masai xeric grasslands and shrublands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#FF0018,Southwest Australia savanna,"Mediterranean Forests, Woodlands & Scrub",Australasia,biomesoplenty:mediterranean_forest,minecraft:forest
+#FF0029,Mediterranean Acacia-Argania dry woodlands and succulent thickets,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:shrubland,minecraft:forest
+#FF0041,Coolgardie woodlands,"Mediterranean Forests, Woodlands & Scrub",Australasia,biomesoplenty:mediterranean_forest,minecraft:forest
+#FF0045,Northwest Iberian montane forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:highland,minecraft:forest
+#FF0046,Mediterranean woodlands and forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#FF009A,Indochina mangroves,Mangroves,Indomalayan,biomesoplenty:wetland,minecraft:mangrove_swamp
+#FF00AD,Bahamian-Antillean mangroves,Mangroves,Neotropic,biomesoplenty:bayou,minecraft:mangrove_swamp
+#FF00E6,Northern Mesoamerican Pacific mangroves,Mangroves,Neotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
+#FF0425,Fynbos shrubland,"Mediterranean Forests, Woodlands & Scrub",Afrotropic,biomesoplenty:shrubland,minecraft:savanna
+#FF0618,Santa Lucia Montane Chaparral & Woodlands,"Mediterranean Forests, Woodlands & Scrub",Nearctic,biomesoplenty:highland,minecraft:savanna
+#FF1000,Illyrian deciduous forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#FF16FC,East African mangroves,Mangroves,Afrotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
+#FF1700,Canary Islands dry woodlands and forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:shrubland,minecraft:forest
+#FF2100,Murray-Darling woodlands and mallee,"Mediterranean Forests, Woodlands & Scrub",Australasia,biomesoplenty:shrubland,minecraft:savanna
+#FF228E,Southern Africa mangroves,Mangroves,Afrotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
+#FF246B,Corsican montane broadleaf and mixed forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:highland,minecraft:forest
+#FF2600,California interior chaparral and woodlands,"Mediterranean Forests, Woodlands & Scrub",Nearctic,biomesoplenty:mediterranean_forest,minecraft:savanna
+#FF2C00,Iberian conifer forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#FF3400,Aegean and Western Turkey sclerophyllous and mixed forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:lavender_field,minecraft:forest
+#FF3A00,Southern Anatolian montane conifer and deciduous forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:highland,minecraft:forest
+#FF3E00,Hampton mallee and woodlands,"Mediterranean Forests, Woodlands & Scrub",Australasia,biomesoplenty:shrubland,minecraft:savanna
+#FF5600,South Apennine mixed montane forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:highland,minecraft:forest
+#FF5903,Hawai'i tropical high shrublands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Oceania,biomesoplenty:shrubland,minecraft:savanna
+#FF5A00,Eyre and York mallee,"Mediterranean Forests, Woodlands & Scrub",Australasia,biomesoplenty:shrubland,minecraft:savanna
+#FF5B00,Angolan wet miombo woodlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:woodland,minecraft:savanna
+#FF6100,Somali Acacia-Commiphora bushlands and thickets,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:shrubland,minecraft:savanna
+#FF672A,Cyprus Mediterranean forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#FF700D,Itigi-Sumbu thicket,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:shrubland,minecraft:savanna
+#FF7700,Angolan mopane woodlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#FF7C18,Zambezian mopane woodlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#FF7D00,Sahelian Acacia savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#FF8300,Cerrado,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:shrubland,minecraft:savanna
+#FF8400,Humid Chaco,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:shrubland,minecraft:savanna
+#FF8808,Guinean forest-savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#FF8C00,Kimberly tropical savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:lush_savanna,minecraft:savanna
+#FF8D00,Trans Fly savanna and grasslands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:prairie,minecraft:savanna
+#FF9313,Western Congolian forest-savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#FF9A19,Terai-Duar savanna and grasslands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Indomalayan,biomesoplenty:prairie,minecraft:savanna
+#FFBD00,Dry miombo woodlands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:dryland,minecraft:savanna
+#FFC024,Uruguayan savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#FFC507,Victoria Basin forest-savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#FFC600,Carpentaria tropical savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:lush_savanna,minecraft:savanna
+#FFCD67,Southeast Australia temperate savanna,"Temperate Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:grassland,minecraft:savanna
+#FFD351,Palouse prairie,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#FFD900,Beni savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#FFDA00,Drakensberg Escarpment savanna and thicket,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:lush_savanna,minecraft:savanna
+#FFDC61,Canterbury-Otago tussock grasslands,"Temperate Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:prairie,minecraft:meadow
+#FFDD69,Edwards Plateau savanna,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:grassland,minecraft:savanna
+#FFE001,Southwest Arabian montane woodlands and grasslands,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:prairie,minecraft:meadow
+#FFE048,Patagonian steppe,"Temperate Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:prairie,minecraft:savanna
+#FFE188,Al-Hajar foothill xeric woodlands and shrublands,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:rocky_shrubland,minecraft:savanna
+#FFE200,Brigalow tropical savanna,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Australasia,biomesoplenty:lush_savanna,minecraft:savanna
+#FFE48A,Amsterdam-Saint Paul Islands temperate grasslands,"Temperate Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:prairie,minecraft:plains
+#FFE54B,Northern Shortgrass prairie,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#FFED63,Central-Southern US mixed grasslands,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#FFF04C,Kazakh steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna
+#FFF28E,Syrian xeric grasslands and shrublands,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:dryland,minecraft:savanna
+#FFF309,Northwest Hawai'i scrub,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Oceania,biomesoplenty:shrubland,minecraft:savanna
+#FFF600,Central bushveld,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:shrubland,minecraft:savanna
+#FFF7CC,Cordillera de Merida páramo,Montane Grasslands & Shrublands,Neotropic,biomesoplenty:highland,minecraft:meadow
+#FFF99B,Humid Pampas,"Temperate Grasslands, Savannas & Shrublands",Neotropic,biomesoplenty:pasture,minecraft:plains
+#FFFACC,Ghorat-Hazarajat alpine meadow,Montane Grasslands & Shrublands,Palearctic,biomesoplenty:highland,minecraft:snowy_slopes
+#FFFC00,Southern Acacia-Commiphora bushlands and thickets,"Tropical & Subtropical Grasslands, Savannas & Shrublands",Afrotropic,biomesoplenty:shrubland,minecraft:savanna
+#FFFC9E,Montana Valley and Foothill grasslands,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#FFFD88,Rock and Ice,N/A,N/A,biomesoplenty:cold_desert,minecraft:frozen_peaks
+#FFFF5D,Central US forest-grasslands transition,"Temperate Grasslands, Savannas & Shrublands",Nearctic,biomesoplenty:prairie,minecraft:plains
+#FFFF88,Selenge-Orkhon forest steppe,"Temperate Grasslands, Savannas & Shrublands",Palearctic,biomesoplenty:prairie,minecraft:savanna

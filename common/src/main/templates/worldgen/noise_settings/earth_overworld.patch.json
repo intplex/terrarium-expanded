@@ -1,0 +1,28 @@
+{
+  "aquifers_enabled": false,
+  "ore_veins_enabled": true,
+  "sea_level": 63,
+  "noise_router": {
+    "continents": {
+      "type": "terrarium_expanded:terrain_continentalness"
+    },
+    "depth": {
+      "type": "terrarium_expanded:terrain_depth"
+    },
+    "erosion": {
+      "type": "terrarium_expanded:terrain_erosion"
+    },
+    "preliminary_surface_level": {
+      "type": "terrarium_expanded:terrain_envelope"
+    },
+    "final_density": {
+      "type": "terrarium_expanded:terrain_envelope"
+    },
+    "initial_density_without_jaggedness": {
+      "type": "terrarium_expanded:terrain_envelope"
+    },
+    "ridges": {
+      "type": "terrarium_expanded:terrain_weirdness"
+    }
+  }
+}
