@@ -111,13 +111,24 @@ jobs:
           test -f "${fabric_jar}" || (echo "Missing file: ${fabric_jar}" >&2 && exit 1)
           test -f "${neoforge_jar}" || (echo "Missing file: ${neoforge_jar}" >&2 && exit 1)
 
+      - name: Prepare release assets with Minecraft version in filename
+        run: |
+          mkdir -p release-assets
+
+          fabric_src="fabric/build/libs/${{ steps.props.outputs.archive_name }}-fabric-${MOD_VERSION}.jar"
+          neoforge_src="neoforge/build/libs/${{ steps.props.outputs.archive_name }}-neoforge-${MOD_VERSION}.jar"
+
+          fabric_out="release-assets/${{ steps.props.outputs.archive_name }}-fabric-${MOD_VERSION}-mc${MINECRAFT_VERSION}.jar"
+          neoforge_out="release-assets/${{ steps.props.outputs.archive_name }}-neoforge-${MOD_VERSION}-mc${MINECRAFT_VERSION}.jar"
+
+          cp "${fabric_src}" "${fabric_out}"
+          cp "${neoforge_src}" "${neoforge_out}"
+
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
         with:
           name: terrarium-expanded-${{ inputs.mod_version }}-mc${{ inputs.minecraft_version }}
-          path: |
-            fabric/build/libs/${{ steps.props.outputs.archive_name }}-fabric-${{ inputs.mod_version }}.jar
-            neoforge/build/libs/${{ steps.props.outputs.archive_name }}-neoforge-${{ inputs.mod_version }}.jar
+          path: release-assets/*.jar
           if-no-files-found: error
 
       - name: Create or update GitHub release
@@ -131,7 +142,5 @@ jobs:
           body: |
             Minecraft version: `${{ inputs.minecraft_version }}`
             Loaders: `fabric`, `neoforge`
-          files: |
-            fabric/build/libs/${{ steps.props.outputs.archive_name }}-fabric-${{ inputs.mod_version }}.jar
-            neoforge/build/libs/${{ steps.props.outputs.archive_name }}-neoforge-${{ inputs.mod_version }}.jar
+          files: release-assets/*.jar
           fail_on_unmatched_files: true
