@@ -42,28 +42,8 @@ class TerrainServiceMathTest {
     }
 
     @Test
-    void chunkCacheCapacityReadsSystemPropertySafely() {
-        String key = TerrainService.CHUNK_CACHE_ENTRIES_PROPERTY;
-        String original = System.getProperty(key);
-        try {
-            System.clearProperty(key);
-            assertEquals(512, TerrainService.chunkCacheEntryCapacity());
-
-            System.setProperty(key, "1024");
-            assertEquals(1024, TerrainService.chunkCacheEntryCapacity());
-
-            System.setProperty(key, "-1");
-            assertEquals(512, TerrainService.chunkCacheEntryCapacity());
-
-            System.setProperty(key, "not-a-number");
-            assertEquals(512, TerrainService.chunkCacheEntryCapacity());
-        } finally {
-            if (original == null) {
-                System.clearProperty(key);
-            } else {
-                System.setProperty(key, original);
-            }
-        }
+    void chunkCacheCapacityUsesRuntimeConfigDefaults() {
+        assertEquals(256, TerrainService.chunkCacheEntryCapacity(TerrariumRuntimeConfig.defaults()));
     }
 
     @Test

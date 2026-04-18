@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +29,7 @@ final class RemotePngTileStore<T> {
     private static final String MISSING_TILE_SUFFIX = ".missing";
     static final int DEFAULT_MEMORY_CACHE_ENTRIES = 512;
     static final int DEFAULT_PREFETCH_RADIUS = 1;
+    static final int DEFAULT_IO_THREADS = 2;
     static final int DEFAULT_MAX_FETCH_ATTEMPTS = 3;
     static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(4);
     static final Duration DEFAULT_REQUEST_TIMEOUT = Duration.ofSeconds(8);
@@ -215,11 +215,19 @@ final class RemotePngTileStore<T> {
         }
     }
 
-    static ExecutorService createDefaultExecutor() {
-        int threads = Math.max(2, Math.min(8, Runtime.getRuntime().availableProcessors()));
-        AtomicInteger counter = new AtomicInteger();
+    int memoryCacheEntries() {
+        return memoryCache.maxEntries();
+    }
+
+    int prefetchRadius() {
+        return prefetchRadius;
+    }
+
+    static ExecutorService createDefaultExecutor(int ioThreads) {
+        int threads = Math.max(1, ioThreads);
+        NamingCounter counter = new NamingCounter();
         ThreadFactory factory = runnable -> {
-            Thread thread = new Thread(runnable, "remote-png-tile-io-" + counter.incrementAndGet());
+            Thread thread = new Thread(runnable, "remote-png-tile-io-" + counter.next());
             thread.setDaemon(true);
             return thread;
         };
@@ -399,6 +407,19 @@ final class RemotePngTileStore<T> {
 
         synchronized void put(TileKey key, T value) {
             delegate.put(Objects.requireNonNull(key), Objects.requireNonNull(value));
+        }
+
+        int maxEntries() {
+            return maxEntries;
+        }
+    }
+
+    private static final class NamingCounter {
+        private int value;
+
+        synchronized int next() {
+            value++;
+            return value;
         }
     }
 }

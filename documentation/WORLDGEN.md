@@ -47,6 +47,7 @@ The Earth preset (`data/terrarium_expanded/worldgen/world_preset/earth.json`) us
 - active `EarthGenerationProfile`
 - active tile services (`terrain`, `recovery`, `ecoregion`, `surface-water`)
 - `TerrainService.RuntimeState` caches and dedupe sets
+- startup-loaded runtime performance config from `<gameDir>/config/terrarium-expanded.properties`
 
 `TerrainServices.runtimeGeneration()` increments whenever the context is replaced; thread-local hot-path caches (`EarthSamplingFacade` / `EcoregionBiomeSource`) invalidate against this generation counter.
 

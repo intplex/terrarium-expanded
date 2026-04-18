@@ -65,6 +65,7 @@ final class TileProjection {
         private int tileY;
         private int pixelX;
         private int pixelY;
+        private TileKey tileKey = new TileKey(0, 0);
 
         int pixelX() {
             return pixelX;
@@ -75,10 +76,13 @@ final class TileProjection {
         }
 
         TileKey tileKey() {
-            return new TileKey(tileX, tileY);
+            return tileKey;
         }
 
         private void set(int tileX, int tileY, int pixelX, int pixelY) {
+            if (this.tileX != tileX || this.tileY != tileY) {
+                this.tileKey = new TileKey(tileX, tileY);
+            }
             this.tileX = tileX;
             this.tileY = tileY;
             this.pixelX = pixelX;

@@ -11,12 +11,11 @@ import com.github.intplex.earth.terrain.TerrainService;
 import com.github.intplex.earth.terrain.TerrainServices;
 import com.github.intplex.earth.terrain.TileKey;
 import com.github.intplex.earth.terrain.WaterBodyKind;
+import java.util.LinkedHashMap;
 import java.util.OptionalDouble;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -112,7 +111,9 @@ public final class EcoregionBiomeSource extends BiomeSource {
     static final double COLD_SST_THRESHOLD_C = 10.0;
     static final double TEMPERATE_SST_THRESHOLD_C = 18.0;
     static final double WARM_SST_THRESHOLD_C = 26.0;
-    private static final ConcurrentMap<UnmappedColorKey, Boolean> LOGGED_UNMAPPED_COLORS = new ConcurrentHashMap<>();
+    private static final int LOGGED_UNMAPPED_COLORS_CAPACITY = 8192;
+    private static final BoundedLogSet<UnmappedColorKey> LOGGED_UNMAPPED_COLORS =
+        new BoundedLogSet<>(LOGGED_UNMAPPED_COLORS_CAPACITY);
     private static final ColorSample OUT_OF_BOUNDS_COLOR_SAMPLE =
         new ColorSample(0, FallbackReason.OUT_OF_BOUNDS, null, -1, -1);
     private static final ThreadLocal<SamplingCacheState> SAMPLING_CACHES =
@@ -228,6 +229,14 @@ public final class EcoregionBiomeSource extends BiomeSource {
     public static void resetFallbackCounters() {
         LOGGED_UNMAPPED_COLORS.clear();
         SAMPLING_CACHES.remove();
+    }
+
+    static boolean markUnmappedColorForTesting(TileKey tileKey, int colorRgb) {
+        return LOGGED_UNMAPPED_COLORS.markIfNew(new UnmappedColorKey(tileKey, colorRgb));
+    }
+
+    static int loggedUnmappedColorCountForTesting() {
+        return LOGGED_UNMAPPED_COLORS.size();
     }
 
     @Override
@@ -421,7 +430,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
         }
 
         UnmappedColorKey unmappedKey = new UnmappedColorKey(sample.tileKey(), sample.colorRgb());
-        if (LOGGED_UNMAPPED_COLORS.putIfAbsent(unmappedKey, Boolean.TRUE) != null) {
+        if (!LOGGED_UNMAPPED_COLORS.markIfNew(unmappedKey)) {
             return;
         }
 
@@ -584,6 +593,37 @@ public final class EcoregionBiomeSource extends BiomeSource {
 
         private void setRuntimeGeneration(long runtimeGeneration) {
             this.runtimeGeneration = runtimeGeneration;
+        }
+    }
+
+    private static final class BoundedLogSet<T> {
+        private final int maxEntries;
+        private final LinkedHashMap<T, Boolean> entries;
+
+        private BoundedLogSet(int maxEntries) {
+            this.maxEntries = Math.max(1, maxEntries);
+            this.entries = new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(java.util.Map.Entry<T, Boolean> eldest) {
+                    return size() > BoundedLogSet.this.maxEntries;
+                }
+            };
+        }
+
+        private synchronized boolean markIfNew(T key) {
+            if (entries.containsKey(key)) {
+                return false;
+            }
+            entries.put(key, Boolean.TRUE);
+            return true;
+        }
+
+        private synchronized void clear() {
+            entries.clear();
+        }
+
+        private synchronized int size() {
+            return entries.size();
         }
     }
 }

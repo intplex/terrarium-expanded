@@ -1,19 +1,20 @@
 package com.github.intplex.earth.terrain;
 
 import com.github.intplex.earth.EarthGenConfig;
+import java.util.Arrays;
 
 final class TerrainChunkSnapshotBuilder {
     private static final int SAMPLE_GRID_MARGIN = TerrainMetricsKernel.RELIEF_RADIUS_BLOCKS;
     private static final int SAMPLE_GRID_SIZE = TerrainService.CHUNK_WIDTH + SAMPLE_GRID_MARGIN * 2;
     private static final int WATER_ANALYSIS_START = 0;
     private static final int WATER_ANALYSIS_END_EXCLUSIVE = SAMPLE_GRID_SIZE;
+    private static final ThreadLocal<ScratchBuffers> SCRATCH_BUFFERS = ThreadLocal.withInitial(ScratchBuffers::new);
 
     private TerrainChunkSnapshotBuilder() {
     }
 
     static TerrainChunkSnapshot build(int chunkMinX, int chunkMinZ, TerrainService.RuntimeState runtimeState, EarthRuntimeContext context) {
         int chunkCellCount = TerrainService.CHUNK_WIDTH * TerrainService.CHUNK_WIDTH;
-        int sampleCellCount = SAMPLE_GRID_SIZE * SAMPLE_GRID_SIZE;
 
         boolean[] inBounds = new boolean[chunkCellCount];
         short[] rawTerrainY = new short[chunkCellCount];
@@ -27,10 +28,12 @@ final class TerrainChunkSnapshotBuilder {
         float[] weirdness = new float[chunkCellCount];
         float[] depth = new float[chunkCellCount];
 
-        boolean[] sampleInBounds = new boolean[sampleCellCount];
-        int[] sampleTerrainY = new int[sampleCellCount];
-        boolean[] sampleOceanMask = new boolean[sampleCellCount];
-        boolean[] sampleRawWaterMask = new boolean[sampleCellCount];
+        ScratchBuffers scratch = SCRATCH_BUFFERS.get();
+        boolean[] sampleInBounds = scratch.sampleInBounds;
+        int[] sampleTerrainY = scratch.sampleTerrainY;
+        boolean[] sampleOceanMask = scratch.sampleOceanMask;
+        boolean[] sampleRawWaterMask = scratch.sampleRawWaterMask;
+        EarthSamplingFacade.MutableTerrainProbe sampleProbe = scratch.sampleProbe;
 
         EarthSamplingFacade.LocalTileCaches tileCaches = EarthSamplingFacade.chunkLocalCaches();
 
@@ -40,12 +43,12 @@ final class TerrainChunkSnapshotBuilder {
             for (int sampleZ = 0; sampleZ < SAMPLE_GRID_SIZE; sampleZ++) {
                 int blockZ = chunkMinZ + sampleZ - SAMPLE_GRID_MARGIN;
                 int sampleIndex = sampleIndex(sampleX, sampleZ);
-                EarthSamplingResult.TerrainProbe sample = EarthSamplingFacade.sampleTerrain(context, blockX, blockZ, tileCaches);
-                sampleInBounds[sampleIndex] = sample.inBounds();
-                sampleTerrainY[sampleIndex] = sample.terrainY();
-                sampleOceanMask[sampleIndex] = sample.ocean();
-                sampleRawWaterMask[sampleIndex] = sample.rawSurfaceWater();
-                if (sample.inBounds() && runtimeState.inlandWaterSettings().enabled() && !sample.surfaceWaterDataAvailable()) {
+                EarthSamplingFacade.sampleTerrainInto(context, blockX, blockZ, tileCaches, sampleProbe);
+                sampleInBounds[sampleIndex] = sampleProbe.inBounds();
+                sampleTerrainY[sampleIndex] = sampleProbe.terrainY();
+                sampleOceanMask[sampleIndex] = sampleProbe.ocean();
+                sampleRawWaterMask[sampleIndex] = sampleProbe.rawSurfaceWater();
+                if (sampleProbe.inBounds() && runtimeState.inlandWaterSettings().enabled() && !sampleProbe.surfaceWaterDataAvailable()) {
                     waterDataComplete = false;
                 }
             }
@@ -54,7 +57,7 @@ final class TerrainChunkSnapshotBuilder {
         TerrainMetricsKernel.suppressIsolatedSpikes(sampleInBounds, sampleTerrainY, SAMPLE_GRID_SIZE, SAMPLE_GRID_SIZE);
 
         InlandWaterAnalysis.FlatResult waterResult = runtimeState.inlandWaterSettings().enabled() && !waterDataComplete
-            ? noInlandWaterResultFlat(sampleInBounds, sampleTerrainY)
+            ? noInlandWaterResultFlat(sampleInBounds, sampleTerrainY, scratch)
             : InlandWaterAnalysis.analyzeFlat(
                 sampleInBounds,
                 sampleTerrainY,
@@ -126,12 +129,13 @@ final class TerrainChunkSnapshotBuilder {
         );
     }
 
-    private static InlandWaterAnalysis.FlatResult noInlandWaterResultFlat(boolean[] inBounds, int[] terrainY) {
+    private static InlandWaterAnalysis.FlatResult noInlandWaterResultFlat(boolean[] inBounds, int[] terrainY, ScratchBuffers scratch) {
         int size = terrainY.length;
-        boolean[] inlandMask = new boolean[size];
-        WaterBodyKind[] waterKind = new WaterBodyKind[size];
-        int[] waterSurfaceY = new int[size];
-        int[] effectiveSolidTopY = new int[size];
+        boolean[] inlandMask = scratch.noInlandMask;
+        WaterBodyKind[] waterKind = scratch.noInlandWaterKind;
+        int[] waterSurfaceY = scratch.noInlandWaterSurfaceY;
+        int[] effectiveSolidTopY = scratch.noInlandEffectiveSolidTopY;
+        Arrays.fill(inlandMask, false);
         for (int i = 0; i < size; i++) {
             waterKind[i] = WaterBodyKind.NONE;
             waterSurfaceY[i] = EarthGenConfig.MIN_Y;
@@ -146,5 +150,17 @@ final class TerrainChunkSnapshotBuilder {
 
     private static int localIndex(int x, int z) {
         return x * TerrainService.CHUNK_WIDTH + z;
+    }
+
+    private static final class ScratchBuffers {
+        private final boolean[] sampleInBounds = new boolean[SAMPLE_GRID_SIZE * SAMPLE_GRID_SIZE];
+        private final int[] sampleTerrainY = new int[SAMPLE_GRID_SIZE * SAMPLE_GRID_SIZE];
+        private final boolean[] sampleOceanMask = new boolean[SAMPLE_GRID_SIZE * SAMPLE_GRID_SIZE];
+        private final boolean[] sampleRawWaterMask = new boolean[SAMPLE_GRID_SIZE * SAMPLE_GRID_SIZE];
+        private final boolean[] noInlandMask = new boolean[SAMPLE_GRID_SIZE * SAMPLE_GRID_SIZE];
+        private final WaterBodyKind[] noInlandWaterKind = new WaterBodyKind[SAMPLE_GRID_SIZE * SAMPLE_GRID_SIZE];
+        private final int[] noInlandWaterSurfaceY = new int[SAMPLE_GRID_SIZE * SAMPLE_GRID_SIZE];
+        private final int[] noInlandEffectiveSolidTopY = new int[SAMPLE_GRID_SIZE * SAMPLE_GRID_SIZE];
+        private final EarthSamplingFacade.MutableTerrainProbe sampleProbe = new EarthSamplingFacade.MutableTerrainProbe();
     }
 }

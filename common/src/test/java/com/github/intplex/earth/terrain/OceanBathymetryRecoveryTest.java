@@ -6,6 +6,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,6 +18,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class OceanBathymetryRecoveryTest {
+    @AfterEach
+    void tearDown() {
+        OceanBathymetryRecovery.resetDiagnosticsForTesting();
+    }
+
     @Test
     void eligibilityRequiresZoomElevenTerrainDataAndZeroMeters() {
         assertFalse(OceanBathymetryRecovery.shouldAttemptRecovery(10, true, 0.0));
@@ -147,6 +157,63 @@ class OceanBathymetryRecoveryTest {
         );
 
         assertTrue(recovered.isEmpty());
+    }
+
+    @Test
+    void diagnosticsCountersRemainConsistentUnderConcurrency() {
+        OceanBathymetryRecovery.resetDiagnosticsForTesting();
+        int threads = 8;
+        int attemptsPerThread = 1024;
+        int expectedAttempts = threads * attemptsPerThread;
+
+        ExecutorService pool = Executors.newFixedThreadPool(threads);
+        try {
+            CompletableFuture<?>[] futures = new CompletableFuture<?>[threads];
+            for (int thread = 0; thread < threads; thread++) {
+                futures[thread] = CompletableFuture.runAsync(() -> {
+                    for (int i = 0; i < attemptsPerThread; i++) {
+                        OceanBathymetryRecovery.recordRecoveryAttempted();
+                        OceanBathymetryRecovery.recordGateFailedTile();
+                    }
+                }, pool);
+            }
+            CompletableFuture.allOf(futures).join();
+        } finally {
+            pool.shutdownNow();
+            try {
+                pool.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        OceanBathymetryRecovery.DiagnosticsSnapshot snapshot = OceanBathymetryRecovery.diagnosticsSnapshotForTesting();
+        assertEquals(expectedAttempts, snapshot.recoveryAttempted());
+        assertEquals(expectedAttempts, snapshot.gateFailedTile());
+        assertEquals(1L, snapshot.lastPoorGenWarningWindow());
+    }
+
+    @Test
+    void modeLoggingGateIsThreadSafe() {
+        OceanBathymetryRecovery.resetDiagnosticsForTesting();
+        int threads = 8;
+        ExecutorService pool = Executors.newFixedThreadPool(threads);
+        try {
+            CompletableFuture<?>[] futures = new CompletableFuture<?>[threads];
+            for (int thread = 0; thread < threads; thread++) {
+                futures[thread] = CompletableFuture.runAsync(() -> OceanBathymetryRecovery.logModeIfActive(11), pool);
+            }
+            CompletableFuture.allOf(futures).join();
+        } finally {
+            pool.shutdownNow();
+            try {
+                pool.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        assertTrue(OceanBathymetryRecovery.diagnosticsSnapshotForTesting().modeLogged());
     }
 
     private static int blockFromGlobalPixel(int globalPixel, int zoom) {

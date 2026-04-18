@@ -4,8 +4,6 @@ import com.github.intplex.earth.EarthGenConfig;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,13 +16,14 @@ public final class OceanBathymetryRecovery {
     private static final long POOR_GEN_MIN_ATTEMPTS = 8192L;
     private static final double POOR_GEN_MAX_APPLY_RATE = 0.02;
     private static final double POOR_GEN_MIN_TILE_FAILURE_RATE = 0.50;
-    private static final AtomicBoolean MODE_LOGGED = new AtomicBoolean();
-    private static final AtomicLong LAST_POOR_GEN_WARNING_WINDOW = new AtomicLong(-1L);
-    private static final AtomicLong RECOVERY_ATTEMPTED = new AtomicLong();
-    private static final AtomicLong RECOVERY_APPLIED = new AtomicLong();
-    private static final AtomicLong GATE_FAILED_ECOREGION = new AtomicLong();
-    private static final AtomicLong GATE_FAILED_WATER = new AtomicLong();
-    private static final AtomicLong GATE_FAILED_TILE = new AtomicLong();
+    private static final Object DIAGNOSTICS_LOCK = new Object();
+    private static boolean modeLogged;
+    private static long lastPoorGenWarningWindow = -1L;
+    private static long recoveryAttempted;
+    private static long recoveryApplied;
+    private static long gateFailedEcoregion;
+    private static long gateFailedWater;
+    private static long gateFailedTile;
 
     private OceanBathymetryRecovery() {
     }
@@ -45,7 +44,12 @@ public final class OceanBathymetryRecovery {
         if (!isRecoveryActiveForZoom(worldZoom)) {
             return;
         }
-        if (MODE_LOGGED.compareAndSet(false, true)) {
+        boolean shouldLog;
+        synchronized (DIAGNOSTICS_LOCK) {
+            shouldLog = !modeLogged;
+            modeLogged = true;
+        }
+        if (shouldLog) {
             LOGGER.info(
                 "[TX-BATHY] ocean recovery active mode=zoom>=11 source_zoom={} interpolation=bilinear gating=meters==0&&ecoregion==#000000&&surface_water==true",
                 SOURCE_ZOOM
@@ -54,26 +58,62 @@ public final class OceanBathymetryRecovery {
     }
 
     public static void recordRecoveryAttempted() {
-        long attempts = RECOVERY_ATTEMPTED.incrementAndGet();
-        if (attempts % POOR_GEN_EVALUATION_INTERVAL_ATTEMPTS == 0L) {
-            maybeLogPoorTerrainGeneration(attempts);
+        synchronized (DIAGNOSTICS_LOCK) {
+            recoveryAttempted++;
+            if (recoveryAttempted % POOR_GEN_EVALUATION_INTERVAL_ATTEMPTS == 0L) {
+                maybeLogPoorTerrainGenerationLocked(recoveryAttempted);
+            }
         }
     }
 
     public static void recordRecoveryApplied() {
-        RECOVERY_APPLIED.incrementAndGet();
+        synchronized (DIAGNOSTICS_LOCK) {
+            recoveryApplied++;
+        }
     }
 
     public static void recordGateFailedEcoregion() {
-        GATE_FAILED_ECOREGION.incrementAndGet();
+        synchronized (DIAGNOSTICS_LOCK) {
+            gateFailedEcoregion++;
+        }
     }
 
     public static void recordGateFailedWater() {
-        GATE_FAILED_WATER.incrementAndGet();
+        synchronized (DIAGNOSTICS_LOCK) {
+            gateFailedWater++;
+        }
     }
 
     public static void recordGateFailedTile() {
-        GATE_FAILED_TILE.incrementAndGet();
+        synchronized (DIAGNOSTICS_LOCK) {
+            gateFailedTile++;
+        }
+    }
+
+    static void resetDiagnosticsForTesting() {
+        synchronized (DIAGNOSTICS_LOCK) {
+            modeLogged = false;
+            lastPoorGenWarningWindow = -1L;
+            recoveryAttempted = 0L;
+            recoveryApplied = 0L;
+            gateFailedEcoregion = 0L;
+            gateFailedWater = 0L;
+            gateFailedTile = 0L;
+        }
+    }
+
+    static DiagnosticsSnapshot diagnosticsSnapshotForTesting() {
+        synchronized (DIAGNOSTICS_LOCK) {
+            return new DiagnosticsSnapshot(
+                recoveryAttempted,
+                recoveryApplied,
+                gateFailedEcoregion,
+                gateFailedWater,
+                gateFailedTile,
+                modeLogged,
+                lastPoorGenWarningWindow
+            );
+        }
     }
 
     public static OptionalDouble sampleZoom10BilinearMeters(int blockX, int blockZ, int worldZoom, Zoom10MetersSampler sampler) {
@@ -148,13 +188,13 @@ public final class OceanBathymetryRecovery {
         return a + (b - a) * t;
     }
 
-    private static void maybeLogPoorTerrainGeneration(long attempts) {
+    private static void maybeLogPoorTerrainGenerationLocked(long attempts) {
         if (attempts < POOR_GEN_MIN_ATTEMPTS) {
             return;
         }
 
-        long applied = RECOVERY_APPLIED.get();
-        long failedTile = GATE_FAILED_TILE.get();
+        long applied = recoveryApplied;
+        long failedTile = gateFailedTile;
         double applyRate = attempts == 0L ? 0.0 : applied / (double) attempts;
         double tileFailureRate = attempts == 0L ? 0.0 : failedTile / (double) attempts;
         if (applyRate > POOR_GEN_MAX_APPLY_RATE || tileFailureRate < POOR_GEN_MIN_TILE_FAILURE_RATE) {
@@ -162,17 +202,17 @@ public final class OceanBathymetryRecovery {
         }
 
         long window = attempts / POOR_GEN_EVALUATION_INTERVAL_ATTEMPTS;
-        long lastWindow = LAST_POOR_GEN_WARNING_WINDOW.get();
-        if (window <= lastWindow || !LAST_POOR_GEN_WARNING_WINDOW.compareAndSet(lastWindow, window)) {
+        if (window <= lastPoorGenWarningWindow) {
             return;
         }
+        lastPoorGenWarningWindow = window;
 
         LOGGER.warn(
             "[TX-BATHY] low recovery quality detected: recovery_attempted={} recovery_applied={} gate_failed_ecoregion={} gate_failed_water={} gate_failed_tile={} apply_rate={} tile_failure_rate={}",
             attempts,
             applied,
-            GATE_FAILED_ECOREGION.get(),
-            GATE_FAILED_WATER.get(),
+            gateFailedEcoregion,
+            gateFailedWater,
             failedTile,
             String.format(Locale.ROOT, "%.4f", applyRate),
             String.format(Locale.ROOT, "%.4f", tileFailureRate)
@@ -182,5 +222,16 @@ public final class OceanBathymetryRecovery {
     @FunctionalInterface
     public interface Zoom10MetersSampler {
         Double sampleMeters(TileKey key, int localX, int localY);
+    }
+
+    record DiagnosticsSnapshot(
+        long recoveryAttempted,
+        long recoveryApplied,
+        long gateFailedEcoregion,
+        long gateFailedWater,
+        long gateFailedTile,
+        boolean modeLogged,
+        long lastPoorGenWarningWindow
+    ) {
     }
 }

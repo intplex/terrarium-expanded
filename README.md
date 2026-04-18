@@ -91,6 +91,29 @@ As the world generates, downloaded terrain, surface-water, and ecoregion files a
 
 Once tiles are cached locally, revisiting the same regions should be smoother.
 
+## Runtime Performance Config
+
+Terrarium Expanded reads runtime tuning from:
+
+- `<gameDir>/config/terrarium-expanded.properties`
+
+If the file is missing, built-in low-memory defaults are used.
+
+Supported keys:
+
+- `terrain.chunk_cache_entries` (default `256`)
+- `tiles.io_threads_per_service` (default `2`)
+- `tiles.terrain.cache_entries` (default `128`)
+- `tiles.terrain.prefetch_radius` (default `0`)
+- `tiles.recovery.cache_entries` (default `128`)
+- `tiles.recovery.prefetch_radius` (default `0`)
+- `tiles.surface_water.cache_entries` (default `128`)
+- `tiles.surface_water.prefetch_radius` (default `0`)
+- `tiles.ecoregion.cache_entries` (default `8`)
+- `tiles.ecoregion.prefetch_radius` (default `0`)
+- `inland_water.enabled` (default `true`)
+- `inland_water.min_water_months` (default `10`, clamped to `1-12`)
+
 ## Data Sources
 
 Terrarium Expanded currently uses:

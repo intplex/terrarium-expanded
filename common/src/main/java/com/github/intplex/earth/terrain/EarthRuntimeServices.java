@@ -28,32 +28,61 @@ final class EarthRuntimeServices {
         return EMPTY;
     }
 
-    static EarthRuntimeServices create(Path gameDir, EarthGenerationProfile profile) {
+    static EarthRuntimeServices create(Path gameDir, EarthGenerationProfile profile, TerrariumRuntimeConfig runtimeConfig) {
         Objects.requireNonNull(gameDir, "gameDir");
         Objects.requireNonNull(profile, "profile");
+        Objects.requireNonNull(runtimeConfig, "runtimeConfig");
         return new EarthRuntimeServices(
-            TerrariumTileService.create(gameDir, profile.zoom(), profile.terrainBaseUrl()),
-            TerrariumTileService.create(gameDir, OceanBathymetryRecovery.SOURCE_ZOOM, profile.terrainBaseUrl()),
-            EcoregionTileService.create(gameDir, profile.biomesBaseUrl()),
+            TerrariumTileService.create(
+                gameDir,
+                profile.zoom(),
+                profile.terrainBaseUrl(),
+                runtimeConfig.terrainTiles(),
+                runtimeConfig.ioThreadsPerService()
+            ),
+            TerrariumTileService.create(
+                gameDir,
+                OceanBathymetryRecovery.SOURCE_ZOOM,
+                profile.terrainBaseUrl(),
+                runtimeConfig.recoveryTiles(),
+                runtimeConfig.ioThreadsPerService()
+            ),
+            EcoregionTileService.create(
+                gameDir,
+                profile.biomesBaseUrl(),
+                runtimeConfig.ecoregionTiles(),
+                runtimeConfig.ioThreadsPerService()
+            ),
             SurfaceWaterTileService.create(
                 gameDir,
                 EarthGenConfig.waterSourceZoomForWorldZoom(profile.zoom()),
-                profile.surfaceWaterBaseUrl()
+                profile.surfaceWaterBaseUrl(),
+                runtimeConfig.surfaceWaterTiles(),
+                runtimeConfig.ioThreadsPerService()
             )
         );
     }
 
-    EarthRuntimeServices forZoom(Path gameDir, EarthGenerationProfile profile) {
+    EarthRuntimeServices forZoom(Path gameDir, EarthGenerationProfile profile, TerrariumRuntimeConfig runtimeConfig) {
         Objects.requireNonNull(gameDir, "gameDir");
         Objects.requireNonNull(profile, "profile");
+        Objects.requireNonNull(runtimeConfig, "runtimeConfig");
         return new EarthRuntimeServices(
-            TerrariumTileService.create(gameDir, profile.zoom(), profile.terrainBaseUrl()),
+            TerrariumTileService.create(
+                gameDir,
+                profile.zoom(),
+                profile.terrainBaseUrl(),
+                runtimeConfig.terrainTiles(),
+                runtimeConfig.ioThreadsPerService()
+            ),
             recoveryTileService,
             ecoregionTileService,
             SurfaceWaterTileService.create(
                 gameDir,
                 EarthGenConfig.waterSourceZoomForWorldZoom(profile.zoom()),
-                profile.surfaceWaterBaseUrl()
+                profile.surfaceWaterBaseUrl(),
+                runtimeConfig.surfaceWaterTiles(),
+                runtimeConfig.ioThreadsPerService()
             )
         );
     }

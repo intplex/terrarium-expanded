@@ -8,6 +8,8 @@ public final class EarthSamplingFacade {
     private static final String ERROR_ECOREGION_TILE_LOAD_FAILURE = errorLabel("ecoregion_tile", "load_failure");
     private static final String ERROR_SURFACE_WATER_MISSING = errorLabel("surface_water", "missing");
     private static final ThreadLocal<ChunkCacheState> CHUNK_LOCAL_CACHES = ThreadLocal.withInitial(ChunkCacheState::new);
+    private static final ThreadLocal<MutableTerrainProbe> TERRAIN_PROBE_SCRATCH =
+        ThreadLocal.withInitial(MutableTerrainProbe::new);
 
     private EarthSamplingFacade() {
     }
@@ -26,7 +28,9 @@ public final class EarthSamplingFacade {
         int blockZ,
         LocalTileCaches localCaches
     ) {
-        return sampleTerrainInternal(context, blockX, blockZ, false, 0, localCaches);
+        MutableTerrainProbe mutableProbe = TERRAIN_PROBE_SCRATCH.get();
+        sampleTerrainInternal(context, blockX, blockZ, false, 0, localCaches, mutableProbe);
+        return mutableProbe.toProbe();
     }
 
     public static EarthSamplingResult.TerrainProbe sampleTerrainWithEcoregionColorHint(
@@ -35,14 +39,27 @@ public final class EarthSamplingFacade {
         int ecoregionColorRgb,
         LocalTileCaches localCaches
     ) {
-        return sampleTerrainInternal(
+        MutableTerrainProbe mutableProbe = TERRAIN_PROBE_SCRATCH.get();
+        sampleTerrainInternal(
             TerrainServices.requireContext(),
             blockX,
             blockZ,
             true,
             ecoregionColorRgb,
-            localCaches
+            localCaches,
+            mutableProbe
         );
+        return mutableProbe.toProbe();
+    }
+
+    static void sampleTerrainInto(
+        EarthRuntimeContext context,
+        int blockX,
+        int blockZ,
+        LocalTileCaches localCaches,
+        MutableTerrainProbe out
+    ) {
+        sampleTerrainInternal(context, blockX, blockZ, false, 0, localCaches, out);
     }
 
     public static EarthSamplingResult.EcoregionProbe sampleEcoregionColor(
@@ -149,18 +166,20 @@ public final class EarthSamplingFacade {
         return state.caches();
     }
 
-    private static EarthSamplingResult.TerrainProbe sampleTerrainInternal(
+    private static void sampleTerrainInternal(
         EarthRuntimeContext context,
         int blockX,
         int blockZ,
         boolean hasEcoregionColorHint,
         int ecoregionColorHint,
-        LocalTileCaches localCaches
+        LocalTileCaches localCaches,
+        MutableTerrainProbe out
     ) {
         TerrainService.RuntimeState runtimeState = context.terrainRuntimeState();
         int zoom = context.profile().zoom();
         if (!TileProjection.projectTerrain(blockX, blockZ, zoom, localCaches.terrainPoint())) {
-            return EarthSamplingResult.TerrainProbe.OUT_OF_BOUNDS;
+            out.set(false, EarthGenConfig.MIN_Y, false, false, true);
+            return;
         }
 
         TileKey terrainTileKey = localCaches.terrainPoint().tileKey();
@@ -173,14 +192,17 @@ public final class EarthSamplingFacade {
 
         boolean needsSurfaceWaterForRecovery = OceanBathymetryRecovery.shouldAttemptRecovery(zoom, terrainSampleAvailable, meters);
         boolean needsSurfaceWaterForInlandAnalysis = runtimeState.inlandWaterSettings().enabled();
-        EarthSamplingResult.SurfaceWaterProbe surfaceWaterProbe = EarthSamplingResult.SurfaceWaterProbe.NOT_REQUESTED;
+        boolean surfaceWaterIsWater = false;
+        boolean surfaceWaterDataAvailable = true;
 
         if (needsSurfaceWaterForRecovery || needsSurfaceWaterForInlandAnalysis) {
-            surfaceWaterProbe = sampleSurfaceWater(context, blockX, blockZ, localCaches);
+            SurfaceWaterTerrainState state = sampleSurfaceWaterForTerrain(context, blockX, blockZ, localCaches);
+            surfaceWaterIsWater = state.isWater();
+            surfaceWaterDataAvailable = state.dataAvailable();
         }
 
         if (needsSurfaceWaterForRecovery) {
-            final EarthSamplingResult.SurfaceWaterProbe finalSurfaceWaterProbe = surfaceWaterProbe;
+            final boolean finalSurfaceWaterIsWater = surfaceWaterIsWater;
             meters = TerrainBathymetryRecovery.applyIfEligible(
                 blockX,
                 blockZ,
@@ -188,7 +210,7 @@ public final class EarthSamplingFacade {
                 terrainSampleAvailable,
                 meters,
                 () -> resolveEcoregionGate(context, runtimeState, blockX, blockZ, hasEcoregionColorHint, ecoregionColorHint, localCaches),
-                finalSurfaceWaterProbe::isWater,
+                () -> finalSurfaceWaterIsWater,
                 (recoveryTileKey, localX, localY) -> {
                     TerrariumTile recoveryTile = recoveryTerrainTileFromCacheOrLoad(
                         localCaches,
@@ -209,15 +231,47 @@ public final class EarthSamplingFacade {
         int terrainY = EarthGenConfig.mapMetersToTerrainY(meters);
         boolean ocean = meters <= 0.0;
         if (runtimeState.inlandWaterSettings().enabled()) {
-            return new EarthSamplingResult.TerrainProbe(
+            out.set(
                 true,
                 terrainY,
                 ocean,
-                surfaceWaterProbe.isWater(),
-                surfaceWaterProbe.dataAvailable()
+                surfaceWaterIsWater,
+                surfaceWaterDataAvailable
             );
+            return;
         }
-        return new EarthSamplingResult.TerrainProbe(true, terrainY, ocean, false, true);
+        out.set(true, terrainY, ocean, false, true);
+    }
+
+    private static SurfaceWaterTerrainState sampleSurfaceWaterForTerrain(
+        EarthRuntimeContext context,
+        int blockX,
+        int blockZ,
+        LocalTileCaches localCaches
+    ) {
+        TerrainService.RuntimeState runtimeState = context.terrainRuntimeState();
+        int waterZoom = EarthGenConfig.waterSourceZoomForWorldZoom(context.profile().zoom());
+        if (!TileProjection.projectSurfaceWater(blockX, blockZ, waterZoom, localCaches.surfaceWaterPoint())) {
+            return SurfaceWaterTerrainState.OUT_OF_BOUNDS;
+        }
+
+        TileKey waterTileKey = localCaches.surfaceWaterPoint().tileKey();
+        int pixelX = localCaches.surfaceWaterPoint().pixelX();
+        int pixelY = localCaches.surfaceWaterPoint().pixelY();
+        SurfaceWaterTileLookup tileLookup = surfaceWaterTileLookupFromCacheOrLoad(
+            localCaches,
+            context,
+            runtimeState,
+            waterTileKey,
+            waterZoom,
+            blockX,
+            blockZ
+        );
+
+        SurfaceWaterTile waterTile = tileLookup.tile();
+        boolean isWater = waterTile != null
+            && waterTile.isWaterAt(pixelX, pixelY, runtimeState.inlandWaterSettings().minWaterMonths());
+        return new SurfaceWaterTerrainState(isWater, tileLookup.dataAvailable());
     }
 
     private static TerrainBathymetryRecovery.EcoregionGate resolveEcoregionGate(
@@ -443,6 +497,10 @@ public final class EarthSamplingFacade {
         }
     }
 
+    private record SurfaceWaterTerrainState(boolean isWater, boolean dataAvailable) {
+        private static final SurfaceWaterTerrainState OUT_OF_BOUNDS = new SurfaceWaterTerrainState(false, false);
+    }
+
     private static String errorLabel(String layer, String reason) {
         return layer + "_" + reason;
     }
@@ -450,6 +508,52 @@ public final class EarthSamplingFacade {
     @FunctionalInterface
     private interface Loader<T> {
         T load();
+    }
+
+    static final class MutableTerrainProbe {
+        private boolean inBounds;
+        private int terrainY;
+        private boolean ocean;
+        private boolean rawSurfaceWater;
+        private boolean surfaceWaterDataAvailable;
+
+        void set(boolean inBounds, int terrainY, boolean ocean, boolean rawSurfaceWater, boolean surfaceWaterDataAvailable) {
+            this.inBounds = inBounds;
+            this.terrainY = terrainY;
+            this.ocean = ocean;
+            this.rawSurfaceWater = rawSurfaceWater;
+            this.surfaceWaterDataAvailable = surfaceWaterDataAvailable;
+        }
+
+        boolean inBounds() {
+            return inBounds;
+        }
+
+        int terrainY() {
+            return terrainY;
+        }
+
+        boolean ocean() {
+            return ocean;
+        }
+
+        boolean rawSurfaceWater() {
+            return rawSurfaceWater;
+        }
+
+        boolean surfaceWaterDataAvailable() {
+            return surfaceWaterDataAvailable;
+        }
+
+        EarthSamplingResult.TerrainProbe toProbe() {
+            return new EarthSamplingResult.TerrainProbe(
+                inBounds,
+                terrainY,
+                ocean,
+                rawSurfaceWater,
+                surfaceWaterDataAvailable
+            );
+        }
     }
 
     public static final class LocalTileCaches {

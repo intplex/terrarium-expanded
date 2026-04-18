@@ -1,6 +1,7 @@
 package com.github.intplex.earth.terrain;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 abstract class AbstractRasterTileService<T> implements AutoCloseable {
@@ -24,7 +25,26 @@ abstract class AbstractRasterTileService<T> implements AutoCloseable {
     }
 
     protected static ExecutorService createDefaultExecutor() {
-        return RemotePngTileStore.createDefaultExecutor();
+        return RemotePngTileStore.createDefaultExecutor(RemotePngTileStore.DEFAULT_IO_THREADS);
+    }
+
+    protected static ExecutorService createDefaultExecutor(int ioThreads) {
+        return RemotePngTileStore.createDefaultExecutor(ioThreads);
+    }
+
+    final int configuredMemoryCacheEntries() {
+        return store.memoryCacheEntries();
+    }
+
+    final int configuredPrefetchRadius() {
+        return store.prefetchRadius();
+    }
+
+    final int configuredIoThreads() {
+        if (executor instanceof ThreadPoolExecutor threadPoolExecutor) {
+            return threadPoolExecutor.getMaximumPoolSize();
+        }
+        return -1;
     }
 
     @Override

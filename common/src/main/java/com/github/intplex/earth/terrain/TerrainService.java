@@ -14,8 +14,6 @@ public final class TerrainService {
     private static final Logger LOGGER = LoggerFactory.getLogger("terrarium_expanded.worldgen");
     static final int CHUNK_WIDTH = 16;
     static final int OUT_OF_BOUNDS_SOLID_TOP_Y = EarthGenConfig.MIN_Y - 1;
-    private static final int DEFAULT_CHUNK_CACHE_ENTRIES = 512;
-    static final String CHUNK_CACHE_ENTRIES_PROPERTY = "terrarium_expanded.terrain.chunk_cache_entries";
 
     private TerrainService() {
     }
@@ -81,30 +79,20 @@ public final class TerrainService {
         return clamp((terrainY - EarthGenConfig.SEA_LEVEL) / (double) Math.max(1, EarthGenConfig.SEA_LEVEL - EarthGenConfig.MIN_TERRAIN_Y));
     }
 
-    static int chunkCacheEntryCapacity() {
-        String rawValue = System.getProperty(CHUNK_CACHE_ENTRIES_PROPERTY);
-        if (rawValue == null || rawValue.isBlank()) {
-            return DEFAULT_CHUNK_CACHE_ENTRIES;
-        }
-        try {
-            int parsed = Integer.parseInt(rawValue.trim());
-            return parsed > 0 ? parsed : DEFAULT_CHUNK_CACHE_ENTRIES;
-        } catch (NumberFormatException exception) {
-            LOGGER.warn("Ignoring invalid terrain chunk cache capacity {} from system property {}; using default {}", rawValue, CHUNK_CACHE_ENTRIES_PROPERTY, DEFAULT_CHUNK_CACHE_ENTRIES);
-            return DEFAULT_CHUNK_CACHE_ENTRIES;
-        }
+    static int chunkCacheEntryCapacity(TerrariumRuntimeConfig runtimeConfig) {
+        return runtimeConfig.terrainChunkCacheEntries();
     }
 
-    static RuntimeState newRuntimeState() {
+    static RuntimeState newRuntimeState(TerrariumRuntimeConfig runtimeConfig) {
         return new RuntimeState(
-            InlandWaterSettings.loadFromSystemProperties(),
+            InlandWaterSettings.loadFromRuntimeConfig(runtimeConfig),
             SurfaceWaterCoverageSettings.DEFAULT,
             new BoundedDedupeSet<>(8192),
             new BoundedDedupeSet<>(8192),
             new BoundedDedupeSet<>(8192),
             new BoundedDedupeSet<>(8192),
             ThreadLocal.withInitial(HotSnapshotCache::new),
-            new ChunkSnapshotCache(chunkCacheEntryCapacity())
+            new ChunkSnapshotCache(chunkCacheEntryCapacity(runtimeConfig))
         );
     }
 
@@ -218,6 +206,10 @@ public final class TerrainService {
             return snapshotCache;
         }
 
+        int snapshotCacheMaxEntries() {
+            return snapshotCache.maxEntries();
+        }
+
         void clear() {
             hotSnapshots.remove();
             snapshotCache.clear();
@@ -309,6 +301,10 @@ public final class TerrainService {
         synchronized void clear() {
             entries.clear();
             inFlightLocks.clear();
+        }
+
+        int maxEntries() {
+            return maxEntries;
         }
 
         private static int chunkMinForBlock(int blockCoord) {

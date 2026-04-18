@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class TerrainServices {
     private static volatile Path gameDir;
     private static volatile EarthRuntimeContext runtimeContext;
+    private static volatile TerrariumRuntimeConfig runtimeConfig = TerrariumRuntimeConfig.defaults();
     private static final AtomicLong RUNTIME_GENERATION = new AtomicLong();
 
     private TerrainServices() {
@@ -15,6 +16,7 @@ public final class TerrainServices {
 
     public static synchronized void bootstrap(Path gameDir) {
         TerrainServices.gameDir = gameDir;
+        TerrainServices.runtimeConfig = TerrariumRuntimeConfig.load(gameDir);
         syncEarthProfile(EarthGenerationProfile.defaults());
         EcoregionBiomeMappings.validateStartupBiomeMapping();
     }
@@ -80,6 +82,11 @@ public final class TerrainServices {
         }
     }
 
+    static TerrariumRuntimeConfig runtimeConfig() {
+        TerrariumRuntimeConfig current = runtimeConfig;
+        return current == null ? TerrariumRuntimeConfig.defaults() : current;
+    }
+
     public static long runtimeGeneration() {
         return RUNTIME_GENERATION.get();
     }
@@ -108,6 +115,7 @@ public final class TerrainServices {
     static synchronized void resetForTesting() {
         shutdown();
         gameDir = null;
+        runtimeConfig = TerrariumRuntimeConfig.defaults();
         EarthGenConfig.setActiveZoom(EarthGenConfig.DEFAULT_ZOOM);
         EarthGenConfig.resetActiveTerrainProfile();
     }
@@ -126,6 +134,7 @@ public final class TerrainServices {
         EarthRuntimeServices.Overrides overrides,
         boolean forceRebuild
     ) {
+        TerrariumRuntimeConfig currentRuntimeConfig = runtimeConfig();
         EarthRuntimeContext previousContext = runtimeContext;
         EarthRuntimeServices previousServices = previousContext != null ? previousContext.services() : EarthRuntimeServices.empty();
         EarthGenerationProfile previousProfile = previousContext != null ? previousContext.profile() : profileFromActiveConfig();
@@ -152,6 +161,7 @@ public final class TerrainServices {
             previousContext,
             previousServices,
             requestedProfile,
+            currentRuntimeConfig,
             zoomChanged,
             terrainBaseUrlChanged,
             biomesBaseUrlChanged,
@@ -172,6 +182,7 @@ public final class TerrainServices {
         EarthRuntimeContext previousContext,
         EarthRuntimeServices previousServices,
         EarthGenerationProfile requestedProfile,
+        TerrariumRuntimeConfig runtimeConfig,
         boolean zoomChanged,
         boolean terrainBaseUrlChanged,
         boolean biomesBaseUrlChanged,
@@ -183,16 +194,16 @@ public final class TerrainServices {
             return previousContext == null ? EarthRuntimeServices.empty() : previousServices;
         }
         if (previousContext == null || forceRebuild) {
-            return EarthRuntimeServices.create(currentGameDir, requestedProfile);
+            return EarthRuntimeServices.create(currentGameDir, requestedProfile, runtimeConfig);
         }
         if (!hasInitializedServices(previousServices)) {
-            return EarthRuntimeServices.create(currentGameDir, requestedProfile);
+            return EarthRuntimeServices.create(currentGameDir, requestedProfile, runtimeConfig);
         }
         if (terrainBaseUrlChanged || biomesBaseUrlChanged) {
-            return EarthRuntimeServices.create(currentGameDir, requestedProfile);
+            return EarthRuntimeServices.create(currentGameDir, requestedProfile, runtimeConfig);
         }
         if (zoomChanged || surfaceWaterBaseUrlChanged) {
-            return previousServices.forZoom(currentGameDir, requestedProfile);
+            return previousServices.forZoom(currentGameDir, requestedProfile, runtimeConfig);
         }
         return previousServices;
     }
@@ -209,7 +220,7 @@ public final class TerrainServices {
         runtimeContext = new EarthRuntimeContext(
             profile,
             services,
-            TerrainService.newRuntimeState()
+            TerrainService.newRuntimeState(runtimeConfig())
         );
         RUNTIME_GENERATION.incrementAndGet();
         if (previous != null) {

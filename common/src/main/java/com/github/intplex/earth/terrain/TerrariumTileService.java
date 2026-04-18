@@ -11,8 +11,9 @@ import java.util.concurrent.ExecutorService;
 import javax.imageio.ImageIO;
 
 public final class TerrariumTileService extends AbstractRasterTileService<TerrariumTile> {
-    static final int DEFAULT_MEMORY_CACHE_ENTRIES = RemotePngTileStore.DEFAULT_MEMORY_CACHE_ENTRIES;
-    static final int PREFETCH_RADIUS = RemotePngTileStore.DEFAULT_PREFETCH_RADIUS;
+    static final int DEFAULT_MEMORY_CACHE_ENTRIES = TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG.cacheEntries();
+    static final int PREFETCH_RADIUS = TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG.prefetchRadius();
+    static final int DEFAULT_IO_THREADS = TerrariumRuntimeConfig.DEFAULT_IO_THREADS_PER_SERVICE;
     static final String DEFAULT_BASE_URL = "https://elevation-tiles-prod.s3.amazonaws.com/terrarium";
 
     private final int zoom;
@@ -36,11 +37,42 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
     }
 
     static TerrariumTileService create(Path gameDir, int zoom) {
-        return new TerrariumTileService(Config.runtime(gameDir, zoom));
+        return create(
+            gameDir,
+            zoom,
+            DEFAULT_BASE_URL,
+            TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG,
+            DEFAULT_IO_THREADS
+        );
     }
 
     static TerrariumTileService create(Path gameDir, int zoom, String baseUrl) {
-        return new TerrariumTileService(Config.runtime(gameDir, zoom, baseUrl));
+        return create(
+            gameDir,
+            zoom,
+            baseUrl,
+            TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG,
+            DEFAULT_IO_THREADS
+        );
+    }
+
+    static TerrariumTileService create(
+        Path gameDir,
+        int zoom,
+        String baseUrl,
+        TerrariumRuntimeConfig.TileLayerConfig tileConfig,
+        int ioThreads
+    ) {
+        return new TerrariumTileService(
+            Config.runtime(
+                gameDir,
+                zoom,
+                baseUrl,
+                tileConfig.cacheEntries(),
+                tileConfig.prefetchRadius(),
+                ioThreads
+            )
+        );
     }
 
     static TerrariumTileService forTesting(Config config) {
@@ -48,7 +80,11 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
     }
 
     protected static ExecutorService createDefaultExecutor() {
-        return AbstractRasterTileService.createDefaultExecutor();
+        return createDefaultExecutor(DEFAULT_IO_THREADS);
+    }
+
+    protected static ExecutorService createDefaultExecutor(int ioThreads) {
+        return AbstractRasterTileService.createDefaultExecutor(ioThreads);
     }
 
     int zoom() {
@@ -106,17 +142,28 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
         }
 
         static Config runtime(Path gameDir, int zoom) {
-            return runtime(gameDir, zoom, DEFAULT_BASE_URL);
+            return runtime(gameDir, zoom, DEFAULT_BASE_URL, DEFAULT_MEMORY_CACHE_ENTRIES, PREFETCH_RADIUS, DEFAULT_IO_THREADS);
         }
 
         static Config runtime(Path gameDir, int zoom, String baseUrl) {
+            return runtime(gameDir, zoom, baseUrl, DEFAULT_MEMORY_CACHE_ENTRIES, PREFETCH_RADIUS, DEFAULT_IO_THREADS);
+        }
+
+        static Config runtime(
+            Path gameDir,
+            int zoom,
+            String baseUrl,
+            int memoryCacheEntries,
+            int prefetchRadius,
+            int ioThreads
+        ) {
             int validatedZoom = EarthGenConfig.validateZoom(zoom);
             return new Config(
                 gameDir.resolve(Path.of("cache", "terrarium_expanded", "terrarium", Integer.toString(validatedZoom))),
-                createDefaultExecutor(),
+                createDefaultExecutor(ioThreads),
                 new HttpTileDownloader(baseUrl, validatedZoom),
-                DEFAULT_MEMORY_CACHE_ENTRIES,
-                PREFETCH_RADIUS,
+                memoryCacheEntries,
+                prefetchRadius,
                 validatedZoom
             );
         }
