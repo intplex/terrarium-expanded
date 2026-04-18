@@ -15,18 +15,18 @@ final class TerrainChunkSnapshotBuilder {
 
     static TerrainChunkSnapshot build(int chunkMinX, int chunkMinZ, TerrainService.RuntimeState runtimeState, EarthRuntimeContext context) {
         int chunkCellCount = TerrainService.CHUNK_WIDTH * TerrainService.CHUNK_WIDTH;
+        int chunkBitWords = (chunkCellCount + Long.SIZE - 1) / Long.SIZE;
 
-        boolean[] inBounds = new boolean[chunkCellCount];
+        long[] inBoundsBits = new long[chunkBitWords];
         short[] rawTerrainY = new short[chunkCellCount];
         short[] effectiveSolidTopY = new short[chunkCellCount];
         short[] waterSurfaceY = new short[chunkCellCount];
-        boolean[] oceanMask = new boolean[chunkCellCount];
-        boolean[] inlandMask = new boolean[chunkCellCount];
-        WaterBodyKind[] waterKind = new WaterBodyKind[chunkCellCount];
+        long[] oceanMaskBits = new long[chunkBitWords];
+        long[] inlandMaskBits = new long[chunkBitWords];
+        byte[] waterKindOrdinals = new byte[chunkCellCount];
         float[] continentalness = new float[chunkCellCount];
         float[] erosion = new float[chunkCellCount];
         float[] weirdness = new float[chunkCellCount];
-        float[] depth = new float[chunkCellCount];
 
         ScratchBuffers scratch = SCRATCH_BUFFERS.get();
         boolean[] sampleInBounds = scratch.sampleInBounds;
@@ -81,19 +81,18 @@ final class TerrainChunkSnapshotBuilder {
                 boolean centerInBounds = sampleInBounds[centerSampleIndex];
                 int centerY = sampleTerrainY[centerSampleIndex];
 
-                inBounds[localIndex] = centerInBounds;
+                TerrainChunkSnapshot.setBit(inBoundsBits, localIndex, centerInBounds);
                 rawTerrainY[localIndex] = (short) (centerInBounds ? centerY : EarthGenConfig.MIN_Y);
                 effectiveSolidTopY[localIndex] = (short) (centerInBounds ? waterResult.effectiveSolidTopY()[centerSampleIndex] : EarthGenConfig.MIN_Y);
                 waterSurfaceY[localIndex] = (short) waterResult.waterSurfaceY()[centerSampleIndex];
-                oceanMask[localIndex] = sampleOceanMask[centerSampleIndex];
-                inlandMask[localIndex] = waterResult.inlandMask()[centerSampleIndex];
-                waterKind[localIndex] = waterResult.waterKind()[centerSampleIndex];
+                TerrainChunkSnapshot.setBit(oceanMaskBits, localIndex, sampleOceanMask[centerSampleIndex]);
+                TerrainChunkSnapshot.setBit(inlandMaskBits, localIndex, waterResult.inlandMask()[centerSampleIndex]);
+                waterKindOrdinals[localIndex] = (byte) waterResult.waterKind()[centerSampleIndex].ordinal();
 
                 if (!centerInBounds) {
                     continentalness[localIndex] = -1.0f;
                     erosion[localIndex] = -1.0f;
                     weirdness[localIndex] = 0.0f;
-                    depth[localIndex] = -1.0f;
                     continue;
                 }
 
@@ -108,24 +107,22 @@ final class TerrainChunkSnapshotBuilder {
                 continentalness[localIndex] = metrics.continentalness();
                 erosion[localIndex] = metrics.erosion();
                 weirdness[localIndex] = metrics.weirdness();
-                depth[localIndex] = metrics.depth();
             }
         }
 
         return new TerrainChunkSnapshot(
             chunkMinX,
             chunkMinZ,
-            inBounds,
+            inBoundsBits,
             rawTerrainY,
             effectiveSolidTopY,
             waterSurfaceY,
-            oceanMask,
-            inlandMask,
-            waterKind,
+            oceanMaskBits,
+            inlandMaskBits,
+            waterKindOrdinals,
             continentalness,
             erosion,
-            weirdness,
-            depth
+            weirdness
         );
     }
 

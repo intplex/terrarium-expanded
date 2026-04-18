@@ -4,16 +4,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-abstract class AbstractRasterTileService<T> implements AutoCloseable {
+abstract class AbstractRasterTileService<T extends WeightedCacheValue> implements AutoCloseable {
     private final ExecutorService executor;
     private final RemotePngTileStore<T> store;
+    private final boolean ownsExecutor;
 
     protected AbstractRasterTileService(
         ExecutorService executor,
-        RemotePngTileStore<T> store
+        RemotePngTileStore<T> store,
+        boolean ownsExecutor
     ) {
         this.executor = executor;
         this.store = store;
+        this.ownsExecutor = ownsExecutor;
     }
 
     public final T requireTile(TileKey key) {
@@ -32,8 +35,12 @@ abstract class AbstractRasterTileService<T> implements AutoCloseable {
         return RemotePngTileStore.createDefaultExecutor(ioThreads);
     }
 
-    final int configuredMemoryCacheEntries() {
-        return store.memoryCacheEntries();
+    final long configuredMemoryCacheMaxWeightBytes() {
+        return store.memoryCacheMaxWeightBytes();
+    }
+
+    final long currentMemoryCacheWeightBytes() {
+        return store.currentMemoryCacheWeightBytes();
     }
 
     final int configuredMemoryCacheTtlSeconds() {
@@ -53,6 +60,9 @@ abstract class AbstractRasterTileService<T> implements AutoCloseable {
 
     @Override
     public void close() {
+        if (!ownsExecutor) {
+            return;
+        }
         executor.shutdownNow();
         try {
             executor.awaitTermination(5, TimeUnit.SECONDS);

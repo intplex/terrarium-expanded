@@ -11,10 +11,11 @@ import java.util.concurrent.ExecutorService;
 import javax.imageio.ImageIO;
 
 public final class TerrariumTileService extends AbstractRasterTileService<TerrariumTile> {
-    static final int DEFAULT_MEMORY_CACHE_ENTRIES = TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG.cacheEntries();
-    static final int DEFAULT_MEMORY_CACHE_TTL_SECONDS = TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG.cacheTtlSeconds();
+    static final long APPROX_TILE_BYTES = EarthGenConfig.TILE_SIZE * EarthGenConfig.TILE_SIZE * 3L;
+    static final long DEFAULT_MEMORY_CACHE_MAX_WEIGHT_BYTES = RemotePngTileStore.DEFAULT_MEMORY_CACHE_MAX_WEIGHT_BYTES;
+    static final int DEFAULT_MEMORY_CACHE_TTL_SECONDS = TerrariumRuntimeConfig.DEFAULT_TILE_TTL_SECONDS;
     static final int PREFETCH_RADIUS = TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG.prefetchRadius();
-    static final int DEFAULT_IO_THREADS = TerrariumRuntimeConfig.DEFAULT_IO_THREADS_PER_SERVICE;
+    static final int DEFAULT_IO_THREADS = TerrariumRuntimeConfig.DEFAULT_SHARED_TILE_THREADS;
     static final String DEFAULT_BASE_URL = "https://elevation-tiles-prod.s3.amazonaws.com/terrarium";
 
     private final int zoom;
@@ -29,11 +30,12 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
                     config.downloader()::fetch,
                     TerrariumTileService::decodeTile,
                     key -> RemotePngTileStore.isValidEarthTile(key, config.zoom()),
-                    config.memoryCacheEntries(),
+                    config.memoryCacheMaxWeightBytes(),
                     config.memoryCacheTtlSeconds(),
                     config.prefetchRadius()
                 )
-            )
+            ),
+            config.ownsExecutor()
         );
         this.zoom = config.zoom();
     }
@@ -44,7 +46,10 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
             zoom,
             DEFAULT_BASE_URL,
             TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG,
-            DEFAULT_IO_THREADS
+            DEFAULT_MEMORY_CACHE_MAX_WEIGHT_BYTES,
+            DEFAULT_MEMORY_CACHE_TTL_SECONDS,
+            createDefaultExecutor(DEFAULT_IO_THREADS),
+            true
         );
     }
 
@@ -54,7 +59,10 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
             zoom,
             baseUrl,
             TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG,
-            DEFAULT_IO_THREADS
+            DEFAULT_MEMORY_CACHE_MAX_WEIGHT_BYTES,
+            DEFAULT_MEMORY_CACHE_TTL_SECONDS,
+            createDefaultExecutor(DEFAULT_IO_THREADS),
+            true
         );
     }
 
@@ -63,17 +71,22 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
         int zoom,
         String baseUrl,
         TerrariumRuntimeConfig.TileLayerConfig tileConfig,
-        int ioThreads
+        long memoryCacheMaxWeightBytes,
+        int memoryCacheTtlSeconds,
+        ExecutorService executor,
+        boolean ownsExecutor
     ) {
+        int validatedZoom = EarthGenConfig.validateZoom(zoom);
         return new TerrariumTileService(
-            Config.runtime(
-                gameDir,
-                zoom,
-                baseUrl,
-                tileConfig.cacheEntries(),
-                tileConfig.cacheTtlSeconds(),
+            new Config(
+                gameDir.resolve(Path.of("cache", "terrarium_expanded", "terrarium", Integer.toString(validatedZoom))),
+                executor,
+                new HttpTileDownloader(baseUrl, validatedZoom),
+                memoryCacheMaxWeightBytes,
+                memoryCacheTtlSeconds,
                 tileConfig.prefetchRadius(),
-                ioThreads
+                validatedZoom,
+                ownsExecutor
             )
         );
     }
@@ -88,6 +101,10 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
 
     protected static ExecutorService createDefaultExecutor(int ioThreads) {
         return AbstractRasterTileService.createDefaultExecutor(ioThreads);
+    }
+
+    static long bytesForEntryCount(int entryCount) {
+        return Math.max(1, entryCount) * APPROX_TILE_BYTES;
     }
 
     int zoom() {
@@ -131,16 +148,17 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
         Path diskCacheRoot,
         ExecutorService executor,
         TileDownloader downloader,
-        int memoryCacheEntries,
+        long memoryCacheMaxWeightBytes,
         int memoryCacheTtlSeconds,
         int prefetchRadius,
-        int zoom
+        int zoom,
+        boolean ownsExecutor
     ) {
         Config {
             diskCacheRoot = Objects.requireNonNull(diskCacheRoot, "diskCacheRoot");
             executor = Objects.requireNonNull(executor, "executor");
             downloader = Objects.requireNonNull(downloader, "downloader");
-            memoryCacheEntries = Math.max(1, memoryCacheEntries);
+            memoryCacheMaxWeightBytes = Math.max(1L, memoryCacheMaxWeightBytes);
             memoryCacheTtlSeconds = Math.max(0, memoryCacheTtlSeconds);
             prefetchRadius = Math.max(0, prefetchRadius);
             zoom = EarthGenConfig.validateZoom(zoom);
@@ -154,51 +172,36 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
             int prefetchRadius,
             int zoom
         ) {
-            this(diskCacheRoot, executor, downloader, memoryCacheEntries, DEFAULT_MEMORY_CACHE_TTL_SECONDS, prefetchRadius, zoom);
-        }
-
-        static Config runtime(Path gameDir, int zoom) {
-            return runtime(
-                gameDir,
-                zoom,
-                DEFAULT_BASE_URL,
-                DEFAULT_MEMORY_CACHE_ENTRIES,
+            this(
+                diskCacheRoot,
+                executor,
+                downloader,
+                bytesForEntryCount(memoryCacheEntries),
                 DEFAULT_MEMORY_CACHE_TTL_SECONDS,
-                PREFETCH_RADIUS,
-                DEFAULT_IO_THREADS
+                prefetchRadius,
+                zoom,
+                true
             );
         }
 
-        static Config runtime(Path gameDir, int zoom, String baseUrl) {
-            return runtime(
-                gameDir,
-                zoom,
-                baseUrl,
-                DEFAULT_MEMORY_CACHE_ENTRIES,
-                DEFAULT_MEMORY_CACHE_TTL_SECONDS,
-                PREFETCH_RADIUS,
-                DEFAULT_IO_THREADS
-            );
-        }
-
-        static Config runtime(
-            Path gameDir,
-            int zoom,
-            String baseUrl,
+        Config(
+            Path diskCacheRoot,
+            ExecutorService executor,
+            TileDownloader downloader,
             int memoryCacheEntries,
             int memoryCacheTtlSeconds,
             int prefetchRadius,
-            int ioThreads
+            int zoom
         ) {
-            int validatedZoom = EarthGenConfig.validateZoom(zoom);
-            return new Config(
-                gameDir.resolve(Path.of("cache", "terrarium_expanded", "terrarium", Integer.toString(validatedZoom))),
-                createDefaultExecutor(ioThreads),
-                new HttpTileDownloader(baseUrl, validatedZoom),
-                memoryCacheEntries,
+            this(
+                diskCacheRoot,
+                executor,
+                downloader,
+                bytesForEntryCount(memoryCacheEntries),
                 memoryCacheTtlSeconds,
                 prefetchRadius,
-                validatedZoom
+                zoom,
+                true
             );
         }
     }

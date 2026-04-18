@@ -101,43 +101,38 @@ If the file is missing, built-in low-memory defaults are used.
 
 Supported keys:
 
-- `terrain.chunk_cache_entries` (default `256`)
-- `terrain.chunk_cache_ttl_seconds` (default `120`, `0` disables TTL)
-- `tiles.io_threads_per_service` (default `2`)
-- `tiles.terrain.cache_entries` (default `64`)
+- `memory.total_budget_mb` (default `96`)
+- `memory.tiles_budget_percent` (default `85`)
+- `memory.tile_ttl_seconds` (default `120`, `0` disables TTL)
+- `memory.snapshot_ttl_seconds` (default `120`, `0` disables TTL)
+- `memory.local_chunk_entries` (default `16`)
+- `memory.local_biome_entries` (default `4`)
+- `memory.local_idle_seconds` (default `10`, `0` disables idle clear)
+- `io.shared_tile_threads` (default `4`)
 - `tiles.terrain.prefetch_radius` (default `0`)
-- `tiles.terrain.cache_ttl_seconds` (default `120`, `0` disables TTL)
-- `tiles.recovery.cache_entries` (default `64`)
 - `tiles.recovery.prefetch_radius` (default `0`)
-- `tiles.recovery.cache_ttl_seconds` (default `120`, `0` disables TTL)
-- `tiles.surface_water.cache_entries` (default `64`)
 - `tiles.surface_water.prefetch_radius` (default `0`)
-- `tiles.surface_water.cache_ttl_seconds` (default `120`, `0` disables TTL)
-- `tiles.ecoregion.cache_entries` (default `4`)
 - `tiles.ecoregion.prefetch_radius` (default `0`)
-- `tiles.ecoregion.cache_ttl_seconds` (default `120`, `0` disables TTL)
-- `sampling.chunk_local_cache_entries` (default `16`)
-- `sampling.biome_local_cache_entries` (default `4`)
-- `sampling.thread_local_idle_seconds` (default `10`, `0` disables idle clear)
 - `inland_water.enabled` (default `true`)
 - `inland_water.min_water_months` (default `10`, clamped to `1-12`)
+
+Legacy cache-entry keys from older versions are no longer supported and are ignored.
 
 Memory-oriented baseline profile (good starting point for modpacks):
 
 ```properties
-terrain.chunk_cache_entries=192
-terrain.chunk_cache_ttl_seconds=90
-tiles.terrain.cache_entries=48
-tiles.terrain.cache_ttl_seconds=60
-tiles.recovery.cache_entries=48
-tiles.recovery.cache_ttl_seconds=60
-tiles.surface_water.cache_entries=48
-tiles.surface_water.cache_ttl_seconds=60
-tiles.ecoregion.cache_entries=4
-tiles.ecoregion.cache_ttl_seconds=90
-sampling.chunk_local_cache_entries=8
-sampling.biome_local_cache_entries=4
-sampling.thread_local_idle_seconds=5
+memory.total_budget_mb=96
+memory.tiles_budget_percent=85
+memory.tile_ttl_seconds=90
+memory.snapshot_ttl_seconds=90
+memory.local_chunk_entries=8
+memory.local_biome_entries=4
+memory.local_idle_seconds=5
+io.shared_tile_threads=4
+tiles.terrain.prefetch_radius=0
+tiles.recovery.prefetch_radius=0
+tiles.surface_water.prefetch_radius=0
+tiles.ecoregion.prefetch_radius=0
 ```
 
 ## Data Sources

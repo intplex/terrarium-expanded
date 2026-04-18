@@ -30,6 +30,7 @@ class EcoregionTileServiceTest {
 
     @Test
     void defaultMemoryCacheIsReducedForLargerTiles() {
-        assertEquals(TerrariumRuntimeConfig.DEFAULT_ECOREGION_TILE_CONFIG.cacheEntries(), EcoregionTileService.DEFAULT_MEMORY_CACHE_ENTRIES);
+        assertTrue(EcoregionTileService.DEFAULT_MEMORY_CACHE_MAX_WEIGHT_BYTES > 0L);
+        assertTrue(EcoregionTileService.DEFAULT_MEMORY_CACHE_MAX_WEIGHT_BYTES < TerrariumTileService.DEFAULT_MEMORY_CACHE_MAX_WEIGHT_BYTES);
     }
 }

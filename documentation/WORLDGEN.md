@@ -50,13 +50,13 @@ The Earth preset (`data/terrarium_expanded/worldgen/world_preset/earth.json`) us
 - startup-loaded runtime performance config from `<gameDir>/config/terrarium-expanded.properties`
 
 `TerrainServices.runtimeGeneration()` increments whenever the context is replaced; thread-local hot-path caches (`EarthSamplingFacade` / `EcoregionBiomeSource`) invalidate against this generation counter.
-Thread-local sampling caches are also idle-cleared using `sampling.thread_local_idle_seconds`.
+Thread-local sampling caches are also idle-cleared using `memory.local_idle_seconds`.
 
 ### Service rebuild rules
 
-- terrain URL or ecoregion URL change: rebuild all tile services
-- zoom or surface-water URL change: rebuild zoom-sensitive services (`terrain` + `surface-water`), reuse recovery/ecoregion services
+- terrain URL, ecoregion URL, zoom, or surface-water URL change: rebuild tile services under a shared tile-IO executor
 - shape-only changes (`max_mountain_y`, `ocean_floor_y`) still replace runtime context but reuse service instances
+- recovery Terrarium service is lazily instantiated only when world zoom is `>= 11`
 
 ### Cache lifecycle
 
@@ -65,7 +65,7 @@ Terrain/runtime caches are cleared on:
 - runtime context transitions (`syncEarthProfile` / `syncEarthSettings`)
 - explicit cache clear (`TerrainServices.clearRuntimeCaches()`, `TerrainService.clearCaches()`)
 - shutdown (`TerrainServices.shutdown()`)
-- idle TTL expiry (`terrain.chunk_cache_ttl_seconds` and `tiles.*.cache_ttl_seconds`, where `0` disables TTL)
+- idle TTL expiry (`memory.snapshot_ttl_seconds` and `memory.tile_ttl_seconds`, where `0` disables TTL)
 
 ## Core Terrain Pipeline
 
@@ -130,6 +130,7 @@ Settings:
   - switches `NoiseGeneratorSettings.aquifersEnabled` for Earth chunks
 - `lava_aquifers`:
   - when aquifers are enabled and `lava_aquifers=false`, force water-only aquifer fluid picker
+  - when `lava_aquifers=false`, skip vanilla lava lake features (`lake_lava_underground` and `lake_lava_surface`)
 - `villages`:
   - blocks structures whose path starts with `village_` in `ChunkGenerator.tryGenerateStructure`
 
@@ -146,7 +147,7 @@ The runtime uses four services:
 
 All are backed by `RemotePngTileStore` and share:
 
-- in-memory LRU + idle TTL eviction
+- weighted in-memory cache (byte budget) + idle TTL eviction
 - disk cache
 - in-flight request dedupe
 - neighbor prefetch

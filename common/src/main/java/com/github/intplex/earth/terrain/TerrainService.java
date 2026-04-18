@@ -1,11 +1,8 @@
 package com.github.intplex.earth.terrain;
 
 import com.github.intplex.earth.EarthGenConfig;
-import java.util.LinkedHashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import net.minecraft.world.level.levelgen.DensityFunction;
 import org.slf4j.Logger;
@@ -80,10 +77,6 @@ public final class TerrainService {
         return clamp((terrainY - EarthGenConfig.SEA_LEVEL) / (double) Math.max(1, EarthGenConfig.SEA_LEVEL - EarthGenConfig.MIN_TERRAIN_Y));
     }
 
-    static int chunkCacheEntryCapacity(TerrariumRuntimeConfig runtimeConfig) {
-        return runtimeConfig.terrainChunkCacheEntries();
-    }
-
     static RuntimeState newRuntimeState(TerrariumRuntimeConfig runtimeConfig) {
         TerrariumRuntimeConfig.SamplingConfig samplingConfig = runtimeConfig.sampling();
         return new RuntimeState(
@@ -95,8 +88,8 @@ public final class TerrainService {
             new BoundedDedupeSet<>(8192),
             ThreadLocal.withInitial(HotSnapshotCache::new),
             new ChunkSnapshotCache(
-                chunkCacheEntryCapacity(runtimeConfig),
-                runtimeConfig.terrainChunkCacheTtlSeconds()
+                runtimeConfig.snapshotBudgetBytes(),
+                runtimeConfig.snapshotTtlSeconds()
             ),
             samplingConfig.chunkLocalCacheEntries(),
             samplingConfig.biomeLocalCacheEntries(),
@@ -227,8 +220,12 @@ public final class TerrainService {
             return snapshotCache;
         }
 
-        int snapshotCacheMaxEntries() {
-            return snapshotCache.maxEntries();
+        long snapshotCacheMaxWeightBytes() {
+            return snapshotCache.maxWeightBytes();
+        }
+
+        long snapshotCacheCurrentWeightBytes() {
+            return snapshotCache.currentWeightBytes();
         }
 
         int snapshotCacheTtlSeconds() {
@@ -286,117 +283,65 @@ public final class TerrainService {
     }
 
     private static final class ChunkSnapshotCache {
-        private final int maxEntries;
+        private final long maxWeightBytes;
         private final int ttlSeconds;
-        private final long ttlNanos;
-        private final Map<ChunkKey, CachedChunkSnapshot> entries;
+        private final WeightedAccessCache<ChunkKey, TerrainChunkSnapshot> entries;
         private final ConcurrentHashMap<ChunkKey, ReentrantLock> inFlightLocks;
 
-        private ChunkSnapshotCache(int maxEntries, int ttlSeconds) {
-            this.maxEntries = maxEntries;
+        private ChunkSnapshotCache(long maxWeightBytes, int ttlSeconds) {
+            this.maxWeightBytes = Math.max(1L, maxWeightBytes);
             this.ttlSeconds = Math.max(0, ttlSeconds);
-            this.ttlNanos = this.ttlSeconds <= 0 ? 0L : TimeUnit.SECONDS.toNanos(this.ttlSeconds);
             this.inFlightLocks = new ConcurrentHashMap<>();
-            this.entries = new LinkedHashMap<>(16, 0.75f, true) {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<ChunkKey, CachedChunkSnapshot> eldest) {
-                    return size() > ChunkSnapshotCache.this.maxEntries;
-                }
-            };
+            this.entries = new WeightedAccessCache<>(this.maxWeightBytes, this.ttlSeconds);
         }
 
         TerrainChunkSnapshot getOrBuildFor(int blockX, int blockZ, ChunkSnapshotBuilder builder) {
             ChunkKey key = new ChunkKey(chunkMinForBlock(blockX), chunkMinForBlock(blockZ));
             ReentrantLock lock;
-            synchronized (this) {
-                TerrainChunkSnapshot context = getIfPresentLocked(key, System.nanoTime());
-                if (context != null) {
-                    return context;
-                }
-                lock = inFlightLocks.computeIfAbsent(key, ignored -> new ReentrantLock());
+            TerrainChunkSnapshot context = entries.getIfPresent(key);
+            if (context != null) {
+                return context;
             }
+            lock = inFlightLocks.computeIfAbsent(key, ignored -> new ReentrantLock());
 
             lock.lock();
             try {
-                synchronized (this) {
-                    TerrainChunkSnapshot context = getIfPresentLocked(key, System.nanoTime());
-                    if (context != null) {
-                        return context;
-                    }
+                TerrainChunkSnapshot lockHit = entries.getIfPresent(key);
+                if (lockHit != null) {
+                    return lockHit;
                 }
                 TerrainChunkSnapshot loaded = builder.build(key.chunkMinX(), key.chunkMinZ());
-                synchronized (this) {
-                    TerrainChunkSnapshot existing = getIfPresentLocked(key, System.nanoTime());
-                    if (existing != null) {
-                        return existing;
-                    }
-                    long nowNanos = System.nanoTime();
-                    evictExpiredLocked(nowNanos);
-                    entries.put(key, new CachedChunkSnapshot(loaded, nowNanos));
-                    return loaded;
+                TerrainChunkSnapshot raced = entries.getIfPresent(key);
+                if (raced != null) {
+                    return raced;
                 }
+                entries.put(key, loaded);
+                return loaded;
             } finally {
                 lock.unlock();
                 inFlightLocks.remove(key, lock);
             }
         }
 
-        synchronized void clear() {
+        void clear() {
             entries.clear();
             inFlightLocks.clear();
         }
 
-        int maxEntries() {
-            return maxEntries;
+        long maxWeightBytes() {
+            return maxWeightBytes;
         }
 
         int ttlSeconds() {
             return ttlSeconds;
         }
 
-        private TerrainChunkSnapshot getIfPresentLocked(ChunkKey key, long nowNanos) {
-            evictExpiredLocked(nowNanos);
-            CachedChunkSnapshot cached = entries.get(key);
-            if (cached == null) {
-                return null;
-            }
-            if (isExpired(cached, nowNanos)) {
-                entries.remove(key);
-                return null;
-            }
-            cached.lastAccessNanos = nowNanos;
-            return cached.snapshot;
-        }
-
-        private void evictExpiredLocked(long nowNanos) {
-            if (ttlNanos <= 0L || entries.isEmpty()) {
-                return;
-            }
-            java.util.Iterator<Map.Entry<ChunkKey, CachedChunkSnapshot>> iterator = entries.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<ChunkKey, CachedChunkSnapshot> entry = iterator.next();
-                if (isExpired(entry.getValue(), nowNanos)) {
-                    iterator.remove();
-                }
-            }
-        }
-
-        private boolean isExpired(CachedChunkSnapshot cached, long nowNanos) {
-            return ttlNanos > 0L && nowNanos - cached.lastAccessNanos >= ttlNanos;
+        long currentWeightBytes() {
+            return entries.weightedSizeBytes();
         }
 
         private static int chunkMinForBlock(int blockCoord) {
             return Math.floorDiv(blockCoord, CHUNK_WIDTH) * CHUNK_WIDTH;
-        }
-    }
-
-    private static final class CachedChunkSnapshot {
-        private final TerrainChunkSnapshot snapshot;
-        private long lastAccessNanos;
-
-        private CachedChunkSnapshot(TerrainChunkSnapshot snapshot, long lastAccessNanos) {
-            this.snapshot = snapshot;
-            this.lastAccessNanos = lastAccessNanos;
         }
     }
 

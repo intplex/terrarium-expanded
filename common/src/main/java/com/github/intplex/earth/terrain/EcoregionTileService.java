@@ -14,10 +14,11 @@ import org.slf4j.LoggerFactory;
 
 public final class EcoregionTileService extends AbstractRasterTileService<EcoregionTile> {
     private static final Logger LOGGER = LoggerFactory.getLogger("terrarium_expanded.worldgen");
-    static final int DEFAULT_MEMORY_CACHE_ENTRIES = TerrariumRuntimeConfig.DEFAULT_ECOREGION_TILE_CONFIG.cacheEntries();
-    static final int DEFAULT_MEMORY_CACHE_TTL_SECONDS = TerrariumRuntimeConfig.DEFAULT_ECOREGION_TILE_CONFIG.cacheTtlSeconds();
+    static final long APPROX_TILE_BYTES = EarthGenConfig.ECOREGION_REDUCED_TILE_SIZE * EarthGenConfig.ECOREGION_REDUCED_TILE_SIZE * 2L;
+    static final long DEFAULT_MEMORY_CACHE_MAX_WEIGHT_BYTES = RemotePngTileStore.DEFAULT_MEMORY_CACHE_MAX_WEIGHT_BYTES / 2L;
+    static final int DEFAULT_MEMORY_CACHE_TTL_SECONDS = TerrariumRuntimeConfig.DEFAULT_TILE_TTL_SECONDS;
     static final int PREFETCH_RADIUS = TerrariumRuntimeConfig.DEFAULT_ECOREGION_TILE_CONFIG.prefetchRadius();
-    static final int DEFAULT_IO_THREADS = TerrariumRuntimeConfig.DEFAULT_IO_THREADS_PER_SERVICE;
+    static final int DEFAULT_IO_THREADS = TerrariumRuntimeConfig.DEFAULT_SHARED_TILE_THREADS;
     static final String DEFAULT_BASE_URL = EarthGenerationProfile.DEFAULT_BIOMES_BASE_URL;
 
     public EcoregionTileService(Config config) {
@@ -30,11 +31,12 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
                     config.downloader()::fetch,
                     EcoregionTileService::decodeTile,
                     EcoregionTileService::isValidReducedTileKey,
-                    config.memoryCacheEntries(),
+                    config.memoryCacheMaxWeightBytes(),
                     config.memoryCacheTtlSeconds(),
                     config.prefetchRadius()
                 )
-            )
+            ),
+            config.ownsExecutor()
         );
     }
 
@@ -43,7 +45,10 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
             gameDir,
             DEFAULT_BASE_URL,
             TerrariumRuntimeConfig.DEFAULT_ECOREGION_TILE_CONFIG,
-            DEFAULT_IO_THREADS
+            DEFAULT_MEMORY_CACHE_MAX_WEIGHT_BYTES,
+            DEFAULT_MEMORY_CACHE_TTL_SECONDS,
+            createDefaultExecutor(DEFAULT_IO_THREADS),
+            true
         );
     }
 
@@ -52,7 +57,10 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
             gameDir,
             baseUrl,
             TerrariumRuntimeConfig.DEFAULT_ECOREGION_TILE_CONFIG,
-            DEFAULT_IO_THREADS
+            DEFAULT_MEMORY_CACHE_MAX_WEIGHT_BYTES,
+            DEFAULT_MEMORY_CACHE_TTL_SECONDS,
+            createDefaultExecutor(DEFAULT_IO_THREADS),
+            true
         );
     }
 
@@ -60,16 +68,20 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
         Path gameDir,
         String baseUrl,
         TerrariumRuntimeConfig.TileLayerConfig tileConfig,
-        int ioThreads
+        long memoryCacheMaxWeightBytes,
+        int memoryCacheTtlSeconds,
+        ExecutorService executor,
+        boolean ownsExecutor
     ) {
         return new EcoregionTileService(
-            Config.runtime(
-                gameDir,
-                baseUrl,
-                tileConfig.cacheEntries(),
-                tileConfig.cacheTtlSeconds(),
+            new Config(
+                gameDir.resolve(Path.of("cache", "terrarium_expanded", "ecoregions", Integer.toString(EarthGenConfig.ECOREGION_SOURCE_ZOOM))),
+                executor,
+                new HttpTileDownloader(baseUrl),
+                memoryCacheMaxWeightBytes,
+                memoryCacheTtlSeconds,
                 tileConfig.prefetchRadius(),
-                ioThreads
+                ownsExecutor
             )
         );
     }
@@ -84,6 +96,10 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
 
     protected static ExecutorService createDefaultExecutor(int ioThreads) {
         return AbstractRasterTileService.createDefaultExecutor(ioThreads);
+    }
+
+    static long bytesForEntryCount(int entryCount) {
+        return Math.max(1, entryCount) * APPROX_TILE_BYTES;
     }
 
     private static EcoregionTile decodeTile(byte[] bytes, TileKey key) {
@@ -127,15 +143,16 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
         Path diskCacheRoot,
         ExecutorService executor,
         TileDownloader downloader,
-        int memoryCacheEntries,
+        long memoryCacheMaxWeightBytes,
         int memoryCacheTtlSeconds,
-        int prefetchRadius
+        int prefetchRadius,
+        boolean ownsExecutor
     ) {
         Config {
             diskCacheRoot = Objects.requireNonNull(diskCacheRoot, "diskCacheRoot");
             executor = Objects.requireNonNull(executor, "executor");
             downloader = Objects.requireNonNull(downloader, "downloader");
-            memoryCacheEntries = Math.max(1, memoryCacheEntries);
+            memoryCacheMaxWeightBytes = Math.max(1L, memoryCacheMaxWeightBytes);
             memoryCacheTtlSeconds = Math.max(0, memoryCacheTtlSeconds);
             prefetchRadius = Math.max(0, prefetchRadius);
         }
@@ -147,46 +164,33 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
             int memoryCacheEntries,
             int prefetchRadius
         ) {
-            this(diskCacheRoot, executor, downloader, memoryCacheEntries, DEFAULT_MEMORY_CACHE_TTL_SECONDS, prefetchRadius);
-        }
-
-        static Config runtime(Path gameDir) {
-            return runtime(
-                gameDir,
-                DEFAULT_BASE_URL,
-                DEFAULT_MEMORY_CACHE_ENTRIES,
+            this(
+                diskCacheRoot,
+                executor,
+                downloader,
+                bytesForEntryCount(memoryCacheEntries),
                 DEFAULT_MEMORY_CACHE_TTL_SECONDS,
-                PREFETCH_RADIUS,
-                DEFAULT_IO_THREADS
+                prefetchRadius,
+                true
             );
         }
 
-        static Config runtime(Path gameDir, String baseUrl) {
-            return runtime(
-                gameDir,
-                baseUrl,
-                DEFAULT_MEMORY_CACHE_ENTRIES,
-                DEFAULT_MEMORY_CACHE_TTL_SECONDS,
-                PREFETCH_RADIUS,
-                DEFAULT_IO_THREADS
-            );
-        }
-
-        static Config runtime(
-            Path gameDir,
-            String baseUrl,
+        Config(
+            Path diskCacheRoot,
+            ExecutorService executor,
+            TileDownloader downloader,
             int memoryCacheEntries,
             int memoryCacheTtlSeconds,
-            int prefetchRadius,
-            int ioThreads
+            int prefetchRadius
         ) {
-            return new Config(
-                gameDir.resolve(Path.of("cache", "terrarium_expanded", "ecoregions", Integer.toString(EarthGenConfig.ECOREGION_SOURCE_ZOOM))),
-                createDefaultExecutor(ioThreads),
-                new HttpTileDownloader(baseUrl),
-                memoryCacheEntries,
+            this(
+                diskCacheRoot,
+                executor,
+                downloader,
+                bytesForEntryCount(memoryCacheEntries),
                 memoryCacheTtlSeconds,
-                prefetchRadius
+                prefetchRadius,
+                true
             );
         }
     }

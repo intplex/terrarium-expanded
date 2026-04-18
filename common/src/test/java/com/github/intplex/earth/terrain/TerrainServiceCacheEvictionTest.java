@@ -30,8 +30,7 @@ class TerrainServiceCacheEvictionTest {
     @Test
     void chunkSnapshotCacheEntriesExpireAfterIdleTtl() throws Exception {
         bootstrapWithConfig(
-            "terrain.chunk_cache_entries=64\n"
-                + "terrain.chunk_cache_ttl_seconds=1\n"
+            "memory.snapshot_ttl_seconds=1\n"
                 + "inland_water.enabled=false\n"
         );
         installTerrainService();
@@ -51,8 +50,8 @@ class TerrainServiceCacheEvictionTest {
     @Test
     void chunkLocalTileCachesAreClearedAfterIdleWindow() throws Exception {
         bootstrapWithConfig(
-            "sampling.chunk_local_cache_entries=4\n"
-                + "sampling.thread_local_idle_seconds=1\n"
+            "memory.local_chunk_entries=4\n"
+                + "memory.local_idle_seconds=1\n"
                 + "inland_water.enabled=false\n"
         );
         installTerrainService();

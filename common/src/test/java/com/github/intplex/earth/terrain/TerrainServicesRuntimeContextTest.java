@@ -8,10 +8,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TerrainServicesRuntimeContextTest {
     @TempDir
@@ -38,7 +39,18 @@ class TerrainServicesRuntimeContextTest {
     }
 
     @Test
-    void zoomSwitchRebuildsOnlyZoomSensitiveServices() {
+    void recoveryTileServiceIsLazyByZoomThreshold() {
+        TerrainServices.bootstrap(tempDir);
+        EarthRuntimeContext initial = TerrainServices.requireContext();
+        assertNull(initial.services().recoveryTileService());
+
+        TerrainServices.syncEarthSettings(11, EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y, EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y);
+        EarthRuntimeContext upgraded = TerrainServices.requireContext();
+        assertNotNull(upgraded.services().recoveryTileService());
+    }
+
+    @Test
+    void zoomSwitchRebuildsRuntimeServices() {
         TerrainServices.bootstrap(tempDir);
         EarthRuntimeContext initial = TerrainServices.requireContext();
 
@@ -52,8 +64,7 @@ class TerrainServicesRuntimeContextTest {
         assertNotSame(initial, switched);
         assertNotSame(initial.services().tileService(), switched.services().tileService());
         assertNotSame(initial.services().surfaceWaterTileService(), switched.services().surfaceWaterTileService());
-        assertSame(initial.services().recoveryTileService(), switched.services().recoveryTileService());
-        assertSame(initial.services().ecoregionTileService(), switched.services().ecoregionTileService());
+        assertNotSame(initial.services().ecoregionTileService(), switched.services().ecoregionTileService());
     }
 
     @Test
@@ -71,7 +82,6 @@ class TerrainServicesRuntimeContextTest {
         assertNotSame(initial, switched);
         assertNotSame(initial.terrainRuntimeState(), switched.terrainRuntimeState());
         assertSame(initial.services().tileService(), switched.services().tileService());
-        assertSame(initial.services().recoveryTileService(), switched.services().recoveryTileService());
         assertSame(initial.services().ecoregionTileService(), switched.services().ecoregionTileService());
         assertSame(initial.services().surfaceWaterTileService(), switched.services().surfaceWaterTileService());
     }
@@ -82,7 +92,11 @@ class TerrainServicesRuntimeContextTest {
         EarthRuntimeContext context = TerrainServices.requireContext();
         assertNotNull(context.services());
         assertSame(context.services().tileService(), TerrainServices.tileService());
-        assertSame(context.services().recoveryTileService(), TerrainServices.recoveryTileService());
+        if (context.services().recoveryTileService() != null) {
+            assertSame(context.services().recoveryTileService(), TerrainServices.recoveryTileService());
+        } else {
+            assertNull(context.services().recoveryTileService());
+        }
         assertSame(context.services().ecoregionTileService(), TerrainServices.ecoregionTileService());
         assertSame(context.services().surfaceWaterTileService(), TerrainServices.surfaceWaterTileService());
     }
@@ -163,32 +177,34 @@ class TerrainServicesRuntimeContextTest {
         Files.createDirectories(configDir);
         Files.writeString(
             configDir.resolve(TerrariumRuntimeConfig.FILE_NAME),
-            "terrain.chunk_cache_entries=300\n"
-                + "terrain.chunk_cache_ttl_seconds=90\n"
-                + "tiles.io_threads_per_service=3\n"
-                + "tiles.terrain.cache_entries=101\n"
+            "memory.total_budget_mb=160\n"
+                + "memory.tiles_budget_percent=80\n"
+                + "memory.tile_ttl_seconds=31\n"
+                + "memory.snapshot_ttl_seconds=90\n"
+                + "memory.local_chunk_entries=18\n"
+                + "memory.local_biome_entries=5\n"
+                + "memory.local_idle_seconds=7\n"
+                + "io.shared_tile_threads=5\n"
                 + "tiles.terrain.prefetch_radius=1\n"
-                + "tiles.terrain.cache_ttl_seconds=31\n"
-                + "tiles.recovery.cache_entries=102\n"
                 + "tiles.recovery.prefetch_radius=2\n"
-                + "tiles.recovery.cache_ttl_seconds=32\n"
-                + "tiles.surface_water.cache_entries=103\n"
                 + "tiles.surface_water.prefetch_radius=3\n"
-                + "tiles.surface_water.cache_ttl_seconds=33\n"
-                + "tiles.ecoregion.cache_entries=11\n"
                 + "tiles.ecoregion.prefetch_radius=0\n"
-                + "tiles.ecoregion.cache_ttl_seconds=34\n"
-                + "sampling.chunk_local_cache_entries=18\n"
-                + "sampling.biome_local_cache_entries=5\n"
-                + "sampling.thread_local_idle_seconds=7\n"
                 + "inland_water.enabled=false\n"
                 + "inland_water.min_water_months=4\n"
         );
 
         TerrainServices.bootstrap(tempDir);
+        TerrainServices.syncEarthSettings(11, EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y, EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y);
         EarthRuntimeContext context = TerrainServices.requireContext();
+        TerrariumRuntimeConfig config = TerrainServices.runtimeConfig();
+        long totalTileBytes = config.tileBudgetBytes();
+        long unit = totalTileBytes / 9L;
+        long terrainBudget = unit * 3L + (totalTileBytes - unit * 9L);
+        long recoveryBudget = unit * 2L;
+        long surfaceBudget = unit * 3L;
+        long ecoregionBudget = unit;
 
-        assertEquals(300, context.terrainRuntimeState().snapshotCacheMaxEntries());
+        assertEquals(config.snapshotBudgetBytes(), context.terrainRuntimeState().snapshotCacheMaxWeightBytes());
         assertEquals(90, context.terrainRuntimeState().snapshotCacheTtlSeconds());
         assertEquals(18, context.terrainRuntimeState().chunkLocalCacheEntries());
         assertEquals(5, context.terrainRuntimeState().biomeLocalCacheEntries());
@@ -196,24 +212,25 @@ class TerrainServicesRuntimeContextTest {
         assertEquals(false, context.terrainRuntimeState().inlandWaterSettings().enabled());
         assertEquals(4, context.terrainRuntimeState().inlandWaterSettings().minWaterMonths());
 
-        assertEquals(101, context.services().tileService().configuredMemoryCacheEntries());
+        assertEquals(terrainBudget, context.services().tileService().configuredMemoryCacheMaxWeightBytes());
         assertEquals(31, context.services().tileService().configuredMemoryCacheTtlSeconds());
         assertEquals(1, context.services().tileService().configuredPrefetchRadius());
-        assertEquals(3, context.services().tileService().configuredIoThreads());
+        assertEquals(5, context.services().tileService().configuredIoThreads());
 
-        assertEquals(102, context.services().recoveryTileService().configuredMemoryCacheEntries());
-        assertEquals(32, context.services().recoveryTileService().configuredMemoryCacheTtlSeconds());
+        assertNotNull(context.services().recoveryTileService());
+        assertEquals(recoveryBudget, context.services().recoveryTileService().configuredMemoryCacheMaxWeightBytes());
+        assertEquals(31, context.services().recoveryTileService().configuredMemoryCacheTtlSeconds());
         assertEquals(2, context.services().recoveryTileService().configuredPrefetchRadius());
-        assertEquals(3, context.services().recoveryTileService().configuredIoThreads());
+        assertEquals(5, context.services().recoveryTileService().configuredIoThreads());
 
-        assertEquals(103, context.services().surfaceWaterTileService().configuredMemoryCacheEntries());
-        assertEquals(33, context.services().surfaceWaterTileService().configuredMemoryCacheTtlSeconds());
+        assertEquals(surfaceBudget, context.services().surfaceWaterTileService().configuredMemoryCacheMaxWeightBytes());
+        assertEquals(31, context.services().surfaceWaterTileService().configuredMemoryCacheTtlSeconds());
         assertEquals(3, context.services().surfaceWaterTileService().configuredPrefetchRadius());
-        assertEquals(3, context.services().surfaceWaterTileService().configuredIoThreads());
+        assertEquals(5, context.services().surfaceWaterTileService().configuredIoThreads());
 
-        assertEquals(11, context.services().ecoregionTileService().configuredMemoryCacheEntries());
-        assertEquals(34, context.services().ecoregionTileService().configuredMemoryCacheTtlSeconds());
+        assertEquals(ecoregionBudget, context.services().ecoregionTileService().configuredMemoryCacheMaxWeightBytes());
+        assertEquals(31, context.services().ecoregionTileService().configuredMemoryCacheTtlSeconds());
         assertEquals(0, context.services().ecoregionTileService().configuredPrefetchRadius());
-        assertEquals(3, context.services().ecoregionTileService().configuredIoThreads());
+        assertEquals(5, context.services().ecoregionTileService().configuredIoThreads());
     }
 }

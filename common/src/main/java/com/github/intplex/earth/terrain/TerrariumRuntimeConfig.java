@@ -12,51 +12,65 @@ import org.slf4j.LoggerFactory;
 public final class TerrariumRuntimeConfig {
     public static final String FILE_NAME = "terrarium-expanded.properties";
 
-    public static final String KEY_TERRAIN_CHUNK_CACHE_ENTRIES = "terrain.chunk_cache_entries";
-    public static final String KEY_TERRAIN_CHUNK_CACHE_TTL_SECONDS = "terrain.chunk_cache_ttl_seconds";
-    public static final String KEY_IO_THREADS_PER_SERVICE = "tiles.io_threads_per_service";
-    public static final String KEY_TERRAIN_CACHE_ENTRIES = "tiles.terrain.cache_entries";
+    public static final String KEY_TOTAL_BUDGET_MB = "memory.total_budget_mb";
+    public static final String KEY_TILES_BUDGET_PERCENT = "memory.tiles_budget_percent";
+    public static final String KEY_TILE_TTL_SECONDS = "memory.tile_ttl_seconds";
+    public static final String KEY_SNAPSHOT_TTL_SECONDS = "memory.snapshot_ttl_seconds";
+    public static final String KEY_LOCAL_CHUNK_ENTRIES = "memory.local_chunk_entries";
+    public static final String KEY_LOCAL_BIOME_ENTRIES = "memory.local_biome_entries";
+    public static final String KEY_LOCAL_IDLE_SECONDS = "memory.local_idle_seconds";
+    public static final String KEY_SHARED_TILE_THREADS = "io.shared_tile_threads";
     public static final String KEY_TERRAIN_PREFETCH_RADIUS = "tiles.terrain.prefetch_radius";
-    public static final String KEY_TERRAIN_CACHE_TTL_SECONDS = "tiles.terrain.cache_ttl_seconds";
-    public static final String KEY_RECOVERY_CACHE_ENTRIES = "tiles.recovery.cache_entries";
     public static final String KEY_RECOVERY_PREFETCH_RADIUS = "tiles.recovery.prefetch_radius";
-    public static final String KEY_RECOVERY_CACHE_TTL_SECONDS = "tiles.recovery.cache_ttl_seconds";
-    public static final String KEY_SURFACE_WATER_CACHE_ENTRIES = "tiles.surface_water.cache_entries";
     public static final String KEY_SURFACE_WATER_PREFETCH_RADIUS = "tiles.surface_water.prefetch_radius";
-    public static final String KEY_SURFACE_WATER_CACHE_TTL_SECONDS = "tiles.surface_water.cache_ttl_seconds";
-    public static final String KEY_ECOREGION_CACHE_ENTRIES = "tiles.ecoregion.cache_entries";
     public static final String KEY_ECOREGION_PREFETCH_RADIUS = "tiles.ecoregion.prefetch_radius";
-    public static final String KEY_ECOREGION_CACHE_TTL_SECONDS = "tiles.ecoregion.cache_ttl_seconds";
-    public static final String KEY_SAMPLING_CHUNK_LOCAL_CACHE_ENTRIES = "sampling.chunk_local_cache_entries";
-    public static final String KEY_SAMPLING_BIOME_LOCAL_CACHE_ENTRIES = "sampling.biome_local_cache_entries";
-    public static final String KEY_SAMPLING_THREAD_LOCAL_IDLE_SECONDS = "sampling.thread_local_idle_seconds";
     public static final String KEY_INLAND_WATER_ENABLED = "inland_water.enabled";
     public static final String KEY_INLAND_WATER_MIN_WATER_MONTHS = "inland_water.min_water_months";
 
-    public static final int DEFAULT_TERRAIN_CHUNK_CACHE_ENTRIES = 256;
-    public static final int DEFAULT_TERRAIN_CHUNK_CACHE_TTL_SECONDS = 120;
-    public static final int DEFAULT_IO_THREADS_PER_SERVICE = 2;
-    public static final int DEFAULT_TILE_CACHE_TTL_SECONDS = 120;
-    public static final TileLayerConfig DEFAULT_TERRAIN_TILE_CONFIG = new TileLayerConfig(64, 0, DEFAULT_TILE_CACHE_TTL_SECONDS);
-    public static final TileLayerConfig DEFAULT_RECOVERY_TILE_CONFIG = new TileLayerConfig(64, 0, DEFAULT_TILE_CACHE_TTL_SECONDS);
-    public static final TileLayerConfig DEFAULT_SURFACE_WATER_TILE_CONFIG = new TileLayerConfig(64, 0, DEFAULT_TILE_CACHE_TTL_SECONDS);
-    public static final TileLayerConfig DEFAULT_ECOREGION_TILE_CONFIG = new TileLayerConfig(4, 0, DEFAULT_TILE_CACHE_TTL_SECONDS);
+    public static final int DEFAULT_TOTAL_BUDGET_MB = 96;
+    public static final int DEFAULT_TILES_BUDGET_PERCENT = 85;
+    public static final int DEFAULT_TILE_TTL_SECONDS = 120;
+    public static final int DEFAULT_SNAPSHOT_TTL_SECONDS = 120;
+    public static final int DEFAULT_SHARED_TILE_THREADS = 4;
+    public static final TileLayerConfig DEFAULT_TERRAIN_TILE_CONFIG = new TileLayerConfig(0);
+    public static final TileLayerConfig DEFAULT_RECOVERY_TILE_CONFIG = new TileLayerConfig(0);
+    public static final TileLayerConfig DEFAULT_SURFACE_WATER_TILE_CONFIG = new TileLayerConfig(0);
+    public static final TileLayerConfig DEFAULT_ECOREGION_TILE_CONFIG = new TileLayerConfig(0);
     public static final SamplingConfig DEFAULT_SAMPLING_CONFIG = new SamplingConfig(16, 4, 10);
     public static final InlandWaterConfig DEFAULT_INLAND_WATER_CONFIG =
         new InlandWaterConfig(InlandWaterSettings.DEFAULT_ENABLED, InlandWaterSettings.DEFAULT_MIN_WATER_MONTHS);
 
     private static final Logger LOGGER = LoggerFactory.getLogger("terrarium_expanded.worldgen");
-    private static final int MAX_CACHE_ENTRIES = 65_536;
-    private static final int MAX_PREFETCH_RADIUS = 8;
-    private static final int MAX_IO_THREADS = 32;
+    private static final int MAX_TOTAL_BUDGET_MB = 8_192;
+    private static final int MAX_TILES_BUDGET_PERCENT = 99;
     private static final int MAX_CACHE_TTL_SECONDS = 86_400;
-    private static final int MAX_SAMPLING_CACHE_ENTRIES = 1_024;
+    private static final int MAX_SHARED_TILE_THREADS = 64;
+    private static final int MAX_PREFETCH_RADIUS = 8;
+    private static final int MAX_LOCAL_CACHE_ENTRIES = 1_024;
     private static final int MAX_THREAD_LOCAL_IDLE_SECONDS = 3_600;
+    private static final String[] UNSUPPORTED_LEGACY_KEYS = new String[] {
+        "terrain.chunk_cache_entries",
+        "terrain.chunk_cache_ttl_seconds",
+        "tiles.io_threads_per_service",
+        "tiles.terrain.cache_entries",
+        "tiles.terrain.cache_ttl_seconds",
+        "tiles.recovery.cache_entries",
+        "tiles.recovery.cache_ttl_seconds",
+        "tiles.surface_water.cache_entries",
+        "tiles.surface_water.cache_ttl_seconds",
+        "tiles.ecoregion.cache_entries",
+        "tiles.ecoregion.cache_ttl_seconds",
+        "sampling.chunk_local_cache_entries",
+        "sampling.biome_local_cache_entries",
+        "sampling.thread_local_idle_seconds"
+    };
 
     private static final TerrariumRuntimeConfig DEFAULTS = new TerrariumRuntimeConfig(
-        DEFAULT_TERRAIN_CHUNK_CACHE_ENTRIES,
-        DEFAULT_TERRAIN_CHUNK_CACHE_TTL_SECONDS,
-        DEFAULT_IO_THREADS_PER_SERVICE,
+        DEFAULT_TOTAL_BUDGET_MB,
+        DEFAULT_TILES_BUDGET_PERCENT,
+        DEFAULT_TILE_TTL_SECONDS,
+        DEFAULT_SNAPSHOT_TTL_SECONDS,
+        DEFAULT_SHARED_TILE_THREADS,
         DEFAULT_TERRAIN_TILE_CONFIG,
         DEFAULT_RECOVERY_TILE_CONFIG,
         DEFAULT_SURFACE_WATER_TILE_CONFIG,
@@ -65,9 +79,11 @@ public final class TerrariumRuntimeConfig {
         DEFAULT_INLAND_WATER_CONFIG
     );
 
-    private final int terrainChunkCacheEntries;
-    private final int terrainChunkCacheTtlSeconds;
-    private final int ioThreadsPerService;
+    private final int totalBudgetMb;
+    private final int tilesBudgetPercent;
+    private final int tileTtlSeconds;
+    private final int snapshotTtlSeconds;
+    private final int sharedTileThreads;
     private final TileLayerConfig terrainTiles;
     private final TileLayerConfig recoveryTiles;
     private final TileLayerConfig surfaceWaterTiles;
@@ -76,9 +92,11 @@ public final class TerrariumRuntimeConfig {
     private final InlandWaterConfig inlandWater;
 
     private TerrariumRuntimeConfig(
-        int terrainChunkCacheEntries,
-        int terrainChunkCacheTtlSeconds,
-        int ioThreadsPerService,
+        int totalBudgetMb,
+        int tilesBudgetPercent,
+        int tileTtlSeconds,
+        int snapshotTtlSeconds,
+        int sharedTileThreads,
         TileLayerConfig terrainTiles,
         TileLayerConfig recoveryTiles,
         TileLayerConfig surfaceWaterTiles,
@@ -86,9 +104,11 @@ public final class TerrariumRuntimeConfig {
         SamplingConfig sampling,
         InlandWaterConfig inlandWater
     ) {
-        this.terrainChunkCacheEntries = terrainChunkCacheEntries;
-        this.terrainChunkCacheTtlSeconds = terrainChunkCacheTtlSeconds;
-        this.ioThreadsPerService = ioThreadsPerService;
+        this.totalBudgetMb = totalBudgetMb;
+        this.tilesBudgetPercent = tilesBudgetPercent;
+        this.tileTtlSeconds = tileTtlSeconds;
+        this.snapshotTtlSeconds = snapshotTtlSeconds;
+        this.sharedTileThreads = sharedTileThreads;
         this.terrainTiles = Objects.requireNonNull(terrainTiles, "terrainTiles");
         this.recoveryTiles = Objects.requireNonNull(recoveryTiles, "recoveryTiles");
         this.surfaceWaterTiles = Objects.requireNonNull(surfaceWaterTiles, "surfaceWaterTiles");
@@ -122,16 +142,24 @@ public final class TerrariumRuntimeConfig {
         return fromProperties(properties, configPath);
     }
 
-    int terrainChunkCacheEntries() {
-        return terrainChunkCacheEntries;
+    int totalBudgetMb() {
+        return totalBudgetMb;
     }
 
-    int terrainChunkCacheTtlSeconds() {
-        return terrainChunkCacheTtlSeconds;
+    int tilesBudgetPercent() {
+        return tilesBudgetPercent;
     }
 
-    int ioThreadsPerService() {
-        return ioThreadsPerService;
+    int tileTtlSeconds() {
+        return tileTtlSeconds;
+    }
+
+    int snapshotTtlSeconds() {
+        return snapshotTtlSeconds;
+    }
+
+    int sharedTileThreads() {
+        return sharedTileThreads;
     }
 
     TileLayerConfig terrainTiles() {
@@ -158,79 +186,82 @@ public final class TerrariumRuntimeConfig {
         return inlandWater;
     }
 
+    long totalBudgetBytes() {
+        return Math.max(1L, (long) totalBudgetMb * 1024L * 1024L);
+    }
+
+    long tileBudgetBytes() {
+        long bytes = (totalBudgetBytes() * tilesBudgetPercent) / 100L;
+        return Math.max(1L, bytes);
+    }
+
+    long snapshotBudgetBytes() {
+        long bytes = totalBudgetBytes() - tileBudgetBytes();
+        return Math.max(1L, bytes);
+    }
+
     private static TerrariumRuntimeConfig fromProperties(Properties properties, Path configPath) {
-        int chunkCacheEntries = parseBoundedInt(
+        logUnsupportedLegacyKeys(properties, configPath);
+
+        int totalBudgetMb = parseBoundedInt(properties, KEY_TOTAL_BUDGET_MB, DEFAULT_TOTAL_BUDGET_MB, 16, MAX_TOTAL_BUDGET_MB, configPath);
+        int tilesBudgetPercent = parseBoundedInt(
             properties,
-            KEY_TERRAIN_CHUNK_CACHE_ENTRIES,
-            DEFAULT_TERRAIN_CHUNK_CACHE_ENTRIES,
+            KEY_TILES_BUDGET_PERCENT,
+            DEFAULT_TILES_BUDGET_PERCENT,
             1,
-            MAX_CACHE_ENTRIES,
+            MAX_TILES_BUDGET_PERCENT,
             configPath
         );
-        int chunkCacheTtlSeconds = parseBoundedInt(
+        int tileTtlSeconds = parseBoundedInt(properties, KEY_TILE_TTL_SECONDS, DEFAULT_TILE_TTL_SECONDS, 0, MAX_CACHE_TTL_SECONDS, configPath);
+        int snapshotTtlSeconds = parseBoundedInt(
             properties,
-            KEY_TERRAIN_CHUNK_CACHE_TTL_SECONDS,
-            DEFAULT_TERRAIN_CHUNK_CACHE_TTL_SECONDS,
+            KEY_SNAPSHOT_TTL_SECONDS,
+            DEFAULT_SNAPSHOT_TTL_SECONDS,
             0,
             MAX_CACHE_TTL_SECONDS,
             configPath
         );
-        int ioThreadsPerService = parseBoundedInt(
+        int sharedTileThreads = parseBoundedInt(
             properties,
-            KEY_IO_THREADS_PER_SERVICE,
-            DEFAULT_IO_THREADS_PER_SERVICE,
+            KEY_SHARED_TILE_THREADS,
+            DEFAULT_SHARED_TILE_THREADS,
             1,
-            MAX_IO_THREADS,
+            MAX_SHARED_TILE_THREADS,
             configPath
         );
 
         TileLayerConfig terrainTiles = new TileLayerConfig(
-            parseBoundedInt(properties, KEY_TERRAIN_CACHE_ENTRIES, DEFAULT_TERRAIN_TILE_CONFIG.cacheEntries(), 1, MAX_CACHE_ENTRIES, configPath),
-            parseBoundedInt(properties, KEY_TERRAIN_PREFETCH_RADIUS, DEFAULT_TERRAIN_TILE_CONFIG.prefetchRadius(), 0, MAX_PREFETCH_RADIUS, configPath),
-            parseBoundedInt(properties, KEY_TERRAIN_CACHE_TTL_SECONDS, DEFAULT_TERRAIN_TILE_CONFIG.cacheTtlSeconds(), 0, MAX_CACHE_TTL_SECONDS, configPath)
+            parseBoundedInt(properties, KEY_TERRAIN_PREFETCH_RADIUS, DEFAULT_TERRAIN_TILE_CONFIG.prefetchRadius(), 0, MAX_PREFETCH_RADIUS, configPath)
         );
         TileLayerConfig recoveryTiles = new TileLayerConfig(
-            parseBoundedInt(properties, KEY_RECOVERY_CACHE_ENTRIES, DEFAULT_RECOVERY_TILE_CONFIG.cacheEntries(), 1, MAX_CACHE_ENTRIES, configPath),
-            parseBoundedInt(properties, KEY_RECOVERY_PREFETCH_RADIUS, DEFAULT_RECOVERY_TILE_CONFIG.prefetchRadius(), 0, MAX_PREFETCH_RADIUS, configPath),
-            parseBoundedInt(properties, KEY_RECOVERY_CACHE_TTL_SECONDS, DEFAULT_RECOVERY_TILE_CONFIG.cacheTtlSeconds(), 0, MAX_CACHE_TTL_SECONDS, configPath)
+            parseBoundedInt(properties, KEY_RECOVERY_PREFETCH_RADIUS, DEFAULT_RECOVERY_TILE_CONFIG.prefetchRadius(), 0, MAX_PREFETCH_RADIUS, configPath)
         );
         TileLayerConfig surfaceWaterTiles = new TileLayerConfig(
-            parseBoundedInt(properties, KEY_SURFACE_WATER_CACHE_ENTRIES, DEFAULT_SURFACE_WATER_TILE_CONFIG.cacheEntries(), 1, MAX_CACHE_ENTRIES, configPath),
-            parseBoundedInt(properties, KEY_SURFACE_WATER_PREFETCH_RADIUS, DEFAULT_SURFACE_WATER_TILE_CONFIG.prefetchRadius(), 0, MAX_PREFETCH_RADIUS, configPath),
-            parseBoundedInt(
-                properties,
-                KEY_SURFACE_WATER_CACHE_TTL_SECONDS,
-                DEFAULT_SURFACE_WATER_TILE_CONFIG.cacheTtlSeconds(),
-                0,
-                MAX_CACHE_TTL_SECONDS,
-                configPath
-            )
+            parseBoundedInt(properties, KEY_SURFACE_WATER_PREFETCH_RADIUS, DEFAULT_SURFACE_WATER_TILE_CONFIG.prefetchRadius(), 0, MAX_PREFETCH_RADIUS, configPath)
         );
         TileLayerConfig ecoregionTiles = new TileLayerConfig(
-            parseBoundedInt(properties, KEY_ECOREGION_CACHE_ENTRIES, DEFAULT_ECOREGION_TILE_CONFIG.cacheEntries(), 1, MAX_CACHE_ENTRIES, configPath),
-            parseBoundedInt(properties, KEY_ECOREGION_PREFETCH_RADIUS, DEFAULT_ECOREGION_TILE_CONFIG.prefetchRadius(), 0, MAX_PREFETCH_RADIUS, configPath),
-            parseBoundedInt(properties, KEY_ECOREGION_CACHE_TTL_SECONDS, DEFAULT_ECOREGION_TILE_CONFIG.cacheTtlSeconds(), 0, MAX_CACHE_TTL_SECONDS, configPath)
+            parseBoundedInt(properties, KEY_ECOREGION_PREFETCH_RADIUS, DEFAULT_ECOREGION_TILE_CONFIG.prefetchRadius(), 0, MAX_PREFETCH_RADIUS, configPath)
         );
         SamplingConfig sampling = new SamplingConfig(
             parseBoundedInt(
                 properties,
-                KEY_SAMPLING_CHUNK_LOCAL_CACHE_ENTRIES,
+                KEY_LOCAL_CHUNK_ENTRIES,
                 DEFAULT_SAMPLING_CONFIG.chunkLocalCacheEntries(),
                 1,
-                MAX_SAMPLING_CACHE_ENTRIES,
+                MAX_LOCAL_CACHE_ENTRIES,
                 configPath
             ),
             parseBoundedInt(
                 properties,
-                KEY_SAMPLING_BIOME_LOCAL_CACHE_ENTRIES,
+                KEY_LOCAL_BIOME_ENTRIES,
                 DEFAULT_SAMPLING_CONFIG.biomeLocalCacheEntries(),
                 1,
-                MAX_SAMPLING_CACHE_ENTRIES,
+                MAX_LOCAL_CACHE_ENTRIES,
                 configPath
             ),
             parseBoundedInt(
                 properties,
-                KEY_SAMPLING_THREAD_LOCAL_IDLE_SECONDS,
+                KEY_LOCAL_IDLE_SECONDS,
                 DEFAULT_SAMPLING_CONFIG.threadLocalIdleSeconds(),
                 0,
                 MAX_THREAD_LOCAL_IDLE_SECONDS,
@@ -250,9 +281,11 @@ public final class TerrariumRuntimeConfig {
         );
 
         return new TerrariumRuntimeConfig(
-            chunkCacheEntries,
-            chunkCacheTtlSeconds,
-            ioThreadsPerService,
+            totalBudgetMb,
+            tilesBudgetPercent,
+            tileTtlSeconds,
+            snapshotTtlSeconds,
+            sharedTileThreads,
             terrainTiles,
             recoveryTiles,
             surfaceWaterTiles,
@@ -260,6 +293,18 @@ public final class TerrariumRuntimeConfig {
             sampling,
             inlandWater
         );
+    }
+
+    private static void logUnsupportedLegacyKeys(Properties properties, Path configPath) {
+        for (String key : UNSUPPORTED_LEGACY_KEYS) {
+            if (properties.containsKey(key)) {
+                LOGGER.warn(
+                    "Ignoring unsupported legacy key {} in {}; this key was removed in the memory-budget cache model",
+                    key,
+                    configPath
+                );
+            }
+        }
     }
 
     private static int parseBoundedInt(
@@ -333,15 +378,9 @@ public final class TerrariumRuntimeConfig {
         return defaultValue;
     }
 
-    public record TileLayerConfig(int cacheEntries, int prefetchRadius, int cacheTtlSeconds) {
+    public record TileLayerConfig(int prefetchRadius) {
         public TileLayerConfig {
-            cacheEntries = Math.max(1, cacheEntries);
             prefetchRadius = Math.max(0, prefetchRadius);
-            cacheTtlSeconds = Math.max(0, cacheTtlSeconds);
-        }
-
-        public TileLayerConfig(int cacheEntries, int prefetchRadius) {
-            this(cacheEntries, prefetchRadius, DEFAULT_TILE_CACHE_TTL_SECONDS);
         }
     }
 

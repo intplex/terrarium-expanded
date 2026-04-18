@@ -42,8 +42,10 @@ class TerrainServiceMathTest {
     }
 
     @Test
-    void chunkCacheCapacityUsesRuntimeConfigDefaults() {
-        assertEquals(256, TerrainService.chunkCacheEntryCapacity(TerrariumRuntimeConfig.defaults()));
+    void snapshotBudgetUsesRuntimeConfigDefaults() {
+        TerrariumRuntimeConfig config = TerrariumRuntimeConfig.defaults();
+        assertTrue(config.snapshotBudgetBytes() > 0L);
+        assertEquals(config.totalBudgetBytes(), config.tileBudgetBytes() + config.snapshotBudgetBytes());
     }
 
     @Test

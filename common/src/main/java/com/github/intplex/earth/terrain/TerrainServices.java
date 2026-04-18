@@ -257,7 +257,6 @@ public final class TerrainServices {
 
     private static boolean hasInitializedServices(EarthRuntimeServices services) {
         return services.tileService() != null
-            && services.recoveryTileService() != null
             && services.ecoregionTileService() != null
             && services.surfaceWaterTileService() != null;
     }

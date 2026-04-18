@@ -180,6 +180,31 @@ class SurfaceWaterTileServiceCacheTest {
         return newService(cacheRoot, downloader, SurfaceWaterTileService.DEFAULT_MEMORY_CACHE_TTL_SECONDS);
     }
 
+    @Test
+    void weightedCacheRespectsMaxWeightBudget() throws Exception {
+        SurfaceWaterTileService service = SurfaceWaterTileService.forTesting(
+            new SurfaceWaterTileService.Config(
+                tempDir.resolve("cache-weighted"),
+                SurfaceWaterTileService.createDefaultExecutor(),
+                key -> createSurfaceWaterPng(0xFF0000AA),
+                SurfaceWaterTileService.APPROX_TILE_BYTES,
+                120,
+                SurfaceWaterTileService.PREFETCH_RADIUS,
+                EarthGenConfig.DEFAULT_ZOOM,
+                true
+            )
+        );
+        try {
+            service.getOrLoad(new TileKey(1, 1));
+            service.getOrLoad(new TileKey(2, 2));
+            service.getOrLoad(new TileKey(1, 1));
+
+            assertTrue(service.currentMemoryCacheWeightBytes() <= SurfaceWaterTileService.APPROX_TILE_BYTES);
+        } finally {
+            service.close();
+        }
+    }
+
     private static SurfaceWaterTileService newService(
         Path cacheRoot,
         SurfaceWaterTileService.TileDownloader downloader,

@@ -3,31 +3,37 @@ package com.github.intplex.earth.terrain;
 import com.github.intplex.earth.EarthGenConfig;
 import java.awt.image.BufferedImage;
 
-public final class SurfaceWaterTile {
+public final class SurfaceWaterTile implements WeightedCacheValue {
     private final TileKey key;
-    private final int[] argb;
+    private final byte[] seasonalityMonths;
 
     public SurfaceWaterTile(TileKey key, BufferedImage image) {
         if (image.getWidth() != EarthGenConfig.TILE_SIZE || image.getHeight() != EarthGenConfig.TILE_SIZE) {
             throw new IllegalArgumentException("Unexpected tile dimensions for " + key + ": " + image.getWidth() + "x" + image.getHeight());
         }
         this.key = key;
-        this.argb = image.getRGB(0, 0, image.getWidth(), image.getHeight(), null, 0, image.getWidth());
+        int[] packed = image.getRGB(0, 0, image.getWidth(), image.getHeight(), null, 0, image.getWidth());
+        this.seasonalityMonths = new byte[packed.length];
+        for (int i = 0; i < packed.length; i++) {
+            seasonalityMonths[i] = (byte) SurfaceWaterClassifier.seasonalityMonths(packed[i]);
+        }
     }
 
     public TileKey key() {
         return key;
     }
 
-    public int sampleArgb(int localX, int localY) {
-        return argb[localY * EarthGenConfig.TILE_SIZE + localX];
-    }
-
     public int seasonalityMonthsAt(int localX, int localY) {
-        return SurfaceWaterClassifier.seasonalityMonths(sampleArgb(localX, localY));
+        return seasonalityMonths[localY * EarthGenConfig.TILE_SIZE + localX] & 0xFF;
     }
 
     public boolean isWaterAt(int localX, int localY, int minWaterMonths) {
-        return SurfaceWaterClassifier.isWater(sampleArgb(localX, localY), minWaterMonths);
+        int threshold = Math.max(1, Math.min(12, minWaterMonths));
+        return seasonalityMonthsAt(localX, localY) >= threshold;
+    }
+
+    @Override
+    public int estimatedBytes() {
+        return seasonalityMonths.length;
     }
 }

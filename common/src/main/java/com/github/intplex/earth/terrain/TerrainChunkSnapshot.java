@@ -2,49 +2,47 @@ package com.github.intplex.earth.terrain;
 
 import com.github.intplex.earth.EarthGenConfig;
 
-final class TerrainChunkSnapshot {
+final class TerrainChunkSnapshot implements WeightedCacheValue {
+    private static final WaterBodyKind[] WATER_KIND_VALUES = WaterBodyKind.values();
     private final int chunkMinX;
     private final int chunkMinZ;
-    private final boolean[] inBounds;
+    private final long[] inBoundsBits;
     private final short[] rawTerrainY;
     private final short[] effectiveSolidTopY;
     private final short[] waterSurfaceY;
-    private final boolean[] oceanMask;
-    private final boolean[] inlandMask;
-    private final WaterBodyKind[] waterKind;
+    private final long[] oceanMaskBits;
+    private final long[] inlandMaskBits;
+    private final byte[] waterKindOrdinals;
     private final float[] continentalness;
     private final float[] erosion;
     private final float[] weirdness;
-    private final float[] depth;
 
     TerrainChunkSnapshot(
         int chunkMinX,
         int chunkMinZ,
-        boolean[] inBounds,
+        long[] inBoundsBits,
         short[] rawTerrainY,
         short[] effectiveSolidTopY,
         short[] waterSurfaceY,
-        boolean[] oceanMask,
-        boolean[] inlandMask,
-        WaterBodyKind[] waterKind,
+        long[] oceanMaskBits,
+        long[] inlandMaskBits,
+        byte[] waterKindOrdinals,
         float[] continentalness,
         float[] erosion,
-        float[] weirdness,
-        float[] depth
+        float[] weirdness
     ) {
         this.chunkMinX = chunkMinX;
         this.chunkMinZ = chunkMinZ;
-        this.inBounds = inBounds;
+        this.inBoundsBits = inBoundsBits;
         this.rawTerrainY = rawTerrainY;
         this.effectiveSolidTopY = effectiveSolidTopY;
         this.waterSurfaceY = waterSurfaceY;
-        this.oceanMask = oceanMask;
-        this.inlandMask = inlandMask;
-        this.waterKind = waterKind;
+        this.oceanMaskBits = oceanMaskBits;
+        this.inlandMaskBits = inlandMaskBits;
+        this.waterKindOrdinals = waterKindOrdinals;
         this.continentalness = continentalness;
         this.erosion = erosion;
         this.weirdness = weirdness;
-        this.depth = depth;
     }
 
     boolean containsBlock(int blockX, int blockZ) {
@@ -80,7 +78,11 @@ final class TerrainChunkSnapshot {
         if (index < 0) {
             return WaterBodyKind.NONE;
         }
-        return waterKind[index];
+        int ordinal = waterKindOrdinals[index] & 0xFF;
+        if (ordinal < 0 || ordinal >= WATER_KIND_VALUES.length) {
+            return WaterBodyKind.NONE;
+        }
+        return WATER_KIND_VALUES[ordinal];
     }
 
     float resolveContinentalness(int blockX, int blockZ) {
@@ -96,7 +98,7 @@ final class TerrainChunkSnapshot {
     }
 
     float resolveDepth(int blockX, int blockZ) {
-        return depth[localIndexUnchecked(blockX, blockZ)];
+        return (float) TerrainService.depthFromTerrainY(resolveRawTerrainY(blockX, blockZ));
     }
 
     boolean oceanAt(int blockX, int blockZ) {
@@ -104,7 +106,7 @@ final class TerrainChunkSnapshot {
         if (index < 0) {
             return false;
         }
-        return oceanMask[index];
+        return getBit(oceanMaskBits, index);
     }
 
     boolean inlandAt(int blockX, int blockZ) {
@@ -112,7 +114,7 @@ final class TerrainChunkSnapshot {
         if (index < 0) {
             return false;
         }
-        return inlandMask[index];
+        return getBit(inlandMaskBits, index);
     }
 
     private int localIndexUnchecked(int blockX, int blockZ) {
@@ -126,10 +128,40 @@ final class TerrainChunkSnapshot {
             return -1;
         }
         int index = localIndex(localX, localZ);
-        return inBounds[index] ? index : -1;
+        return getBit(inBoundsBits, index) ? index : -1;
     }
 
     private static int localIndex(int localX, int localZ) {
         return localX * TerrainService.CHUNK_WIDTH + localZ;
+    }
+
+    static void setBit(long[] bits, int index, boolean value) {
+        int word = index >>> 6;
+        long mask = 1L << (index & 63);
+        if (value) {
+            bits[word] |= mask;
+        } else {
+            bits[word] &= ~mask;
+        }
+    }
+
+    static boolean getBit(long[] bits, int index) {
+        int word = index >>> 6;
+        long mask = 1L << (index & 63);
+        return (bits[word] & mask) != 0L;
+    }
+
+    @Override
+    public int estimatedBytes() {
+        return inBoundsBits.length * Long.BYTES
+            + rawTerrainY.length * Short.BYTES
+            + effectiveSolidTopY.length * Short.BYTES
+            + waterSurfaceY.length * Short.BYTES
+            + oceanMaskBits.length * Long.BYTES
+            + inlandMaskBits.length * Long.BYTES
+            + waterKindOrdinals.length
+            + continentalness.length * Float.BYTES
+            + erosion.length * Float.BYTES
+            + weirdness.length * Float.BYTES;
     }
 }
