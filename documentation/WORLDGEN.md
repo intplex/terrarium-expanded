@@ -126,6 +126,10 @@ Settings:
 
 - `caves`, `canyons`, `extra_underground`:
   - filter AIR carvers (`cave`, `canyon`, `cave_extra_underground`) in `NoiseBasedChunkGenerator.applyCarvers`
+- `caves`:
+  - when enabled and `aquifers=false`, use boundary-aware dry cave carving:
+    - cave interiors default to air
+    - cave cells directly adjacent to existing fluids keep fluid to avoid dry pockets in water/lava bodies
 - `aquifers`:
   - switches `NoiseGeneratorSettings.aquifersEnabled` for Earth chunks
 - `lava_aquifers`:
