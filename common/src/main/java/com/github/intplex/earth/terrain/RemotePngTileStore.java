@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +53,7 @@ final class RemotePngTileStore<T> {
         this.decoder = config.decoder();
         this.tileValidator = config.tileValidator();
         this.prefetchRadius = config.prefetchRadius();
-        this.memoryCache = new MemoryLruCache<>(config.memoryCacheEntries());
+        this.memoryCache = new MemoryLruCache<>(config.memoryCacheEntries(), config.memoryCacheTtlSeconds());
         this.inFlight = new ConcurrentHashMap<>();
     }
 
@@ -219,6 +220,10 @@ final class RemotePngTileStore<T> {
         return memoryCache.maxEntries();
     }
 
+    int memoryCacheTtlSeconds() {
+        return memoryCache.ttlSeconds();
+    }
+
     int prefetchRadius() {
         return prefetchRadius;
     }
@@ -257,6 +262,7 @@ final class RemotePngTileStore<T> {
         TileDecoder<T> decoder,
         TileValidator tileValidator,
         int memoryCacheEntries,
+        int memoryCacheTtlSeconds,
         int prefetchRadius
     ) {
         StoreConfig {
@@ -266,6 +272,7 @@ final class RemotePngTileStore<T> {
             decoder = Objects.requireNonNull(decoder, "decoder");
             tileValidator = Objects.requireNonNull(tileValidator, "tileValidator");
             memoryCacheEntries = Math.max(1, memoryCacheEntries);
+            memoryCacheTtlSeconds = Math.max(0, memoryCacheTtlSeconds);
             prefetchRadius = Math.max(0, prefetchRadius);
         }
     }
@@ -389,28 +396,80 @@ final class RemotePngTileStore<T> {
 
     private static final class MemoryLruCache<T> {
         private final int maxEntries;
-        private final Map<TileKey, T> delegate;
+        private final long ttlNanos;
+        private final Map<TileKey, CacheEntry<T>> delegate;
 
-        MemoryLruCache(int maxEntries) {
+        MemoryLruCache(int maxEntries, int ttlSeconds) {
             this.maxEntries = maxEntries;
+            this.ttlNanos = ttlSeconds <= 0 ? 0L : Duration.ofSeconds(ttlSeconds).toNanos();
             this.delegate = new LinkedHashMap<>(16, 0.75f, true) {
                 @Override
-                protected boolean removeEldestEntry(Map.Entry<TileKey, T> eldest) {
+                protected boolean removeEldestEntry(Map.Entry<TileKey, CacheEntry<T>> eldest) {
                     return size() > MemoryLruCache.this.maxEntries;
                 }
             };
         }
 
         synchronized T get(TileKey key) {
-            return delegate.get(key);
+            long now = System.nanoTime();
+            evictExpiredEntries(now);
+            CacheEntry<T> entry = delegate.get(key);
+            if (entry == null) {
+                return null;
+            }
+            if (isExpired(entry, now)) {
+                delegate.remove(key);
+                return null;
+            }
+            entry.lastAccessNanos = now;
+            return entry.value;
         }
 
         synchronized void put(TileKey key, T value) {
-            delegate.put(Objects.requireNonNull(key), Objects.requireNonNull(value));
+            long now = System.nanoTime();
+            evictExpiredEntries(now);
+            delegate.put(
+                Objects.requireNonNull(key),
+                new CacheEntry<>(Objects.requireNonNull(value), now)
+            );
         }
 
         int maxEntries() {
             return maxEntries;
+        }
+
+        int ttlSeconds() {
+            if (ttlNanos <= 0L) {
+                return 0;
+            }
+            return (int) TimeUnit.NANOSECONDS.toSeconds(ttlNanos);
+        }
+
+        private boolean isExpired(CacheEntry<T> entry, long nowNanos) {
+            return ttlNanos > 0L && nowNanos - entry.lastAccessNanos >= ttlNanos;
+        }
+
+        private void evictExpiredEntries(long nowNanos) {
+            if (ttlNanos <= 0L || delegate.isEmpty()) {
+                return;
+            }
+            java.util.Iterator<Map.Entry<TileKey, CacheEntry<T>>> iterator = delegate.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<TileKey, CacheEntry<T>> entry = iterator.next();
+                if (isExpired(entry.getValue(), nowNanos)) {
+                    iterator.remove();
+                }
+            }
+        }
+    }
+
+    private static final class CacheEntry<T> {
+        private final T value;
+        private long lastAccessNanos;
+
+        private CacheEntry(T value, long lastAccessNanos) {
+            this.value = value;
+            this.lastAccessNanos = lastAccessNanos;
         }
     }
 

@@ -102,17 +102,43 @@ If the file is missing, built-in low-memory defaults are used.
 Supported keys:
 
 - `terrain.chunk_cache_entries` (default `256`)
+- `terrain.chunk_cache_ttl_seconds` (default `120`, `0` disables TTL)
 - `tiles.io_threads_per_service` (default `2`)
-- `tiles.terrain.cache_entries` (default `128`)
+- `tiles.terrain.cache_entries` (default `64`)
 - `tiles.terrain.prefetch_radius` (default `0`)
-- `tiles.recovery.cache_entries` (default `128`)
+- `tiles.terrain.cache_ttl_seconds` (default `120`, `0` disables TTL)
+- `tiles.recovery.cache_entries` (default `64`)
 - `tiles.recovery.prefetch_radius` (default `0`)
-- `tiles.surface_water.cache_entries` (default `128`)
+- `tiles.recovery.cache_ttl_seconds` (default `120`, `0` disables TTL)
+- `tiles.surface_water.cache_entries` (default `64`)
 - `tiles.surface_water.prefetch_radius` (default `0`)
-- `tiles.ecoregion.cache_entries` (default `8`)
+- `tiles.surface_water.cache_ttl_seconds` (default `120`, `0` disables TTL)
+- `tiles.ecoregion.cache_entries` (default `4`)
 - `tiles.ecoregion.prefetch_radius` (default `0`)
+- `tiles.ecoregion.cache_ttl_seconds` (default `120`, `0` disables TTL)
+- `sampling.chunk_local_cache_entries` (default `16`)
+- `sampling.biome_local_cache_entries` (default `4`)
+- `sampling.thread_local_idle_seconds` (default `10`, `0` disables idle clear)
 - `inland_water.enabled` (default `true`)
 - `inland_water.min_water_months` (default `10`, clamped to `1-12`)
+
+Memory-oriented baseline profile (good starting point for modpacks):
+
+```properties
+terrain.chunk_cache_entries=192
+terrain.chunk_cache_ttl_seconds=90
+tiles.terrain.cache_entries=48
+tiles.terrain.cache_ttl_seconds=60
+tiles.recovery.cache_entries=48
+tiles.recovery.cache_ttl_seconds=60
+tiles.surface_water.cache_entries=48
+tiles.surface_water.cache_ttl_seconds=60
+tiles.ecoregion.cache_entries=4
+tiles.ecoregion.cache_ttl_seconds=90
+sampling.chunk_local_cache_entries=8
+sampling.biome_local_cache_entries=4
+sampling.thread_local_idle_seconds=5
+```
 
 ## Data Sources
 

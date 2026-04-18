@@ -36,6 +36,10 @@ abstract class AbstractRasterTileService<T> implements AutoCloseable {
         return store.memoryCacheEntries();
     }
 
+    final int configuredMemoryCacheTtlSeconds() {
+        return store.memoryCacheTtlSeconds();
+    }
+
     final int configuredPrefetchRadius() {
         return store.prefetchRadius();
     }

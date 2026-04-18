@@ -3,13 +3,12 @@ package com.github.intplex.earth.terrain;
 import com.github.intplex.earth.EarthGenConfig;
 import com.github.intplex.earth.biome.EcoregionBiomeMappings;
 import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicLong;
 
 public final class TerrainServices {
     private static volatile Path gameDir;
     private static volatile EarthRuntimeContext runtimeContext;
     private static volatile TerrariumRuntimeConfig runtimeConfig = TerrariumRuntimeConfig.defaults();
-    private static final AtomicLong RUNTIME_GENERATION = new AtomicLong();
+    private static volatile long runtimeGeneration;
 
     private TerrainServices() {
     }
@@ -88,7 +87,15 @@ public final class TerrainServices {
     }
 
     public static long runtimeGeneration() {
-        return RUNTIME_GENERATION.get();
+        return runtimeGeneration;
+    }
+
+    public static int biomeSamplingCacheEntries() {
+        return requireContext().terrainRuntimeState().biomeLocalCacheEntries();
+    }
+
+    public static int samplingThreadLocalIdleSeconds() {
+        return requireContext().terrainRuntimeState().threadLocalIdleSeconds();
     }
 
     static synchronized EarthRuntimeContext refreshRuntimeContextForTesting(EarthGenerationProfile profile) {
@@ -222,7 +229,7 @@ public final class TerrainServices {
             services,
             TerrainService.newRuntimeState(runtimeConfig())
         );
-        RUNTIME_GENERATION.incrementAndGet();
+        runtimeGeneration++;
         if (previous != null) {
             previous.clearCaches();
         }

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 public final class SurfaceWaterTileService extends AbstractRasterTileService<SurfaceWaterTile> {
     private static final Logger LOGGER = LoggerFactory.getLogger("terrarium_expanded.worldgen");
     static final int DEFAULT_MEMORY_CACHE_ENTRIES = TerrariumRuntimeConfig.DEFAULT_SURFACE_WATER_TILE_CONFIG.cacheEntries();
+    static final int DEFAULT_MEMORY_CACHE_TTL_SECONDS = TerrariumRuntimeConfig.DEFAULT_SURFACE_WATER_TILE_CONFIG.cacheTtlSeconds();
     static final int PREFETCH_RADIUS = TerrariumRuntimeConfig.DEFAULT_SURFACE_WATER_TILE_CONFIG.prefetchRadius();
     static final int DEFAULT_IO_THREADS = TerrariumRuntimeConfig.DEFAULT_IO_THREADS_PER_SERVICE;
     static final String DEFAULT_BASE_URL = "https://storage.googleapis.com/global-surface-water/tiles2021/seasonality";
@@ -32,6 +33,7 @@ public final class SurfaceWaterTileService extends AbstractRasterTileService<Sur
                     SurfaceWaterTileService::decodeTile,
                     key -> RemotePngTileStore.isValidEarthTile(key, config.zoom()),
                     config.memoryCacheEntries(),
+                    config.memoryCacheTtlSeconds(),
                     config.prefetchRadius()
                 )
             )
@@ -72,6 +74,7 @@ public final class SurfaceWaterTileService extends AbstractRasterTileService<Sur
                 zoom,
                 baseUrl,
                 tileConfig.cacheEntries(),
+                tileConfig.cacheTtlSeconds(),
                 tileConfig.prefetchRadius(),
                 ioThreads
             )
@@ -132,6 +135,7 @@ public final class SurfaceWaterTileService extends AbstractRasterTileService<Sur
         ExecutorService executor,
         TileDownloader downloader,
         int memoryCacheEntries,
+        int memoryCacheTtlSeconds,
         int prefetchRadius,
         int zoom
     ) {
@@ -140,16 +144,44 @@ public final class SurfaceWaterTileService extends AbstractRasterTileService<Sur
             executor = Objects.requireNonNull(executor, "executor");
             downloader = Objects.requireNonNull(downloader, "downloader");
             memoryCacheEntries = Math.max(1, memoryCacheEntries);
+            memoryCacheTtlSeconds = Math.max(0, memoryCacheTtlSeconds);
             prefetchRadius = Math.max(0, prefetchRadius);
             zoom = EarthGenConfig.validateZoom(zoom);
         }
 
+        Config(
+            Path diskCacheRoot,
+            ExecutorService executor,
+            TileDownloader downloader,
+            int memoryCacheEntries,
+            int prefetchRadius,
+            int zoom
+        ) {
+            this(diskCacheRoot, executor, downloader, memoryCacheEntries, DEFAULT_MEMORY_CACHE_TTL_SECONDS, prefetchRadius, zoom);
+        }
+
         static Config runtime(Path gameDir, int zoom) {
-            return runtime(gameDir, zoom, DEFAULT_BASE_URL, DEFAULT_MEMORY_CACHE_ENTRIES, PREFETCH_RADIUS, DEFAULT_IO_THREADS);
+            return runtime(
+                gameDir,
+                zoom,
+                DEFAULT_BASE_URL,
+                DEFAULT_MEMORY_CACHE_ENTRIES,
+                DEFAULT_MEMORY_CACHE_TTL_SECONDS,
+                PREFETCH_RADIUS,
+                DEFAULT_IO_THREADS
+            );
         }
 
         static Config runtime(Path gameDir, int zoom, String baseUrl) {
-            return runtime(gameDir, zoom, baseUrl, DEFAULT_MEMORY_CACHE_ENTRIES, PREFETCH_RADIUS, DEFAULT_IO_THREADS);
+            return runtime(
+                gameDir,
+                zoom,
+                baseUrl,
+                DEFAULT_MEMORY_CACHE_ENTRIES,
+                DEFAULT_MEMORY_CACHE_TTL_SECONDS,
+                PREFETCH_RADIUS,
+                DEFAULT_IO_THREADS
+            );
         }
 
         static Config runtime(
@@ -157,6 +189,7 @@ public final class SurfaceWaterTileService extends AbstractRasterTileService<Sur
             int zoom,
             String baseUrl,
             int memoryCacheEntries,
+            int memoryCacheTtlSeconds,
             int prefetchRadius,
             int ioThreads
         ) {
@@ -166,6 +199,7 @@ public final class SurfaceWaterTileService extends AbstractRasterTileService<Sur
                 createDefaultExecutor(ioThreads),
                 new HttpTileDownloader(baseUrl, validatedZoom),
                 memoryCacheEntries,
+                memoryCacheTtlSeconds,
                 prefetchRadius,
                 validatedZoom
             );

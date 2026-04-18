@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 public final class EcoregionTileService extends AbstractRasterTileService<EcoregionTile> {
     private static final Logger LOGGER = LoggerFactory.getLogger("terrarium_expanded.worldgen");
     static final int DEFAULT_MEMORY_CACHE_ENTRIES = TerrariumRuntimeConfig.DEFAULT_ECOREGION_TILE_CONFIG.cacheEntries();
+    static final int DEFAULT_MEMORY_CACHE_TTL_SECONDS = TerrariumRuntimeConfig.DEFAULT_ECOREGION_TILE_CONFIG.cacheTtlSeconds();
     static final int PREFETCH_RADIUS = TerrariumRuntimeConfig.DEFAULT_ECOREGION_TILE_CONFIG.prefetchRadius();
     static final int DEFAULT_IO_THREADS = TerrariumRuntimeConfig.DEFAULT_IO_THREADS_PER_SERVICE;
     static final String DEFAULT_BASE_URL = EarthGenerationProfile.DEFAULT_BIOMES_BASE_URL;
@@ -30,6 +31,7 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
                     EcoregionTileService::decodeTile,
                     EcoregionTileService::isValidReducedTileKey,
                     config.memoryCacheEntries(),
+                    config.memoryCacheTtlSeconds(),
                     config.prefetchRadius()
                 )
             )
@@ -65,6 +67,7 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
                 gameDir,
                 baseUrl,
                 tileConfig.cacheEntries(),
+                tileConfig.cacheTtlSeconds(),
                 tileConfig.prefetchRadius(),
                 ioThreads
             )
@@ -125,6 +128,7 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
         ExecutorService executor,
         TileDownloader downloader,
         int memoryCacheEntries,
+        int memoryCacheTtlSeconds,
         int prefetchRadius
     ) {
         Config {
@@ -132,21 +136,47 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
             executor = Objects.requireNonNull(executor, "executor");
             downloader = Objects.requireNonNull(downloader, "downloader");
             memoryCacheEntries = Math.max(1, memoryCacheEntries);
+            memoryCacheTtlSeconds = Math.max(0, memoryCacheTtlSeconds);
             prefetchRadius = Math.max(0, prefetchRadius);
         }
 
+        Config(
+            Path diskCacheRoot,
+            ExecutorService executor,
+            TileDownloader downloader,
+            int memoryCacheEntries,
+            int prefetchRadius
+        ) {
+            this(diskCacheRoot, executor, downloader, memoryCacheEntries, DEFAULT_MEMORY_CACHE_TTL_SECONDS, prefetchRadius);
+        }
+
         static Config runtime(Path gameDir) {
-            return runtime(gameDir, DEFAULT_BASE_URL, DEFAULT_MEMORY_CACHE_ENTRIES, PREFETCH_RADIUS, DEFAULT_IO_THREADS);
+            return runtime(
+                gameDir,
+                DEFAULT_BASE_URL,
+                DEFAULT_MEMORY_CACHE_ENTRIES,
+                DEFAULT_MEMORY_CACHE_TTL_SECONDS,
+                PREFETCH_RADIUS,
+                DEFAULT_IO_THREADS
+            );
         }
 
         static Config runtime(Path gameDir, String baseUrl) {
-            return runtime(gameDir, baseUrl, DEFAULT_MEMORY_CACHE_ENTRIES, PREFETCH_RADIUS, DEFAULT_IO_THREADS);
+            return runtime(
+                gameDir,
+                baseUrl,
+                DEFAULT_MEMORY_CACHE_ENTRIES,
+                DEFAULT_MEMORY_CACHE_TTL_SECONDS,
+                PREFETCH_RADIUS,
+                DEFAULT_IO_THREADS
+            );
         }
 
         static Config runtime(
             Path gameDir,
             String baseUrl,
             int memoryCacheEntries,
+            int memoryCacheTtlSeconds,
             int prefetchRadius,
             int ioThreads
         ) {
@@ -155,6 +185,7 @@ public final class EcoregionTileService extends AbstractRasterTileService<Ecoreg
                 createDefaultExecutor(ioThreads),
                 new HttpTileDownloader(baseUrl),
                 memoryCacheEntries,
+                memoryCacheTtlSeconds,
                 prefetchRadius
             );
         }

@@ -12,6 +12,7 @@ import javax.imageio.ImageIO;
 
 public final class TerrariumTileService extends AbstractRasterTileService<TerrariumTile> {
     static final int DEFAULT_MEMORY_CACHE_ENTRIES = TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG.cacheEntries();
+    static final int DEFAULT_MEMORY_CACHE_TTL_SECONDS = TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG.cacheTtlSeconds();
     static final int PREFETCH_RADIUS = TerrariumRuntimeConfig.DEFAULT_TERRAIN_TILE_CONFIG.prefetchRadius();
     static final int DEFAULT_IO_THREADS = TerrariumRuntimeConfig.DEFAULT_IO_THREADS_PER_SERVICE;
     static final String DEFAULT_BASE_URL = "https://elevation-tiles-prod.s3.amazonaws.com/terrarium";
@@ -29,6 +30,7 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
                     TerrariumTileService::decodeTile,
                     key -> RemotePngTileStore.isValidEarthTile(key, config.zoom()),
                     config.memoryCacheEntries(),
+                    config.memoryCacheTtlSeconds(),
                     config.prefetchRadius()
                 )
             )
@@ -69,6 +71,7 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
                 zoom,
                 baseUrl,
                 tileConfig.cacheEntries(),
+                tileConfig.cacheTtlSeconds(),
                 tileConfig.prefetchRadius(),
                 ioThreads
             )
@@ -129,6 +132,7 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
         ExecutorService executor,
         TileDownloader downloader,
         int memoryCacheEntries,
+        int memoryCacheTtlSeconds,
         int prefetchRadius,
         int zoom
     ) {
@@ -137,16 +141,44 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
             executor = Objects.requireNonNull(executor, "executor");
             downloader = Objects.requireNonNull(downloader, "downloader");
             memoryCacheEntries = Math.max(1, memoryCacheEntries);
+            memoryCacheTtlSeconds = Math.max(0, memoryCacheTtlSeconds);
             prefetchRadius = Math.max(0, prefetchRadius);
             zoom = EarthGenConfig.validateZoom(zoom);
         }
 
+        Config(
+            Path diskCacheRoot,
+            ExecutorService executor,
+            TileDownloader downloader,
+            int memoryCacheEntries,
+            int prefetchRadius,
+            int zoom
+        ) {
+            this(diskCacheRoot, executor, downloader, memoryCacheEntries, DEFAULT_MEMORY_CACHE_TTL_SECONDS, prefetchRadius, zoom);
+        }
+
         static Config runtime(Path gameDir, int zoom) {
-            return runtime(gameDir, zoom, DEFAULT_BASE_URL, DEFAULT_MEMORY_CACHE_ENTRIES, PREFETCH_RADIUS, DEFAULT_IO_THREADS);
+            return runtime(
+                gameDir,
+                zoom,
+                DEFAULT_BASE_URL,
+                DEFAULT_MEMORY_CACHE_ENTRIES,
+                DEFAULT_MEMORY_CACHE_TTL_SECONDS,
+                PREFETCH_RADIUS,
+                DEFAULT_IO_THREADS
+            );
         }
 
         static Config runtime(Path gameDir, int zoom, String baseUrl) {
-            return runtime(gameDir, zoom, baseUrl, DEFAULT_MEMORY_CACHE_ENTRIES, PREFETCH_RADIUS, DEFAULT_IO_THREADS);
+            return runtime(
+                gameDir,
+                zoom,
+                baseUrl,
+                DEFAULT_MEMORY_CACHE_ENTRIES,
+                DEFAULT_MEMORY_CACHE_TTL_SECONDS,
+                PREFETCH_RADIUS,
+                DEFAULT_IO_THREADS
+            );
         }
 
         static Config runtime(
@@ -154,6 +186,7 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
             int zoom,
             String baseUrl,
             int memoryCacheEntries,
+            int memoryCacheTtlSeconds,
             int prefetchRadius,
             int ioThreads
         ) {
@@ -163,6 +196,7 @@ public final class TerrariumTileService extends AbstractRasterTileService<Terrar
                 createDefaultExecutor(ioThreads),
                 new HttpTileDownloader(baseUrl, validatedZoom),
                 memoryCacheEntries,
+                memoryCacheTtlSeconds,
                 prefetchRadius,
                 validatedZoom
             );

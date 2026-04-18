@@ -18,6 +18,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,6 +40,27 @@ class SurfaceWaterTileServiceCacheTest {
             service.getOrLoad(key);
             service.getOrLoad(key);
             assertEquals(1, downloads.get());
+        } finally {
+            service.close();
+        }
+    }
+
+    @Test
+    void memoryCacheEntriesExpireAfterIdleTtl() throws Exception {
+        AtomicInteger downloads = new AtomicInteger();
+        SurfaceWaterTileService.TileDownloader downloader = key -> {
+            downloads.incrementAndGet();
+            return createSurfaceWaterPng(0xFF0000AA);
+        };
+
+        SurfaceWaterTileService service = newService(tempDir.resolve("cache-ttl"), downloader, 1);
+        TileKey key = new TileKey(11, 11);
+        try {
+            SurfaceWaterTile first = service.getOrLoad(key);
+            Thread.sleep(1_250L);
+            SurfaceWaterTile second = service.getOrLoad(key);
+            assertEquals(1, downloads.get(), "expired entries should be reloaded from disk cache without downloader refetch");
+            assertNotSame(first, second, "expired in-memory entries should not return the same tile object");
         } finally {
             service.close();
         }
@@ -155,12 +177,21 @@ class SurfaceWaterTileServiceCacheTest {
     }
 
     private static SurfaceWaterTileService newService(Path cacheRoot, SurfaceWaterTileService.TileDownloader downloader) {
+        return newService(cacheRoot, downloader, SurfaceWaterTileService.DEFAULT_MEMORY_CACHE_TTL_SECONDS);
+    }
+
+    private static SurfaceWaterTileService newService(
+        Path cacheRoot,
+        SurfaceWaterTileService.TileDownloader downloader,
+        int memoryCacheTtlSeconds
+    ) {
         return SurfaceWaterTileService.forTesting(
             new SurfaceWaterTileService.Config(
                 cacheRoot,
                 SurfaceWaterTileService.createDefaultExecutor(),
                 downloader,
                 32,
+                memoryCacheTtlSeconds,
                 SurfaceWaterTileService.PREFETCH_RADIUS,
                 EarthGenConfig.DEFAULT_ZOOM
             )

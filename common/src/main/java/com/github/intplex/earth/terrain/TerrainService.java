@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import net.minecraft.world.level.levelgen.DensityFunction;
 import org.slf4j.Logger;
@@ -84,6 +85,7 @@ public final class TerrainService {
     }
 
     static RuntimeState newRuntimeState(TerrariumRuntimeConfig runtimeConfig) {
+        TerrariumRuntimeConfig.SamplingConfig samplingConfig = runtimeConfig.sampling();
         return new RuntimeState(
             InlandWaterSettings.loadFromRuntimeConfig(runtimeConfig),
             SurfaceWaterCoverageSettings.DEFAULT,
@@ -92,7 +94,13 @@ public final class TerrainService {
             new BoundedDedupeSet<>(8192),
             new BoundedDedupeSet<>(8192),
             ThreadLocal.withInitial(HotSnapshotCache::new),
-            new ChunkSnapshotCache(chunkCacheEntryCapacity(runtimeConfig))
+            new ChunkSnapshotCache(
+                chunkCacheEntryCapacity(runtimeConfig),
+                runtimeConfig.terrainChunkCacheTtlSeconds()
+            ),
+            samplingConfig.chunkLocalCacheEntries(),
+            samplingConfig.biomeLocalCacheEntries(),
+            samplingConfig.threadLocalIdleSeconds()
         );
     }
 
@@ -131,6 +139,10 @@ public final class TerrainService {
         return loaded;
     }
 
+    static Object snapshotIdentityForTesting(int blockX, int blockZ) {
+        return snapshotFor(blockX, blockZ);
+    }
+
     private static String geoDebugString(int blockX, int blockZ) {
         return EarthGenConfig.blockToGeo(blockX, blockZ)
             .map(geo -> String.format(Locale.ROOT, "lat=%.5f lon=%.5f", geo.latitude(), geo.longitude()))
@@ -153,6 +165,9 @@ public final class TerrainService {
         private final BoundedDedupeSet<TileKey> loggedEcoregionTileFailures;
         private final ThreadLocal<HotSnapshotCache> hotSnapshots;
         private final ChunkSnapshotCache snapshotCache;
+        private final int chunkLocalCacheEntries;
+        private final int biomeLocalCacheEntries;
+        private final int threadLocalIdleSeconds;
 
         RuntimeState(
             InlandWaterSettings inlandWaterSettings,
@@ -162,7 +177,10 @@ public final class TerrainService {
             BoundedDedupeSet<TileKey> loggedTerrainTileFailures,
             BoundedDedupeSet<TileKey> loggedEcoregionTileFailures,
             ThreadLocal<HotSnapshotCache> hotSnapshots,
-            ChunkSnapshotCache snapshotCache
+            ChunkSnapshotCache snapshotCache,
+            int chunkLocalCacheEntries,
+            int biomeLocalCacheEntries,
+            int threadLocalIdleSeconds
         ) {
             this.inlandWaterSettings = inlandWaterSettings;
             this.surfaceWaterCoverageSettings = surfaceWaterCoverageSettings;
@@ -172,6 +190,9 @@ public final class TerrainService {
             this.loggedEcoregionTileFailures = loggedEcoregionTileFailures;
             this.hotSnapshots = hotSnapshots;
             this.snapshotCache = snapshotCache;
+            this.chunkLocalCacheEntries = Math.max(1, chunkLocalCacheEntries);
+            this.biomeLocalCacheEntries = Math.max(1, biomeLocalCacheEntries);
+            this.threadLocalIdleSeconds = Math.max(0, threadLocalIdleSeconds);
         }
 
         InlandWaterSettings inlandWaterSettings() {
@@ -208,6 +229,22 @@ public final class TerrainService {
 
         int snapshotCacheMaxEntries() {
             return snapshotCache.maxEntries();
+        }
+
+        int snapshotCacheTtlSeconds() {
+            return snapshotCache.ttlSeconds();
+        }
+
+        int chunkLocalCacheEntries() {
+            return chunkLocalCacheEntries;
+        }
+
+        int biomeLocalCacheEntries() {
+            return biomeLocalCacheEntries;
+        }
+
+        int threadLocalIdleSeconds() {
+            return threadLocalIdleSeconds;
         }
 
         void clear() {
@@ -250,15 +287,19 @@ public final class TerrainService {
 
     private static final class ChunkSnapshotCache {
         private final int maxEntries;
-        private final Map<ChunkKey, TerrainChunkSnapshot> entries;
+        private final int ttlSeconds;
+        private final long ttlNanos;
+        private final Map<ChunkKey, CachedChunkSnapshot> entries;
         private final ConcurrentHashMap<ChunkKey, ReentrantLock> inFlightLocks;
 
-        private ChunkSnapshotCache(int maxEntries) {
+        private ChunkSnapshotCache(int maxEntries, int ttlSeconds) {
             this.maxEntries = maxEntries;
+            this.ttlSeconds = Math.max(0, ttlSeconds);
+            this.ttlNanos = this.ttlSeconds <= 0 ? 0L : TimeUnit.SECONDS.toNanos(this.ttlSeconds);
             this.inFlightLocks = new ConcurrentHashMap<>();
             this.entries = new LinkedHashMap<>(16, 0.75f, true) {
                 @Override
-                protected boolean removeEldestEntry(Map.Entry<ChunkKey, TerrainChunkSnapshot> eldest) {
+                protected boolean removeEldestEntry(Map.Entry<ChunkKey, CachedChunkSnapshot> eldest) {
                     return size() > ChunkSnapshotCache.this.maxEntries;
                 }
             };
@@ -268,7 +309,7 @@ public final class TerrainService {
             ChunkKey key = new ChunkKey(chunkMinForBlock(blockX), chunkMinForBlock(blockZ));
             ReentrantLock lock;
             synchronized (this) {
-                TerrainChunkSnapshot context = entries.get(key);
+                TerrainChunkSnapshot context = getIfPresentLocked(key, System.nanoTime());
                 if (context != null) {
                     return context;
                 }
@@ -278,18 +319,20 @@ public final class TerrainService {
             lock.lock();
             try {
                 synchronized (this) {
-                    TerrainChunkSnapshot context = entries.get(key);
+                    TerrainChunkSnapshot context = getIfPresentLocked(key, System.nanoTime());
                     if (context != null) {
                         return context;
                     }
                 }
                 TerrainChunkSnapshot loaded = builder.build(key.chunkMinX(), key.chunkMinZ());
                 synchronized (this) {
-                    TerrainChunkSnapshot existing = entries.get(key);
+                    TerrainChunkSnapshot existing = getIfPresentLocked(key, System.nanoTime());
                     if (existing != null) {
                         return existing;
                     }
-                    entries.put(key, loaded);
+                    long nowNanos = System.nanoTime();
+                    evictExpiredLocked(nowNanos);
+                    entries.put(key, new CachedChunkSnapshot(loaded, nowNanos));
                     return loaded;
                 }
             } finally {
@@ -307,8 +350,53 @@ public final class TerrainService {
             return maxEntries;
         }
 
+        int ttlSeconds() {
+            return ttlSeconds;
+        }
+
+        private TerrainChunkSnapshot getIfPresentLocked(ChunkKey key, long nowNanos) {
+            evictExpiredLocked(nowNanos);
+            CachedChunkSnapshot cached = entries.get(key);
+            if (cached == null) {
+                return null;
+            }
+            if (isExpired(cached, nowNanos)) {
+                entries.remove(key);
+                return null;
+            }
+            cached.lastAccessNanos = nowNanos;
+            return cached.snapshot;
+        }
+
+        private void evictExpiredLocked(long nowNanos) {
+            if (ttlNanos <= 0L || entries.isEmpty()) {
+                return;
+            }
+            java.util.Iterator<Map.Entry<ChunkKey, CachedChunkSnapshot>> iterator = entries.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<ChunkKey, CachedChunkSnapshot> entry = iterator.next();
+                if (isExpired(entry.getValue(), nowNanos)) {
+                    iterator.remove();
+                }
+            }
+        }
+
+        private boolean isExpired(CachedChunkSnapshot cached, long nowNanos) {
+            return ttlNanos > 0L && nowNanos - cached.lastAccessNanos >= ttlNanos;
+        }
+
         private static int chunkMinForBlock(int blockCoord) {
             return Math.floorDiv(blockCoord, CHUNK_WIDTH) * CHUNK_WIDTH;
+        }
+    }
+
+    private static final class CachedChunkSnapshot {
+        private final TerrainChunkSnapshot snapshot;
+        private long lastAccessNanos;
+
+        private CachedChunkSnapshot(TerrainChunkSnapshot snapshot, long lastAccessNanos) {
+            this.snapshot = snapshot;
+            this.lastAccessNanos = lastAccessNanos;
         }
     }
 

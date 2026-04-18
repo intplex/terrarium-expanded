@@ -9,6 +9,7 @@ import com.github.intplex.earth.terrain.EarthWorldgenToggles;
 import com.github.intplex.earth.terrain.OceanSurfaceTemperatureService;
 import com.github.intplex.earth.terrain.TerrainService;
 import com.github.intplex.earth.terrain.TerrainServices;
+import com.github.intplex.earth.terrain.TerrariumRuntimeConfig;
 import com.github.intplex.earth.terrain.TileKey;
 import com.github.intplex.earth.terrain.WaterBodyKind;
 import java.util.LinkedHashMap;
@@ -519,10 +520,18 @@ public final class EcoregionBiomeSource extends BiomeSource {
     private static EarthSamplingFacade.LocalTileCaches samplingCaches() {
         SamplingCacheState state = SAMPLING_CACHES.get();
         long currentGeneration = TerrainServices.runtimeGeneration();
+        int configuredEntries = TerrainServices.biomeSamplingCacheEntries();
+        int idleSeconds = TerrainServices.samplingThreadLocalIdleSeconds();
+        long nowNanos = System.nanoTime();
         if (state.runtimeGeneration() != currentGeneration) {
-            state.caches().clear();
+            state.recreateCaches(configuredEntries);
             state.setRuntimeGeneration(currentGeneration);
+        } else if (state.maxEntriesPerLayer() != configuredEntries) {
+            state.recreateCaches(configuredEntries);
+        } else if (isIdleExpired(state.lastAccessNanos(), idleSeconds, nowNanos)) {
+            state.caches().clear();
         }
+        state.setLastAccessNanos(nowNanos);
         return state.caches();
     }
 
@@ -576,15 +585,27 @@ public final class EcoregionBiomeSource extends BiomeSource {
     }
 
     private static final class SamplingCacheState {
-        private final EarthSamplingFacade.LocalTileCaches caches;
+        private EarthSamplingFacade.LocalTileCaches caches;
+        private int maxEntriesPerLayer;
         private long runtimeGeneration = Long.MIN_VALUE;
+        private long lastAccessNanos = Long.MIN_VALUE;
 
         private SamplingCacheState() {
-            this.caches = EarthSamplingFacade.LocalTileCaches.hotPathCaches();
+            this.maxEntriesPerLayer = TerrariumRuntimeConfig.DEFAULT_SAMPLING_CONFIG.biomeLocalCacheEntries();
+            this.caches = EarthSamplingFacade.LocalTileCaches.hotPathCaches(this.maxEntriesPerLayer);
         }
 
         private EarthSamplingFacade.LocalTileCaches caches() {
             return caches;
+        }
+
+        private int maxEntriesPerLayer() {
+            return maxEntriesPerLayer;
+        }
+
+        private void recreateCaches(int maxEntriesPerLayer) {
+            this.maxEntriesPerLayer = Math.max(1, maxEntriesPerLayer);
+            this.caches = EarthSamplingFacade.LocalTileCaches.hotPathCaches(this.maxEntriesPerLayer);
         }
 
         private long runtimeGeneration() {
@@ -594,6 +615,22 @@ public final class EcoregionBiomeSource extends BiomeSource {
         private void setRuntimeGeneration(long runtimeGeneration) {
             this.runtimeGeneration = runtimeGeneration;
         }
+
+        private long lastAccessNanos() {
+            return lastAccessNanos;
+        }
+
+        private void setLastAccessNanos(long lastAccessNanos) {
+            this.lastAccessNanos = lastAccessNanos;
+        }
+    }
+
+    private static boolean isIdleExpired(long lastAccessNanos, int idleSeconds, long nowNanos) {
+        if (idleSeconds <= 0 || lastAccessNanos == Long.MIN_VALUE) {
+            return false;
+        }
+        long idleNanos = java.util.concurrent.TimeUnit.SECONDS.toNanos(idleSeconds);
+        return nowNanos - lastAccessNanos >= idleNanos;
     }
 
     private static final class BoundedLogSet<T> {

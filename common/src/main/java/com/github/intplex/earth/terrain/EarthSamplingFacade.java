@@ -158,11 +158,19 @@ public final class EarthSamplingFacade {
 
     static LocalTileCaches chunkLocalCaches() {
         ChunkCacheState state = CHUNK_LOCAL_CACHES.get();
+        EarthRuntimeContext context = TerrainServices.requireContext();
+        TerrainService.RuntimeState runtimeState = context.terrainRuntimeState();
         long generation = TerrainServices.runtimeGeneration();
+        long nowNanos = System.nanoTime();
         if (state.runtimeGeneration() != generation) {
-            state.caches().clear();
+            state.recreateCaches(runtimeState.chunkLocalCacheEntries());
             state.setRuntimeGeneration(generation);
+        } else if (state.maxEntriesPerLayer() != runtimeState.chunkLocalCacheEntries()) {
+            state.recreateCaches(runtimeState.chunkLocalCacheEntries());
+        } else if (isIdleExpired(state.lastAccessNanos(), runtimeState.threadLocalIdleSeconds(), nowNanos)) {
+            state.caches().clear();
         }
+        state.setLastAccessNanos(nowNanos);
         return state.caches();
     }
 
@@ -574,7 +582,11 @@ public final class EarthSamplingFacade {
         }
 
         public static LocalTileCaches hotPathCaches() {
-            return new LocalTileCaches(8);
+            return hotPathCaches(TerrariumRuntimeConfig.DEFAULT_SAMPLING_CONFIG.biomeLocalCacheEntries());
+        }
+
+        public static LocalTileCaches hotPathCaches(int maxEntriesPerLayer) {
+            return new LocalTileCaches(maxEntriesPerLayer);
         }
 
         public void clear() {
@@ -596,6 +608,10 @@ public final class EarthSamplingFacade {
             return surfaceWaterPoint;
         }
 
+        int totalEntries() {
+            return primaryTerrainTiles.size() + recoveryTerrainTiles.size() + ecoregionTiles.size() + surfaceWaterTiles.size();
+        }
+
         private static <T> Map<TileKey, T> newLruTileMap(int maxEntries) {
             int boundedMaxEntries = Math.max(1, maxEntries);
             return new LinkedHashMap<>(16, 0.75f, true) {
@@ -608,11 +624,23 @@ public final class EarthSamplingFacade {
     }
 
     private static final class ChunkCacheState {
-        private final LocalTileCaches caches = new LocalTileCaches(128);
+        private LocalTileCaches caches =
+            new LocalTileCaches(TerrariumRuntimeConfig.DEFAULT_SAMPLING_CONFIG.chunkLocalCacheEntries());
+        private int maxEntriesPerLayer = TerrariumRuntimeConfig.DEFAULT_SAMPLING_CONFIG.chunkLocalCacheEntries();
         private long runtimeGeneration = Long.MIN_VALUE;
+        private long lastAccessNanos = Long.MIN_VALUE;
 
         private LocalTileCaches caches() {
             return caches;
+        }
+
+        private int maxEntriesPerLayer() {
+            return maxEntriesPerLayer;
+        }
+
+        private void recreateCaches(int maxEntriesPerLayer) {
+            this.maxEntriesPerLayer = Math.max(1, maxEntriesPerLayer);
+            this.caches = new LocalTileCaches(this.maxEntriesPerLayer);
         }
 
         private long runtimeGeneration() {
@@ -622,5 +650,21 @@ public final class EarthSamplingFacade {
         private void setRuntimeGeneration(long runtimeGeneration) {
             this.runtimeGeneration = runtimeGeneration;
         }
+
+        private long lastAccessNanos() {
+            return lastAccessNanos;
+        }
+
+        private void setLastAccessNanos(long lastAccessNanos) {
+            this.lastAccessNanos = lastAccessNanos;
+        }
+    }
+
+    private static boolean isIdleExpired(long lastAccessNanos, int idleSeconds, long nowNanos) {
+        if (idleSeconds <= 0 || lastAccessNanos == Long.MIN_VALUE) {
+            return false;
+        }
+        long idleNanos = java.util.concurrent.TimeUnit.SECONDS.toNanos(idleSeconds);
+        return nowNanos - lastAccessNanos >= idleNanos;
     }
 }

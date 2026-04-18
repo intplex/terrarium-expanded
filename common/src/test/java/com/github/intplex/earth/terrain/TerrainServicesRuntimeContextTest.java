@@ -164,15 +164,23 @@ class TerrainServicesRuntimeContextTest {
         Files.writeString(
             configDir.resolve(TerrariumRuntimeConfig.FILE_NAME),
             "terrain.chunk_cache_entries=300\n"
+                + "terrain.chunk_cache_ttl_seconds=90\n"
                 + "tiles.io_threads_per_service=3\n"
                 + "tiles.terrain.cache_entries=101\n"
                 + "tiles.terrain.prefetch_radius=1\n"
+                + "tiles.terrain.cache_ttl_seconds=31\n"
                 + "tiles.recovery.cache_entries=102\n"
                 + "tiles.recovery.prefetch_radius=2\n"
+                + "tiles.recovery.cache_ttl_seconds=32\n"
                 + "tiles.surface_water.cache_entries=103\n"
                 + "tiles.surface_water.prefetch_radius=3\n"
+                + "tiles.surface_water.cache_ttl_seconds=33\n"
                 + "tiles.ecoregion.cache_entries=11\n"
                 + "tiles.ecoregion.prefetch_radius=0\n"
+                + "tiles.ecoregion.cache_ttl_seconds=34\n"
+                + "sampling.chunk_local_cache_entries=18\n"
+                + "sampling.biome_local_cache_entries=5\n"
+                + "sampling.thread_local_idle_seconds=7\n"
                 + "inland_water.enabled=false\n"
                 + "inland_water.min_water_months=4\n"
         );
@@ -181,22 +189,30 @@ class TerrainServicesRuntimeContextTest {
         EarthRuntimeContext context = TerrainServices.requireContext();
 
         assertEquals(300, context.terrainRuntimeState().snapshotCacheMaxEntries());
+        assertEquals(90, context.terrainRuntimeState().snapshotCacheTtlSeconds());
+        assertEquals(18, context.terrainRuntimeState().chunkLocalCacheEntries());
+        assertEquals(5, context.terrainRuntimeState().biomeLocalCacheEntries());
+        assertEquals(7, context.terrainRuntimeState().threadLocalIdleSeconds());
         assertEquals(false, context.terrainRuntimeState().inlandWaterSettings().enabled());
         assertEquals(4, context.terrainRuntimeState().inlandWaterSettings().minWaterMonths());
 
         assertEquals(101, context.services().tileService().configuredMemoryCacheEntries());
+        assertEquals(31, context.services().tileService().configuredMemoryCacheTtlSeconds());
         assertEquals(1, context.services().tileService().configuredPrefetchRadius());
         assertEquals(3, context.services().tileService().configuredIoThreads());
 
         assertEquals(102, context.services().recoveryTileService().configuredMemoryCacheEntries());
+        assertEquals(32, context.services().recoveryTileService().configuredMemoryCacheTtlSeconds());
         assertEquals(2, context.services().recoveryTileService().configuredPrefetchRadius());
         assertEquals(3, context.services().recoveryTileService().configuredIoThreads());
 
         assertEquals(103, context.services().surfaceWaterTileService().configuredMemoryCacheEntries());
+        assertEquals(33, context.services().surfaceWaterTileService().configuredMemoryCacheTtlSeconds());
         assertEquals(3, context.services().surfaceWaterTileService().configuredPrefetchRadius());
         assertEquals(3, context.services().surfaceWaterTileService().configuredIoThreads());
 
         assertEquals(11, context.services().ecoregionTileService().configuredMemoryCacheEntries());
+        assertEquals(34, context.services().ecoregionTileService().configuredMemoryCacheTtlSeconds());
         assertEquals(0, context.services().ecoregionTileService().configuredPrefetchRadius());
         assertEquals(3, context.services().ecoregionTileService().configuredIoThreads());
     }

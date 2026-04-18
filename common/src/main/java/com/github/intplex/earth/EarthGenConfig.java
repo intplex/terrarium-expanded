@@ -2,7 +2,6 @@ package com.github.intplex.earth;
 
 import com.github.intplex.earth.terrain.TileKey;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public final class EarthGenConfig {
     public static final int MIN_ZOOM = 8;
@@ -43,7 +42,7 @@ public final class EarthGenConfig {
     public static final double MAX_ABOVE_SEA_METERS = 8900.0;
     public static final double OCEAN_FLOOR_DEPTH_METERS = 4000.0;
     private static final double EARTH_EQUATOR_CIRCUMFERENCE_METERS = 40075016.68557849;
-    private static final AtomicInteger ACTIVE_ZOOM = new AtomicInteger(DEFAULT_ZOOM);
+    private static volatile int activeZoom = DEFAULT_ZOOM;
     private static volatile int activeMaxMountainY = DEFAULT_MAX_MOUNTAIN_Y;
     private static volatile int activeOceanFloorY = DEFAULT_OCEAN_FLOOR_Y;
 
@@ -62,11 +61,11 @@ public final class EarthGenConfig {
     }
 
     public static int activeZoom() {
-        return ACTIVE_ZOOM.get();
+        return activeZoom;
     }
 
     public static void setActiveZoom(int zoom) {
-        ACTIVE_ZOOM.set(validateZoom(zoom));
+        activeZoom = validateZoom(zoom);
     }
 
     public static int activeWaterZoom() {
