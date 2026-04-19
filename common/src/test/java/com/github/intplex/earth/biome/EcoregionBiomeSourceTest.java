@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.biome.Biome;
 import org.junit.jupiter.api.AfterEach;
@@ -279,8 +279,8 @@ class EcoregionBiomeSourceTest {
             Map.of(
                 MODE_TEST_COLOR,
                 new EcoregionBiomeMappings.BiomeSelectionIds(
-                    ResourceLocation.parse("biomesoplenty:maple_woods"),
-                    ResourceLocation.parse("minecraft:plains")
+                    Identifier.parse("biomesoplenty:maple_woods"),
+                    Identifier.parse("minecraft:plains")
                 )
             ),
             mode,

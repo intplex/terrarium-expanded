@@ -69,6 +69,7 @@ abstract class ChunkGeneratorMixin {
         ChunkAccess chunkAccess,
         ChunkPos chunkPos,
         SectionPos sectionPos,
+        ResourceKey<?> structureSetKey,
         CallbackInfoReturnable<Boolean> cir
     ) {
         ChunkGenerator generator = (ChunkGenerator) (Object) this;
@@ -82,19 +83,19 @@ abstract class ChunkGeneratorMixin {
             return;
         }
 
-        if (!toggles.allowsStructure(structureKey.get().location())) {
+        if (!toggles.allowsStructure(structureKey.get().identifier())) {
             cir.setReturnValue(false);
         }
     }
 
     private static boolean isLavaLakeFeature(PlacedFeature placedFeature, RegistryAccess registryAccess) {
-        Registry<PlacedFeature> placedFeatureRegistry = registryAccess.registryOrThrow(Registries.PLACED_FEATURE);
+        Registry<PlacedFeature> placedFeatureRegistry = registryAccess.lookupOrThrow(Registries.PLACED_FEATURE);
         Optional<ResourceKey<PlacedFeature>> placedFeatureKey = placedFeatureRegistry.getResourceKey(placedFeature);
         if (placedFeatureKey.isEmpty()) {
             return false;
         }
 
-        String path = placedFeatureKey.get().location().getPath();
+        String path = placedFeatureKey.get().identifier().getPath();
         return path.equals("lake_lava_underground") || path.equals("lake_lava_surface");
     }
 }

@@ -1,6 +1,6 @@
 package com.github.intplex.earth.terrain;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,8 +15,8 @@ class EarthWorldgenTogglesTest {
         assertFalse(toggles.extraUnderground());
         assertFalse(toggles.aquifers());
         assertFalse(toggles.lavaAquifers());
-        assertFalse(toggles.allowsStructure(ResourceLocation.parse("minecraft:village_plains")));
-        assertTrue(toggles.allowsStructure(ResourceLocation.parse("minecraft:stronghold")));
+        assertFalse(toggles.allowsStructure(Identifier.parse("minecraft:village_plains")));
+        assertTrue(toggles.allowsStructure(Identifier.parse("minecraft:stronghold")));
     }
 
     @Test
@@ -29,8 +29,8 @@ class EarthWorldgenTogglesTest {
             false,
             false
         );
-        assertFalse(toggles.allowsStructure(ResourceLocation.parse("minecraft:village_plains")));
-        assertFalse(toggles.allowsStructure(ResourceLocation.parse("minecraft:village_taiga")));
+        assertFalse(toggles.allowsStructure(Identifier.parse("minecraft:village_plains")));
+        assertFalse(toggles.allowsStructure(Identifier.parse("minecraft:village_taiga")));
     }
 
     @Test
@@ -43,6 +43,6 @@ class EarthWorldgenTogglesTest {
             false,
             false
         );
-        assertTrue(toggles.allowsStructure(ResourceLocation.parse("minecraft:stronghold")));
+        assertTrue(toggles.allowsStructure(Identifier.parse("minecraft:stronghold")));
     }
 }

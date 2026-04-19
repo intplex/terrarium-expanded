@@ -10,8 +10,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,10 +22,18 @@ public abstract class DebugScreenOverlayMixin {
     @Final
     private Minecraft minecraft;
 
-    @Inject(method = "getGameInformation", at = @At("RETURN"), cancellable = true)
-    private void terrariumExpanded$appendLatLon(CallbackInfoReturnable<List<String>> cir) {
+    @ModifyArg(
+        method = "render",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/components/DebugScreenOverlay;renderLines(Lnet/minecraft/client/gui/GuiGraphics;Ljava/util/List;Z)V",
+            ordinal = 1
+        ),
+        index = 1
+    )
+    private List<String> terrariumExpanded$appendLatLon(List<String> lines) {
         if (minecraft.level == null) {
-            return;
+            return lines;
         }
 
         Entity cameraEntity = minecraft.getCameraEntity();
@@ -34,7 +41,7 @@ public abstract class DebugScreenOverlayMixin {
             cameraEntity = minecraft.player;
         }
         if (cameraEntity == null) {
-            return;
+            return lines;
         }
 
         int blockX = cameraEntity.getBlockX();
@@ -52,9 +59,9 @@ public abstract class DebugScreenOverlayMixin {
             })
             .orElse(String.format(Locale.ROOT, "Terrarium: terrain unavailable (sea %d)", EarthGenConfig.SEA_LEVEL));
 
-        List<String> information = new ArrayList<>(cir.getReturnValue());
+        List<String> information = new ArrayList<>(lines);
         information.add(line);
         information.add(terrainLine);
-        cir.setReturnValue(information);
+        return information;
     }
 }

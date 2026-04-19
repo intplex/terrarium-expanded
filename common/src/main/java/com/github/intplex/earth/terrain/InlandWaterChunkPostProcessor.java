@@ -26,8 +26,8 @@ public final class InlandWaterChunkPostProcessor {
     }
 
     public static void fillChunk(ChunkAccess chunkAccess) {
-        int minY = chunkAccess.getMinBuildHeight();
-        int maxY = chunkAccess.getMaxBuildHeight();
+        int minY = chunkAccess.getMinY();
+        int maxY = minY + chunkAccess.getHeight();
         int chunkMinX = chunkAccess.getPos().getMinBlockX();
         int chunkMinZ = chunkAccess.getPos().getMinBlockZ();
         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
@@ -46,7 +46,7 @@ public final class InlandWaterChunkPostProcessor {
                 int endY = Math.min(maxY - 1, waterSurfaceY);
                 for (int y = startY; y <= endY; y++) {
                     mutablePos.set(blockX, y, blockZ);
-                    chunkAccess.setBlockState(mutablePos, WATER, false);
+                    chunkAccess.setBlockState(mutablePos, WATER, 0);
                 }
             }
         }

@@ -22,7 +22,6 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.Aquifer;
 import net.minecraft.world.level.levelgen.DensityFunction;
 import net.minecraft.world.level.levelgen.DensityFunctions;
-import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseChunk;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
@@ -41,17 +40,13 @@ abstract class NoiseBasedChunkGeneratorMixin {
         method = "applyCarvers",
         at = @At(
             value = "INVOKE",
-            target = "Lnet/minecraft/world/level/biome/BiomeGenerationSettings;getCarvers(Lnet/minecraft/world/level/levelgen/GenerationStep$Carving;)Ljava/lang/Iterable;"
+            target = "Lnet/minecraft/world/level/biome/BiomeGenerationSettings;getCarvers()Ljava/lang/Iterable;"
         )
     )
     private Iterable<Holder<ConfiguredWorldCarver<?>>> terrariumExpanded$filterCarvers(
-        BiomeGenerationSettings biomeGenerationSettings,
-        GenerationStep.Carving carvingStep
+        BiomeGenerationSettings biomeGenerationSettings
     ) {
-        Iterable<Holder<ConfiguredWorldCarver<?>>> original = biomeGenerationSettings.getCarvers(carvingStep);
-        if (carvingStep != GenerationStep.Carving.AIR) {
-            return original;
-        }
+        Iterable<Holder<ConfiguredWorldCarver<?>>> original = biomeGenerationSettings.getCarvers();
 
         EarthWorldgenToggles toggles = earthWorldgenToggles();
         if (toggles == null) {
@@ -84,13 +79,9 @@ abstract class NoiseBasedChunkGeneratorMixin {
         RandomState randomState,
         BiomeManager biomeManager,
         StructureManager structureManager,
-        ChunkAccess chunkAccess,
-        GenerationStep.Carving carvingStep
+        ChunkAccess chunkAccess
     ) {
         Aquifer aquifer = noiseChunk.aquifer();
-        if (carvingStep != GenerationStep.Carving.AIR) {
-            return aquifer;
-        }
 
         EarthWorldgenToggles toggles = earthWorldgenToggles();
         if (toggles == null || !toggles.caves() || toggles.aquifers()) {
@@ -190,7 +181,7 @@ abstract class NoiseBasedChunkGeneratorMixin {
         if (key.isEmpty()) {
             return true;
         }
-        String path = key.get().location().getPath();
+        String path = key.get().identifier().getPath();
         if (path.equals("cave")) {
             return toggles.caves();
         }

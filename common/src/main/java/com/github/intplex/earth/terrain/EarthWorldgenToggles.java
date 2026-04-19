@@ -2,7 +2,7 @@ package com.github.intplex.earth.terrain;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record EarthWorldgenToggles(
     boolean caves,
@@ -39,7 +39,7 @@ public record EarthWorldgenToggles(
         return DEFAULT;
     }
 
-    public boolean allowsStructure(ResourceLocation structureId) {
+    public boolean allowsStructure(Identifier structureId) {
         String path = structureId.getPath();
         if (path.startsWith("village_")) {
             return villages;

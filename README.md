@@ -4,7 +4,7 @@ Bring the Earth into Minecraft with real-world terrain, biome-driven landcover, 
 
 > [!IMPORTANT]
 > **Requirements**
-> - Minecraft `1.21.1`
+> - Minecraft `1.21.11`
 > - Java `21+`
 > - A live internet connection during world generation and exploration
 >
@@ -66,7 +66,7 @@ Higher zoom means a much larger playable world with finer real-world detail, but
 
 ## Requirements
 
-- Minecraft `1.21.1`
+- Minecraft `1.21.11`
 - Java `21+`
 - Internet access while generating or exploring Earth worlds
 

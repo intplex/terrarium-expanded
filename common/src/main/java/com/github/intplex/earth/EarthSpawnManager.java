@@ -5,8 +5,10 @@ import com.github.intplex.earth.terrain.EarthGenerationProfile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
+import net.minecraft.world.level.storage.LevelData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,10 +37,10 @@ public final class EarthSpawnManager {
             return;
         }
 
-        BlockPos previousSpawn = overworld.getSharedSpawnPos();
+        BlockPos previousSpawn = currentSpawn(overworld);
         SpawnPoint spawnPoint = resolveSpawnPoint(overworld);
         BlockPos spawnPos = spawnPoint.blockPos();
-        overworld.setDefaultSpawnPos(spawnPos, 0.0F);
+        overworld.setRespawnData(LevelData.RespawnData.of(Level.OVERWORLD, spawnPos, 0.0F, 0.0F));
         applyWorldBorderFromPreset(overworld, phase);
         LOGGER.info(
             "[TX-SPAWN] forcing overworld spawn during {} previous=({}, {}, {}) new=({}, {}, {}) source={} lat={} lon={}",
@@ -53,6 +55,14 @@ public final class EarthSpawnManager {
             spawnPoint.latitude(),
             spawnPoint.longitude()
         );
+    }
+
+    private static BlockPos currentSpawn(ServerLevel overworld) {
+        LevelData.RespawnData respawnData = overworld.getRespawnData();
+        if (respawnData != null && respawnData.dimension() == Level.OVERWORLD) {
+            return respawnData.pos();
+        }
+        return new BlockPos(0, EarthGenConfig.SEA_LEVEL, 0);
     }
 
     private static void applyWorldBorderFromPreset(ServerLevel overworld, String phase) {

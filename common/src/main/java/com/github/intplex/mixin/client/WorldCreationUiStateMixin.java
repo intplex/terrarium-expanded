@@ -26,7 +26,7 @@ public abstract class WorldCreationUiStateMixin {
         }
 
         Optional<net.minecraft.resources.ResourceKey<WorldPreset>> worldPresetKey = worldTypeEntry.preset().unwrapKey();
-        if (worldPresetKey.isEmpty() || !worldPresetKey.get().location().equals(TerrariumExpanded.id("earth"))) {
+        if (worldPresetKey.isEmpty() || !worldPresetKey.get().identifier().equals(TerrariumExpanded.id("earth"))) {
             return;
         }
 

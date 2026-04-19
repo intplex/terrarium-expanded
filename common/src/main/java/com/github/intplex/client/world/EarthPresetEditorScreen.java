@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -197,7 +198,7 @@ public final class EarthPresetEditorScreen extends Screen {
     protected void init() {
         layoutScreen();
 
-        zoomButton = CycleButton.<Integer>builder(value -> Component.literal(Integer.toString(value)))
+        zoomButton = CycleButton.<Integer>builder(value -> Component.literal(Integer.toString(value)), Integer.valueOf(selectedZoom))
             .withValues(SUPPORTED_ZOOMS)
             .create(leftX, zoomRowY, fullWidth, ROW_HEIGHT, ZOOM_LABEL, (button, value) -> {
                 selectedZoom = value.intValue();
@@ -206,7 +207,7 @@ public final class EarthPresetEditorScreen extends Screen {
         zoomButton.setValue(selectedZoom);
         addRenderableWidget(zoomButton);
 
-        biomeIntegrationButton = CycleButton.<BiomeIntegrationMode>builder(this::biomeIntegrationModeLabel)
+        biomeIntegrationButton = CycleButton.<BiomeIntegrationMode>builder(this::biomeIntegrationModeLabel, selectedBiomeIntegration)
             .withValues(List.of(BiomeIntegrationMode.AUTO, BiomeIntegrationMode.VANILLA, BiomeIntegrationMode.EXPANDED))
             .create(leftX, biomeIntegrationRowY, halfWidth, ROW_HEIGHT, BIOME_INTEGRATION_LABEL, (button, value) -> {
                 selectedBiomeIntegration = value;
@@ -253,7 +254,7 @@ public final class EarthPresetEditorScreen extends Screen {
         surfaceWaterBaseUrlBox.setResponder(ignored -> updateValidationState());
         addRenderableWidget(surfaceWaterBaseUrlBox);
 
-        terrainFixesButton = CycleButton.<String>builder(Component::literal)
+        terrainFixesButton = CycleButton.<String>builder(Component::literal, selectedTerrainFixes)
             .withValues(List.of(selectedTerrainFixes))
             .create(leftX, terrainFixesRowY, fullWidth, ROW_HEIGHT, TERRAIN_FIXES_LABEL, (button, value) -> selectedTerrainFixes = value);
         terrainFixesButton.active = false;
@@ -428,7 +429,7 @@ public final class EarthPresetEditorScreen extends Screen {
         boolean initialValue,
         java.util.function.Consumer<Boolean> onUpdate
     ) {
-        CycleButton<Boolean> button = CycleButton.<Boolean>builder(this::booleanValueLabel)
+        CycleButton<Boolean> button = CycleButton.<Boolean>builder(this::booleanValueLabel, Boolean.valueOf(initialValue))
             .withValues(List.of(Boolean.TRUE, Boolean.FALSE))
             .create(x, y, width, ROW_HEIGHT, label, (cycle, value) -> {
                 onUpdate.accept(value);
@@ -541,31 +542,31 @@ public final class EarthPresetEditorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && isOverScrollbar(mouseX, mouseY)) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean bl) {
+        if (event.button() == 0 && isOverScrollbar(event.x(), event.y())) {
             draggingScrollbar = true;
-            updateScrollFromMouseY(mouseY);
+            updateScrollFromMouseY(event.y());
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, bl);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (draggingScrollbar && button == 0) {
-            updateScrollFromMouseY(mouseY);
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        if (draggingScrollbar && event.button() == 0) {
+            updateScrollFromMouseY(event.y());
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (draggingScrollbar && button == 0) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (draggingScrollbar && event.button() == 0) {
             draggingScrollbar = false;
             return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     private void setScrollOffset(int newOffset) {
@@ -610,14 +611,15 @@ public final class EarthPresetEditorScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        // 1.21.11 enforces at most one blur pass per frame. Using a plain dim fill
+        // avoids double-blur crashes when the parent screen already requested blur.
+        guiGraphics.fill(0, 0, width, height, 0xA0101010);
 
         int centerX = width / 2;
         int span = EarthGenConfig.blockSpanForZoom(selectedZoom);
         double metersPerBlock = EarthGenConfig.metersPerBlockForZoom(selectedZoom);
 
-        guiGraphics.drawCenteredString(font, TITLE, centerX, titleY, 0xFFFFFF);
+        guiGraphics.drawCenteredString(font, TITLE, centerX, titleY, withOpaqueAlpha(0xFFFFFF));
 
         drawLabelIfVisible(guiGraphics, BIOME_INTEGRATION_LABEL, leftX, biomeIntegrationLabelY, 0xCFCFCF);
         drawLabelIfVisible(guiGraphics, MAX_MOUNTAIN_LABEL, leftX, shapeLabelY, 0xCFCFCF);
@@ -655,23 +657,30 @@ public final class EarthPresetEditorScreen extends Screen {
 
         renderScrollbar(guiGraphics);
 
+        // Render widgets after static labels so controls appear on top.
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
+
         if (validationMessage != null) {
-            guiGraphics.drawCenteredString(font, validationMessage, centerX, validationY, 0xFF6B6B);
+            guiGraphics.drawCenteredString(font, validationMessage, centerX, validationY, withOpaqueAlpha(0xFF6B6B));
         }
     }
 
     private void drawLabelIfVisible(GuiGraphics guiGraphics, Component text, int x, int baseY, int color) {
         int y = scrolledY(baseY);
         if (y >= viewportTop - 10 && y <= viewportBottom) {
-            guiGraphics.drawString(font, text, x, y, color);
+            guiGraphics.drawString(font, text, x, y, withOpaqueAlpha(color));
         }
     }
 
     private void drawCenteredIfVisible(GuiGraphics guiGraphics, Component text, int centerX, int baseY, int color) {
         int y = scrolledY(baseY);
         if (y >= viewportTop - 10 && y <= viewportBottom) {
-            guiGraphics.drawCenteredString(font, text, centerX, y, color);
+            guiGraphics.drawCenteredString(font, text, centerX, y, withOpaqueAlpha(color));
         }
+    }
+
+    private static int withOpaqueAlpha(int rgbOrArgb) {
+        return rgbOrArgb | 0xFF000000;
     }
 
     private void renderScrollbar(GuiGraphics guiGraphics) {

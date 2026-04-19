@@ -349,7 +349,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
         BlockPos.MutableBlockPos reusablePos
     ) {
         reusablePos.set(blockX, blockY, blockZ);
-        return biome.value().coldEnoughToSnow(reusablePos);
+        return biome.value().coldEnoughToSnow(reusablePos, blockY);
     }
 
     Holder<Biome> oceanFallbackForTerrainY(int blockX, int blockZ, int terrainY) {
@@ -436,7 +436,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
         }
 
         String pixelText = sample.pixelX() >= 0 && sample.pixelY() >= 0 ? sample.pixelX() + "," + sample.pixelY() : "<none>";
-        String fallbackBiomeId = fallbackBiome.unwrapKey().map(key -> key.location().toString()).orElse("<unbound>");
+        String fallbackBiomeId = fallbackBiome.unwrapKey().map(key -> key.identifier().toString()).orElse("<unbound>");
         LOGGER.warn(
             "[TX-BIOME] no biome mapping for ecoregion color=#{} block=({}, {}) tile={} pixel={} terrainY={} deep_threshold={} fallback={}",
             String.format("%06X", sample.colorRgb()),

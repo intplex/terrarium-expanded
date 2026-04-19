@@ -18,7 +18,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import org.slf4j.Logger;
@@ -99,14 +99,14 @@ public final class EcoregionBiomeMappings {
                     throw new IllegalStateException("Blank MINECRAFT_BIOME at line " + lineNumber);
                 }
 
-                ResourceLocation minecraftBiomeLocation = ResourceLocation.tryParse(minecraftBiomeId);
+                Identifier minecraftBiomeLocation = Identifier.tryParse(minecraftBiomeId);
                 if (minecraftBiomeLocation == null) {
                     throw new IllegalStateException("Invalid MINECRAFT_BIOME '" + minecraftBiomeId + "' at line " + lineNumber);
                 }
 
-                ResourceLocation preferredBiomeLocation = minecraftBiomeLocation;
+                Identifier preferredBiomeLocation = minecraftBiomeLocation;
                 if (!bopBiomeId.isEmpty()) {
-                    ResourceLocation bopBiomeLocation = ResourceLocation.tryParse(bopBiomeId);
+                    Identifier bopBiomeLocation = Identifier.tryParse(bopBiomeId);
                     if (bopBiomeLocation == null) {
                         throw new IllegalStateException(
                             "Invalid BIOMES_O_PLENTY_BIOME '" + bopBiomeId + "' at line " + lineNumber
@@ -170,7 +170,7 @@ public final class EcoregionBiomeMappings {
     static ResolvedBiomeMapping resolveMappings(
         Map<Integer, BiomeSelectionIds> byColor,
         BiomeIntegrationMode integrationMode,
-        Function<ResourceLocation, Holder<Biome>> biomeResolver
+        Function<Identifier, Holder<Biome>> biomeResolver
     ) {
         Map<Integer, Holder<Biome>> resolved = new HashMap<>();
         Set<Holder<Biome>> possibleBiomes = new LinkedHashSet<>();
@@ -180,17 +180,17 @@ public final class EcoregionBiomeMappings {
             possibleBiomes.add(holder);
         }
 
-        Holder<Biome> ocean = requireBiomeHolder(biomeResolver, Biomes.OCEAN.location());
-        Holder<Biome> coldOcean = requireBiomeHolder(biomeResolver, Biomes.COLD_OCEAN.location());
-        Holder<Biome> lukewarmOcean = requireBiomeHolder(biomeResolver, Biomes.LUKEWARM_OCEAN.location());
-        Holder<Biome> warmOcean = requireBiomeHolder(biomeResolver, Biomes.WARM_OCEAN.location());
-        Holder<Biome> frozenOcean = requireBiomeHolder(biomeResolver, Biomes.FROZEN_OCEAN.location());
-        Holder<Biome> deepOcean = requireBiomeHolder(biomeResolver, Biomes.DEEP_OCEAN.location());
-        Holder<Biome> deepColdOcean = requireBiomeHolder(biomeResolver, Biomes.DEEP_COLD_OCEAN.location());
-        Holder<Biome> deepLukewarmOcean = requireBiomeHolder(biomeResolver, Biomes.DEEP_LUKEWARM_OCEAN.location());
-        Holder<Biome> deepFrozenOcean = requireBiomeHolder(biomeResolver, Biomes.DEEP_FROZEN_OCEAN.location());
-        Holder<Biome> river = requireBiomeHolder(biomeResolver, Biomes.RIVER.location());
-        Holder<Biome> frozenRiver = requireBiomeHolder(biomeResolver, Biomes.FROZEN_RIVER.location());
+        Holder<Biome> ocean = requireBiomeHolder(biomeResolver, Biomes.OCEAN.identifier());
+        Holder<Biome> coldOcean = requireBiomeHolder(biomeResolver, Biomes.COLD_OCEAN.identifier());
+        Holder<Biome> lukewarmOcean = requireBiomeHolder(biomeResolver, Biomes.LUKEWARM_OCEAN.identifier());
+        Holder<Biome> warmOcean = requireBiomeHolder(biomeResolver, Biomes.WARM_OCEAN.identifier());
+        Holder<Biome> frozenOcean = requireBiomeHolder(biomeResolver, Biomes.FROZEN_OCEAN.identifier());
+        Holder<Biome> deepOcean = requireBiomeHolder(biomeResolver, Biomes.DEEP_OCEAN.identifier());
+        Holder<Biome> deepColdOcean = requireBiomeHolder(biomeResolver, Biomes.DEEP_COLD_OCEAN.identifier());
+        Holder<Biome> deepLukewarmOcean = requireBiomeHolder(biomeResolver, Biomes.DEEP_LUKEWARM_OCEAN.identifier());
+        Holder<Biome> deepFrozenOcean = requireBiomeHolder(biomeResolver, Biomes.DEEP_FROZEN_OCEAN.identifier());
+        Holder<Biome> river = requireBiomeHolder(biomeResolver, Biomes.RIVER.identifier());
+        Holder<Biome> frozenRiver = requireBiomeHolder(biomeResolver, Biomes.FROZEN_RIVER.identifier());
 
         possibleBiomes.add(ocean);
         possibleBiomes.add(coldOcean);
@@ -240,7 +240,7 @@ public final class EcoregionBiomeMappings {
     private static Holder<Biome> resolvePreferredOrFallback(
         BiomeSelectionIds selection,
         BiomeIntegrationMode integrationMode,
-        Function<ResourceLocation, Holder<Biome>> biomeResolver
+        Function<Identifier, Holder<Biome>> biomeResolver
     ) {
         if (integrationMode == BiomeIntegrationMode.VANILLA) {
             return requireFallbackBiomeHolder(biomeResolver, selection);
@@ -249,7 +249,7 @@ public final class EcoregionBiomeMappings {
     }
 
     private static Holder<Biome> requireFallbackBiomeHolder(
-        Function<ResourceLocation, Holder<Biome>> biomeResolver,
+        Function<Identifier, Holder<Biome>> biomeResolver,
         BiomeSelectionIds selection
     ) {
         try {
@@ -263,7 +263,7 @@ public final class EcoregionBiomeMappings {
     }
 
     private static Holder<Biome> requirePreferredBiomeHolder(
-        Function<ResourceLocation, Holder<Biome>> biomeResolver,
+        Function<Identifier, Holder<Biome>> biomeResolver,
         BiomeSelectionIds selection,
         BiomeIntegrationMode integrationMode
     ) {
@@ -282,7 +282,7 @@ public final class EcoregionBiomeMappings {
         }
     }
 
-    private static Holder<Biome> requireBiomeHolder(Function<ResourceLocation, Holder<Biome>> biomeResolver, ResourceLocation biomeId) {
+    private static Holder<Biome> requireBiomeHolder(Function<Identifier, Holder<Biome>> biomeResolver, Identifier biomeId) {
         try {
             Holder<Biome> holder = biomeResolver.apply(biomeId);
             if (holder == null) {
@@ -297,7 +297,7 @@ public final class EcoregionBiomeMappings {
         }
     }
 
-    private static Holder<Biome> requireBiomeHolder(HolderGetter<Biome> biomeLookup, ResourceLocation biomeId) {
+    private static Holder<Biome> requireBiomeHolder(HolderGetter<Biome> biomeLookup, Identifier biomeId) {
         ResourceKey<Biome> key = ResourceKey.create(Registries.BIOME, biomeId);
         Holder<Biome> holder = biomeLookup.get(key).orElseThrow(() -> new IllegalStateException("resolver returned missing holder"));
         if (!holder.isBound()) {
@@ -355,7 +355,7 @@ public final class EcoregionBiomeMappings {
         return cells;
     }
 
-    public record BiomeSelectionIds(ResourceLocation preferredBiomeId, ResourceLocation fallbackBiomeId) {
+    public record BiomeSelectionIds(Identifier preferredBiomeId, Identifier fallbackBiomeId) {
     }
 
     public record ResolvedBiomeMapping(

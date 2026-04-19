@@ -14,6 +14,7 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
@@ -36,7 +37,7 @@ public final class EarthCommands {
 
     private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> buildTpLatLongCommand(String literal) {
         return Commands.literal(literal)
-            .requires(source -> source.hasPermission(2))
+            .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
             .then(Commands.argument("latitude", DoubleArgumentType.doubleArg(-EarthGenConfig.MAX_MERCATOR_LATITUDE, EarthGenConfig.MAX_MERCATOR_LATITUDE))
                 .then(Commands.argument("longitude", DoubleArgumentType.doubleArg(EarthGenConfig.MIN_LONGITUDE, EarthGenConfig.MAX_LONGITUDE))
                     .executes(context -> teleportToLatLong(
@@ -93,7 +94,7 @@ public final class EarthCommands {
 
         int teleportedCount = targets.size();
         for (ServerPlayer player : targets) {
-            ServerLevel level = player.serverLevel();
+            ServerLevel level = player.level();
             double targetX = target.x() + 0.5;
             double targetZ = target.z() + 0.5;
             double targetY = resolveTargetY(level, target.x(), target.z(), yOverride);
@@ -119,8 +120,8 @@ public final class EarthCommands {
     }
 
     private static double resolveTargetY(ServerLevel level, int blockX, int blockZ, Double yOverride) throws CommandSyntaxException {
-        int minY = level.getMinBuildHeight() + 1;
-        int maxY = level.getMaxBuildHeight() - 1;
+        int minY = level.getMinY() + 1;
+        int maxY = level.getMaxY() - 1;
         if (yOverride != null) {
             if (yOverride < minY || yOverride > maxY) {
                 throw Y_OUT_OF_BOUNDS.create();
@@ -128,8 +129,8 @@ public final class EarthCommands {
             return yOverride;
         }
 
+        int seaY = level.getChunkSource().getGenerator().getSeaLevel();
         if (isEarthOverworld(level)) {
-            int seaY = level.getSeaLevel();
             int estimatedSolidTopY = TerrainService.effectiveSolidTopYAtXZ(blockX, blockZ);
             int waterSurfaceY = TerrainService.inlandWaterSurfaceYAtXZ(blockX, blockZ);
             WaterBodyKind waterKind = TerrainService.inlandWaterKindAtXZ(blockX, blockZ);
@@ -140,7 +141,6 @@ public final class EarthCommands {
         }
 
         int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, blockX, blockZ);
-        int seaY = level.getSeaLevel();
         return clamp(Math.max(surfaceY + 1, seaY + 1), minY, maxY);
     }
 

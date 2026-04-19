@@ -7,7 +7,7 @@ import net.minecraft.core.HolderOwner;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,10 +51,10 @@ class EcoregionBiomeMappingsTest {
         Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> mappings = EcoregionBiomeMappings.parseMappingsCsv(new StringReader(csv));
 
         assertEquals(2, mappings.size());
-        assertEquals(ResourceLocation.parse("minecraft:plains"), mappings.get(0x112233).preferredBiomeId());
-        assertEquals(ResourceLocation.parse("minecraft:plains"), mappings.get(0x112233).fallbackBiomeId());
-        assertEquals(ResourceLocation.parse("biomesoplenty:maple_woods"), mappings.get(0xAABBCC).preferredBiomeId());
-        assertEquals(ResourceLocation.parse("minecraft:forest"), mappings.get(0xAABBCC).fallbackBiomeId());
+        assertEquals(Identifier.parse("minecraft:plains"), mappings.get(0x112233).preferredBiomeId());
+        assertEquals(Identifier.parse("minecraft:plains"), mappings.get(0x112233).fallbackBiomeId());
+        assertEquals(Identifier.parse("biomesoplenty:maple_woods"), mappings.get(0xAABBCC).preferredBiomeId());
+        assertEquals(Identifier.parse("minecraft:forest"), mappings.get(0xAABBCC).fallbackBiomeId());
     }
 
     @Test
@@ -98,8 +98,8 @@ class EcoregionBiomeMappingsTest {
 
         Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> mappings =
             EcoregionBiomeMappings.parseMappingsCsv(new StringReader(csv));
-        assertEquals(ResourceLocation.parse("minecraft:plains"), mappings.get(0x112233).preferredBiomeId());
-        assertEquals(ResourceLocation.parse("minecraft:plains"), mappings.get(0x112233).fallbackBiomeId());
+        assertEquals(Identifier.parse("minecraft:plains"), mappings.get(0x112233).preferredBiomeId());
+        assertEquals(Identifier.parse("minecraft:plains"), mappings.get(0x112233).fallbackBiomeId());
     }
 
     @Test
@@ -111,8 +111,8 @@ class EcoregionBiomeMappingsTest {
 
         Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> mappings =
             EcoregionBiomeMappings.parseMappingsCsv(new StringReader(csv));
-        assertEquals(ResourceLocation.parse("biomesoplenty:maple_woods"), mappings.get(0x112233).preferredBiomeId());
-        assertEquals(ResourceLocation.parse("minecraft:forest"), mappings.get(0x112233).fallbackBiomeId());
+        assertEquals(Identifier.parse("biomesoplenty:maple_woods"), mappings.get(0x112233).preferredBiomeId());
+        assertEquals(Identifier.parse("minecraft:forest"), mappings.get(0x112233).fallbackBiomeId());
     }
 
     @Test
@@ -164,8 +164,8 @@ class EcoregionBiomeMappingsTest {
         Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> byColor = Map.of(
             0x010203,
             new EcoregionBiomeMappings.BiomeSelectionIds(
-                ResourceLocation.parse("biomesoplenty:maple_woods"),
-                ResourceLocation.parse("minecraft:plains")
+                Identifier.parse("biomesoplenty:maple_woods"),
+                Identifier.parse("minecraft:plains")
             )
         );
 
@@ -193,13 +193,13 @@ class EcoregionBiomeMappingsTest {
         Holder<Biome> fallbackHolder = dummyBiomeHolder();
         Holder<Biome> unboundPreferredHolder = Holder.Reference.createStandAlone(
             new HolderOwner<>() {},
-            ResourceKey.create(Registries.BIOME, ResourceLocation.parse("biomesoplenty:maple_woods"))
+            ResourceKey.create(Registries.BIOME, Identifier.parse("biomesoplenty:maple_woods"))
         );
         Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> byColor = Map.of(
             0x010203,
             new EcoregionBiomeMappings.BiomeSelectionIds(
-                ResourceLocation.parse("biomesoplenty:maple_woods"),
-                ResourceLocation.parse("minecraft:plains")
+                Identifier.parse("biomesoplenty:maple_woods"),
+                Identifier.parse("minecraft:plains")
             )
         );
 
@@ -230,8 +230,8 @@ class EcoregionBiomeMappingsTest {
         Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> byColor = Map.of(
             0x010203,
             new EcoregionBiomeMappings.BiomeSelectionIds(
-                ResourceLocation.parse("biomesoplenty:maple_woods"),
-                ResourceLocation.parse("minecraft:plains")
+                Identifier.parse("biomesoplenty:maple_woods"),
+                Identifier.parse("minecraft:plains")
             )
         );
 
@@ -257,8 +257,8 @@ class EcoregionBiomeMappingsTest {
         Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> byColor = Map.of(
             0x010203,
             new EcoregionBiomeMappings.BiomeSelectionIds(
-                ResourceLocation.parse("biomesoplenty:maple_woods"),
-                ResourceLocation.parse("minecraft:not_a_real_biome")
+                Identifier.parse("biomesoplenty:maple_woods"),
+                Identifier.parse("minecraft:not_a_real_biome")
             )
         );
 
@@ -290,13 +290,13 @@ class EcoregionBiomeMappingsTest {
 
     @Test
     void resolvedPossibleBiomesIncludeRiverAndFrozenRiver() {
-        Map<ResourceLocation, Holder<Biome>> holdersById = new java.util.HashMap<>();
+        Map<Identifier, Holder<Biome>> holdersById = new java.util.HashMap<>();
         EcoregionBiomeMappings.ResolvedBiomeMapping resolved = EcoregionBiomeMappings.resolveMappings(
             Map.of(
                 0x123456,
                 new EcoregionBiomeMappings.BiomeSelectionIds(
-                    ResourceLocation.parse("minecraft:plains"),
-                    ResourceLocation.parse("minecraft:plains")
+                    Identifier.parse("minecraft:plains"),
+                    Identifier.parse("minecraft:plains")
                 )
             ),
             BiomeIntegrationMode.AUTO,
