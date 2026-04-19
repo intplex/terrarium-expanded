@@ -1,12 +1,12 @@
 UNIQUE_ECOREGION_COLOR,ECO_NAME,BIOME_NAME,REALM,BIOMES_O_PLENTY_BIOME,MINECRAFT_BIOME
 #004928,Changjiang Plain evergreen forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:orchard,minecraft:forest
-#004B34,Rodope montane mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:dark_forest
-#004E33,Central Korean deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:aspen_glade,minecraft:forest
+#004B34,Rodope montane mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:ominous_woods,minecraft:dark_forest
+#004E33,Central Korean deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:maple_woods,minecraft:forest
 #005040,Pyrenees conifer and mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
 #005340,Central China Loess Plateau mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:aspen_glade,minecraft:forest
 #005542,Eastern Canadian Forest-Boreal transition,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:maple_woods,minecraft:forest
-#00554D,Pannonian mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:forest
-#00584D,Celtic broadleaf forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:old_growth_birch_forest
+#00554D,Pannonian mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:maple_woods,minecraft:forest
+#00584D,Celtic broadleaf forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:old_growth_woodland,minecraft:old_growth_birch_forest
 #00585A,North Atlantic moist mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
 #005A4F,Appalachian-Blue Ridge forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:maple_woods,minecraft:forest
 #005C28,Western Siberian hemiboreal forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
@@ -34,13 +34,13 @@ UNIQUE_ECOREGION_COLOR,ECO_NAME,BIOME_NAME,REALM,BIOMES_O_PLENTY_BIOME,MINECRAFT
 #008D59,Chatham Island temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
 #008E75,Huang He Plain mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
 #008E76,Manchurian mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:maple_woods,minecraft:forest
-#009174,Caucasus mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:old_growth_woodland,minecraft:forest
-#00938A,Euxine-Colchic broadleaf forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#009174,Caucasus mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:ominous_woods,minecraft:dark_forest
+#00938A,Euxine-Colchic broadleaf forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:ominous_woods,minecraft:dark_forest
 #009535,Tarim Basin deciduous forests and steppe,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
-#009689,Cantabrian mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#009689,Cantabrian mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:birch_forest
 #009832,English Lowlands beech forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:birch_forest
 #009A48,Taiheiyo evergreen forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:orchard,minecraft:forest
-#009B2F,Balkan mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:dark_forest
+#009B2F,Balkan mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:ominous_woods,minecraft:dark_forest
 #009D44,Daba Mountains evergreen forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
 #009D45,East European forest steppe,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:forested_field,minecraft:forest
 #009F5C,Sichuan Basin evergreen broadleaf forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
@@ -54,12 +54,12 @@ UNIQUE_ECOREGION_COLOR,ECO_NAME,BIOME_NAME,REALM,BIOMES_O_PLENTY_BIOME,MINECRAFT
 #037D00,Tenasserim-South Thailand semi-evergreen rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
 #03823F,Changbai Mountains mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
 #038963,Nihonkai montane deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:cherry_grove
-#03908B,Western European broadleaf forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:birch_forest
+#03908B,Western European broadleaf forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:aspen_glade,minecraft:birch_forest
 #04594A,Nelson Coast temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
 #058D00,Uatumã-Trombetas moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
 #05BE02,Northern Thailand-Laos moist deciduous forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
 #06543E,New Zealand South Island temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
-#067D31,Crimean Submediterranean forest complex,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:dark_forest
+#067D31,Crimean Submediterranean forest complex,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:ominous_woods,minecraft:dark_forest
 #068000,Peninsular Malaysian rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
 #068452,Northeast China Plain deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
 #068B78,Zagros Mountains forest steppe,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
@@ -71,21 +71,21 @@ UNIQUE_ECOREGION_COLOR,ECO_NAME,BIOME_NAME,REALM,BIOMES_O_PLENTY_BIOME,MINECRAFT
 #088F00,Pernambuco interior forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
 #08C000,Luang Prabang montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
 #094A29,Southeast Australia temperate forests,Temperate Broadleaf & Mixed Forests,Australasia,biomesoplenty:woodland,minecraft:forest
-#097874,Dinaric Mountains mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:dark_forest
+#097874,Dinaric Mountains mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:ominous_woods,minecraft:dark_forest
 #097F43,Po Basin mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
 #098200,Mindanao montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
 #09B700,Araucaria moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
 #0AA04B,Northeast US Coastal forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:woodland,minecraft:forest
 #0AA800,Xingu-Tocantins-Araguaia moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
 #0ABB0B,Sumatran freshwater swamp forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:floodplain,minecraft:swamp
-#0B7364,Eastern Anatolian deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#0B7364,Eastern Anatolian deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:aspen_glade,minecraft:birch_forest
 #0B7A36,Qin Ling Mountains deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
 #0BD000,Guianan piedmont moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
 #0C6739,Azores temperate mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
 #0C9200,Japurá-Solimões-Negro moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
 #0CA50A,Hainan Island monsoon rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:tropics,minecraft:jungle
 #0CB507,Cuban moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
-#0D6E55,European Atlantic mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:old_growth_woodland,minecraft:forest
+#0D6E55,European Atlantic mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:old_growth_woodland,minecraft:old_growth_birch_forest
 #0D8500,Christmas and Cocos Islands tropical forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,,minecraft:jungle
 #0D9400,Northern New Guinea montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Australasia,,minecraft:jungle
 #0D960C,Congolian coastal forests,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:tropics,minecraft:jungle
@@ -93,11 +93,11 @@ UNIQUE_ECOREGION_COLOR,ECO_NAME,BIOME_NAME,REALM,BIOMES_O_PLENTY_BIOME,MINECRAFT
 #0DC300,Borneo montane rain forests,Tropical & Subtropical Moist Broadleaf Forests,Indomalayan,biomesoplenty:jade_cliffs,minecraft:jungle
 #0DCC00,Maputaland coastal forests and woodlands,Tropical & Subtropical Moist Broadleaf Forests,Afrotropic,biomesoplenty:tropics,minecraft:jungle
 #0E622E,Baltic mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:old_growth_birch_forest
-#0E7574,Sarmatic mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,,minecraft:dark_forest
+#0E7574,Sarmatic mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:ominous_woods,minecraft:dark_forest
 #0EB100,Fiji tropical moist forests,Tropical & Subtropical Moist Broadleaf Forests,Oceania,,minecraft:jungle
 #0F6948,Hokkaido deciduous forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:snowblossom_grove,minecraft:forest
 #0FB20F,Magdalena-Urabá moist forests,Tropical & Subtropical Moist Broadleaf Forests,Neotropic,,minecraft:jungle
-#105D5C,Caspian Hyrcanian mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
+#105D5C,Caspian Hyrcanian mixed forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:ominous_woods,minecraft:dark_forest
 #10643C,Madeira evergreen forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:woodland,minecraft:forest
 #107065,Southern Korea evergreen forests,Temperate Broadleaf & Mixed Forests,Palearctic,biomesoplenty:orchard,minecraft:forest
 #108E67,Allegheny Highlands forests,Temperate Broadleaf & Mixed Forests,Nearctic,biomesoplenty:woodland,minecraft:forest
@@ -789,7 +789,7 @@ UNIQUE_ECOREGION_COLOR,ECO_NAME,BIOME_NAME,REALM,BIOMES_O_PLENTY_BIOME,MINECRAFT
 #FF00E6,Northern Mesoamerican Pacific mangroves,Mangroves,Neotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
 #FF0425,Fynbos shrubland,"Mediterranean Forests, Woodlands & Scrub",Afrotropic,biomesoplenty:shrubland,minecraft:savanna
 #FF0618,Santa Lucia Montane Chaparral & Woodlands,"Mediterranean Forests, Woodlands & Scrub",Nearctic,biomesoplenty:highland,minecraft:savanna
-#FF1000,Illyrian deciduous forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:mediterranean_forest,minecraft:forest
+#FF1000,Illyrian deciduous forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:ominous_woods,minecraft:dark_forest
 #FF16FC,East African mangroves,Mangroves,Afrotropic,biomesoplenty:wetland,minecraft:mangrove_swamp
 #FF1700,Canary Islands dry woodlands and forests,"Mediterranean Forests, Woodlands & Scrub",Palearctic,biomesoplenty:shrubland,minecraft:forest
 #FF2100,Murray-Darling woodlands and mallee,"Mediterranean Forests, Woodlands & Scrub",Australasia,biomesoplenty:shrubland,minecraft:savanna
