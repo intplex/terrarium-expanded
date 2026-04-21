@@ -48,6 +48,7 @@ The Earth preset (`data/terrarium_expanded/worldgen/world_preset/earth.json`) us
 - active tile services (`terrain`, `recovery`, `ecoregion`, `surface-water`)
 - `TerrainService.RuntimeState` caches and dedupe sets
 - startup-loaded runtime performance config from `<gameDir>/config/terrarium-expanded.properties`
+- startup-loaded bathymetry source-zoom override rules from bundled `bad_tile_recovery.geojson`, optionally merged with `<gameDir>/config/bad_tile_recovery.geojson`
 
 `TerrainServices.runtimeGeneration()` increments whenever the context is replaced; thread-local hot-path caches (`EarthSamplingFacade` / `EcoregionBiomeSource`) invalidate against this generation counter.
 Thread-local sampling caches are also idle-cleared using `memory.local_idle_seconds`.
@@ -56,7 +57,9 @@ Thread-local sampling caches are also idle-cleared using `memory.local_idle_seco
 
 - terrain URL, ecoregion URL, zoom, or surface-water URL change: rebuild tile services under a shared tile-IO executor
 - shape-only changes (`max_mountain_y`, `ocean_floor_y`) still replace runtime context but reuse service instances
-- recovery Terrarium service is lazily instantiated only when world zoom is `>= 11`
+- supplemental terrain source services are instantiated only when required by:
+  - GeoJSON bathymetry source-zoom overrides for the active world zoom
+  - zoom-10 ocean recovery (world zoom `>= 11`)
 
 ### Cache lifecycle
 
@@ -72,18 +75,19 @@ Terrain/runtime caches are cleared on:
 1. Project `(blockX, blockZ)` to tile/pixel coordinates via `TileProjection` / `EarthGenConfig`.
 2. Sample Terrarium meters in `EarthSamplingFacade`.
 3. Apply seam correction (`TerrariumSeamPatch.patchedPixelX`) for zoom 11+ around the dateline seam.
-4. Optionally sample surface-water data (needed for inland-water analysis and/or bathymetry recovery).
-5. At zoom 11+, optionally recover ocean bathymetry from zoom-10 Terrarium tiles when gates pass:
+4. If the current target tile matches a GeoJSON bathymetry override, resample from a lower source zoom using Mercator-aware region rasterization (bathymetry-only: applies only when sampled meters are `<= 0.0`).
+5. Optionally sample surface-water data (needed for inland-water analysis and/or bathymetry recovery).
+6. At zoom 11+, optionally recover ocean bathymetry from zoom-10 Terrarium tiles when gates pass:
    - sampled meters are exactly `0.0`
    - ecoregion pixel is no-data (`#000000`)
    - sampled surface-water pixel is water
-6. Convert meters to terrain Y with `EarthGenConfig.mapMetersToTerrainY` (uses active `max_mountain_y` / `ocean_floor_y`).
-7. Build per-chunk snapshots in `TerrainChunkSnapshotBuilder`:
+7. Convert meters to terrain Y with `EarthGenConfig.mapMetersToTerrainY` (uses active `max_mountain_y` / `ocean_floor_y`).
+8. Build per-chunk snapshots in `TerrainChunkSnapshotBuilder`:
    - sample grid: `40 x 40` (16x16 chunk plus relief margin)
    - spike suppression via `TerrainMetricsKernel.suppressIsolatedSpikes`
    - channel metrics via `TerrainMetricsKernel.computeMetricsAt`
-8. Inland-water analysis (`InlandWaterAnalysis`) computes water mask/kind/surface Y/effective solid top.
-9. Post-noise fill (`InlandWaterChunkPostProcessor`) writes water blocks for inland columns.
+9. Inland-water analysis (`InlandWaterAnalysis`) computes water mask/kind/surface Y/effective solid top.
+10. Post-noise fill (`InlandWaterChunkPostProcessor`) writes water blocks for inland columns.
 
 Note: if any in-bounds sample in a snapshot lacks usable surface-water data, inland-water fill is disabled for that snapshot.
 

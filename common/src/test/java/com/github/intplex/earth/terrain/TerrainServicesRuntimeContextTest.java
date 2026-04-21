@@ -50,6 +50,28 @@ class TerrainServicesRuntimeContextTest {
     }
 
     @Test
+    void badTileSupplementalSourceServiceIsProvisionedWhenNeeded() {
+        TerrainServices.bootstrap(tempDir);
+        TerrainServices.syncEarthSettings(9, EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y, EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y);
+
+        EarthRuntimeContext context = TerrainServices.requireContext();
+        TerrariumTileService sourceZoomEight = context.services().terrainSourceTileService(8);
+
+        assertNotNull(sourceZoomEight);
+        assertEquals(8, sourceZoomEight.zoom());
+        assertNull(context.services().recoveryTileService());
+    }
+
+    @Test
+    void noUnneededSupplementalSourceServiceAtDefaultZoomEight() {
+        TerrainServices.bootstrap(tempDir);
+
+        EarthRuntimeContext context = TerrainServices.requireContext();
+
+        assertNull(context.services().terrainSourceTileService(10));
+    }
+
+    @Test
     void zoomSwitchRebuildsRuntimeServices() {
         TerrainServices.bootstrap(tempDir);
         EarthRuntimeContext initial = TerrainServices.requireContext();

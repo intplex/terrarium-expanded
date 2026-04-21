@@ -118,6 +118,17 @@ Supported keys:
 
 Legacy cache-entry keys from older versions are no longer supported and are ignored.
 
+## Bathymetry Override Rules (GeoJSON)
+
+Bathymetry source-zoom overrides are loaded from:
+
+- bundled data: `data/terrarium_expanded/terrain/bad_tile_recovery.geojson`
+- optional external override: `<gameDir>/config/bad_tile_recovery.geojson`
+
+Rules use GeoJSON `FeatureCollection` entries with `Polygon` or `MultiPolygon` geometries in WGS84 lon/lat.
+Each feature requires `source_zoom` and may set `min_target_zoom` / `max_target_zoom` (defaults to `9..12`).
+Overlaps resolve with the lower `source_zoom` winning.
+
 Memory-oriented baseline profile (good starting point for modpacks):
 
 ```properties
