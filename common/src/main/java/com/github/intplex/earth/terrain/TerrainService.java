@@ -86,6 +86,7 @@ public final class TerrainService {
             new BoundedDedupeSet<>(8192),
             new BoundedDedupeSet<>(8192),
             new BoundedDedupeSet<>(8192),
+            new BoundedDedupeSet<>(8192),
             ThreadLocal.withInitial(HotSnapshotCache::new),
             new ChunkSnapshotCache(
                 runtimeConfig.snapshotBudgetBytes(),
@@ -156,6 +157,7 @@ public final class TerrainService {
         private final BoundedDedupeSet<TileKey> loggedFailedSurfaceWaterTiles;
         private final BoundedDedupeSet<TileKey> loggedTerrainTileFailures;
         private final BoundedDedupeSet<TileKey> loggedEcoregionTileFailures;
+        private final BoundedDedupeSet<BadTerrainTileRegistry.TargetTile> loggedBadTerrainReplacementFailures;
         private final ThreadLocal<HotSnapshotCache> hotSnapshots;
         private final ChunkSnapshotCache snapshotCache;
         private final int chunkLocalCacheEntries;
@@ -169,6 +171,7 @@ public final class TerrainService {
             BoundedDedupeSet<TileKey> loggedFailedSurfaceWaterTiles,
             BoundedDedupeSet<TileKey> loggedTerrainTileFailures,
             BoundedDedupeSet<TileKey> loggedEcoregionTileFailures,
+            BoundedDedupeSet<BadTerrainTileRegistry.TargetTile> loggedBadTerrainReplacementFailures,
             ThreadLocal<HotSnapshotCache> hotSnapshots,
             ChunkSnapshotCache snapshotCache,
             int chunkLocalCacheEntries,
@@ -181,6 +184,7 @@ public final class TerrainService {
             this.loggedFailedSurfaceWaterTiles = loggedFailedSurfaceWaterTiles;
             this.loggedTerrainTileFailures = loggedTerrainTileFailures;
             this.loggedEcoregionTileFailures = loggedEcoregionTileFailures;
+            this.loggedBadTerrainReplacementFailures = loggedBadTerrainReplacementFailures;
             this.hotSnapshots = hotSnapshots;
             this.snapshotCache = snapshotCache;
             this.chunkLocalCacheEntries = Math.max(1, chunkLocalCacheEntries);
@@ -210,6 +214,10 @@ public final class TerrainService {
 
         BoundedDedupeSet<TileKey> loggedEcoregionTileFailures() {
             return loggedEcoregionTileFailures;
+        }
+
+        BoundedDedupeSet<BadTerrainTileRegistry.TargetTile> loggedBadTerrainReplacementFailures() {
+            return loggedBadTerrainReplacementFailures;
         }
 
         ThreadLocal<HotSnapshotCache> hotSnapshots() {
@@ -251,6 +259,7 @@ public final class TerrainService {
             loggedFailedSurfaceWaterTiles.clear();
             loggedTerrainTileFailures.clear();
             loggedEcoregionTileFailures.clear();
+            loggedBadTerrainReplacementFailures.clear();
         }
     }
 

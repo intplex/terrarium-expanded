@@ -116,10 +116,18 @@ public final class OceanBathymetryRecovery {
         }
     }
 
-    public static OptionalDouble sampleZoom10BilinearMeters(int blockX, int blockZ, int worldZoom, Zoom10MetersSampler sampler) {
-        if (worldZoom < SOURCE_ZOOM) {
+    public static OptionalDouble sampleBilinearMeters(
+        int blockX,
+        int blockZ,
+        int worldZoom,
+        int sourceZoom,
+        ZoomMetersSampler sampler,
+        InterpolationClamp clamp
+    ) {
+        if (sourceZoom > worldZoom) {
             return OptionalDouble.empty();
         }
+        int validatedSourceZoom = EarthGenConfig.validateZoom(sourceZoom);
 
         Optional<EarthGenConfig.TileSamplePoint> highZoomSample = EarthGenConfig.projectBlockToTerrainTile(blockX, blockZ, worldZoom);
         if (highZoomSample.isEmpty()) {
@@ -129,12 +137,12 @@ public final class OceanBathymetryRecovery {
         EarthGenConfig.TileSamplePoint samplePoint = highZoomSample.get();
         long highZoomGlobalX = (long) samplePoint.tileKey().x() * EarthGenConfig.TILE_SIZE + samplePoint.pixelX();
         long highZoomGlobalY = (long) samplePoint.tileKey().y() * EarthGenConfig.TILE_SIZE + samplePoint.pixelY();
-        int scaleShift = worldZoom - SOURCE_ZOOM;
+        int scaleShift = worldZoom - validatedSourceZoom;
         double scale = Math.scalb(1.0, scaleShift);
         double sourceX = highZoomGlobalX / scale;
         double sourceY = highZoomGlobalY / scale;
 
-        int maxSourceGlobal = EarthGenConfig.blockSpanForZoom(SOURCE_ZOOM) - 1;
+        int maxSourceGlobal = EarthGenConfig.blockSpanForZoom(validatedSourceZoom) - 1;
         int x0 = clampToSourceGlobal((int) Math.floor(sourceX), maxSourceGlobal);
         int y0 = clampToSourceGlobal((int) Math.floor(sourceY), maxSourceGlobal);
         int x1 = Math.min(maxSourceGlobal, x0 + 1);
@@ -162,10 +170,24 @@ public final class OceanBathymetryRecovery {
         double top = lerp(topLeft.getAsDouble(), topRight.getAsDouble(), fracX);
         double bottom = lerp(bottomLeft.getAsDouble(), bottomRight.getAsDouble(), fracX);
         double interpolated = lerp(top, bottom, fracY);
-        return OptionalDouble.of(Math.min(0.0, interpolated));
+        if (clamp == InterpolationClamp.OCEAN_ONLY) {
+            return OptionalDouble.of(Math.min(0.0, interpolated));
+        }
+        return OptionalDouble.of(interpolated);
     }
 
-    private static OptionalDouble sampleSourceGlobalPixelMeters(int sourceGlobalX, int sourceGlobalY, Zoom10MetersSampler sampler) {
+    public static OptionalDouble sampleZoom10BilinearMeters(int blockX, int blockZ, int worldZoom, Zoom10MetersSampler sampler) {
+        return sampleBilinearMeters(
+            blockX,
+            blockZ,
+            worldZoom,
+            SOURCE_ZOOM,
+            sampler,
+            InterpolationClamp.OCEAN_ONLY
+        );
+    }
+
+    private static OptionalDouble sampleSourceGlobalPixelMeters(int sourceGlobalX, int sourceGlobalY, ZoomMetersSampler sampler) {
         int tileX = Math.floorDiv(sourceGlobalX, EarthGenConfig.TILE_SIZE);
         int tileY = Math.floorDiv(sourceGlobalY, EarthGenConfig.TILE_SIZE);
         int localX = Math.floorMod(sourceGlobalX, EarthGenConfig.TILE_SIZE);
@@ -220,7 +242,18 @@ public final class OceanBathymetryRecovery {
     }
 
     @FunctionalInterface
-    public interface Zoom10MetersSampler {
+    public interface ZoomMetersSampler {
+        Double sampleMeters(TileKey key, int localX, int localY);
+    }
+
+    public enum InterpolationClamp {
+        OCEAN_ONLY,
+        UNCLAMPED
+    }
+
+    @FunctionalInterface
+    public interface Zoom10MetersSampler extends ZoomMetersSampler {
+        @Override
         Double sampleMeters(TileKey key, int localX, int localY);
     }
 

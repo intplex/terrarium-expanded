@@ -3,6 +3,8 @@ package com.github.intplex.earth.terrain;
 import com.github.intplex.earth.EarthGenConfig;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
 
 public final class EarthSamplingFacade {
     private static final String ERROR_ECOREGION_TILE_LOAD_FAILURE = errorLabel("ecoregion_tile", "load_failure");
@@ -197,6 +199,46 @@ public final class EarthSamplingFacade {
         TerrariumTile terrainTile = terrainTileFromCacheOrLoad(localCaches, context, runtimeState, terrainTileKey, blockX, blockZ);
         boolean terrainSampleAvailable = terrainTile != null;
         double meters = terrainSampleAvailable ? terrainTile.sampleMeters(terrainPixelX, terrainPixelY) : 0.0;
+        OptionalInt sourceZoomOverride = BadTerrainTileRegistry.sourceZoomFor(zoom, terrainTileKey);
+        if (sourceZoomOverride.isPresent() && terrainSampleAvailable && meters <= 0.0) {
+            int sourceZoom = sourceZoomOverride.getAsInt();
+            OptionalDouble replacementMeters = OceanBathymetryRecovery.sampleBilinearMeters(
+                blockX,
+                blockZ,
+                zoom,
+                sourceZoom,
+                (sourceTileKey, localX, localY) -> {
+                    TerrariumTile sourceTile = sourceTerrainTileFromCacheOrLoad(
+                        localCaches,
+                        context,
+                        runtimeState,
+                        sourceZoom,
+                        sourceTileKey,
+                        blockX,
+                        blockZ
+                    );
+                    if (sourceTile == null) {
+                        return null;
+                    }
+                    return sourceTile.sampleMeters(localX, localY);
+                },
+                OceanBathymetryRecovery.InterpolationClamp.OCEAN_ONLY
+            );
+            if (replacementMeters.isPresent()) {
+                meters = replacementMeters.getAsDouble();
+                terrainSampleAvailable = true;
+            } else {
+                BadTerrainTileRegistry.TargetTile targetTile = new BadTerrainTileRegistry.TargetTile(zoom, terrainTileKey);
+                if (runtimeState.loggedBadTerrainReplacementFailures().markIfNew(targetTile)) {
+                    TerrainService.logWarn(
+                        "Bad terrain tile replacement failed target={} source_zoom={} context={}",
+                        targetTile,
+                        sourceZoom,
+                        TerrainService.sampleContextLabel(terrainTileKey, blockX, blockZ)
+                    );
+                }
+            }
+        }
 
         boolean needsSurfaceWaterForRecovery = OceanBathymetryRecovery.shouldAttemptRecovery(zoom, terrainSampleAvailable, meters);
         boolean needsSurfaceWaterForInlandAnalysis = runtimeState.inlandWaterSettings().enabled();
@@ -220,10 +262,11 @@ public final class EarthSamplingFacade {
                 () -> resolveEcoregionGate(context, runtimeState, blockX, blockZ, hasEcoregionColorHint, ecoregionColorHint, localCaches),
                 () -> finalSurfaceWaterIsWater,
                 (recoveryTileKey, localX, localY) -> {
-                    TerrariumTile recoveryTile = recoveryTerrainTileFromCacheOrLoad(
+                    TerrariumTile recoveryTile = sourceTerrainTileFromCacheOrLoad(
                         localCaches,
                         context,
                         runtimeState,
+                        OceanBathymetryRecovery.SOURCE_ZOOM,
                         recoveryTileKey,
                         blockX,
                         blockZ
@@ -326,18 +369,19 @@ public final class EarthSamplingFacade {
         );
     }
 
-    private static TerrariumTile recoveryTerrainTileFromCacheOrLoad(
+    private static TerrariumTile sourceTerrainTileFromCacheOrLoad(
         LocalTileCaches localCaches,
         EarthRuntimeContext context,
         TerrainService.RuntimeState runtimeState,
+        int sourceZoom,
         TileKey tileKey,
         int blockX,
         int blockZ
     ) {
         return getCachedTile(
-            localCaches.recoveryTerrainTiles,
-            tileKey,
-            () -> loadRecoveryTerrainTile(context, runtimeState, tileKey, blockX, blockZ)
+            localCaches.sourceTerrainTiles,
+            new SourceTileKey(sourceZoom, tileKey),
+            () -> loadSourceTerrainTile(context, runtimeState, sourceZoom, tileKey, blockX, blockZ)
         );
     }
 
@@ -374,19 +418,19 @@ public final class EarthSamplingFacade {
         return loaded;
     }
 
-    private static <T> T getCachedTile(
-        Map<TileKey, T> cache,
-        TileKey tileKey,
+    private static <K, T> T getCachedTile(
+        Map<K, T> cache,
+        K key,
         Loader<T> loader
     ) {
-        T cached = cache.get(tileKey);
+        T cached = cache.get(key);
         if (cached != null) {
             return cached;
         }
 
         T loaded = loader.load();
         if (loaded != null) {
-            cache.put(tileKey, loaded);
+            cache.put(key, loaded);
         }
         return loaded;
     }
@@ -412,19 +456,32 @@ public final class EarthSamplingFacade {
         }
     }
 
-    private static TerrariumTile loadRecoveryTerrainTile(
+    private static TerrariumTile loadSourceTerrainTile(
         EarthRuntimeContext context,
         TerrainService.RuntimeState runtimeState,
+        int sourceZoom,
         TileKey tileKey,
         int blockX,
         int blockZ
     ) {
+        TerrariumTileService sourceService = context.services().terrainSourceTileService(sourceZoom);
+        if (sourceService == null) {
+            if (runtimeState.loggedTerrainTileFailures().markIfNew(tileKey)) {
+                TerrainService.logWarn(
+                    "Terrain source tile service unavailable source_zoom={} context={}",
+                    sourceZoom,
+                    TerrainService.sampleContextLabel(tileKey, blockX, blockZ)
+                );
+            }
+            return null;
+        }
         try {
-            return context.services().recoveryTileService().requireTile(tileKey);
+            return sourceService.requireTile(tileKey);
         } catch (RuntimeException exception) {
             if (runtimeState.loggedTerrainTileFailures().markIfNew(tileKey)) {
                 TerrainService.logWarn(
-                    "Recovery terrain tile fetch/decode failure: {} context={}",
+                    "Terrain source tile fetch/decode failure source_zoom={} error={} context={}",
+                    sourceZoom,
                     exception.toString(),
                     TerrainService.sampleContextLabel(tileKey, blockX, blockZ)
                 );
@@ -566,7 +623,7 @@ public final class EarthSamplingFacade {
 
     public static final class LocalTileCaches {
         private final Map<TileKey, TerrariumTile> primaryTerrainTiles;
-        private final Map<TileKey, TerrariumTile> recoveryTerrainTiles;
+        private final Map<SourceTileKey, TerrariumTile> sourceTerrainTiles;
         private final Map<TileKey, EcoregionTile> ecoregionTiles;
         private final Map<TileKey, SurfaceWaterTileLookup> surfaceWaterTiles;
 
@@ -576,7 +633,7 @@ public final class EarthSamplingFacade {
 
         private LocalTileCaches(int maxEntriesPerLayer) {
             this.primaryTerrainTiles = newLruTileMap(maxEntriesPerLayer);
-            this.recoveryTerrainTiles = newLruTileMap(maxEntriesPerLayer);
+            this.sourceTerrainTiles = newLruTileMap(maxEntriesPerLayer);
             this.ecoregionTiles = newLruTileMap(maxEntriesPerLayer);
             this.surfaceWaterTiles = newLruTileMap(maxEntriesPerLayer);
         }
@@ -591,7 +648,7 @@ public final class EarthSamplingFacade {
 
         public void clear() {
             primaryTerrainTiles.clear();
-            recoveryTerrainTiles.clear();
+            sourceTerrainTiles.clear();
             ecoregionTiles.clear();
             surfaceWaterTiles.clear();
         }
@@ -609,18 +666,21 @@ public final class EarthSamplingFacade {
         }
 
         int totalEntries() {
-            return primaryTerrainTiles.size() + recoveryTerrainTiles.size() + ecoregionTiles.size() + surfaceWaterTiles.size();
+            return primaryTerrainTiles.size() + sourceTerrainTiles.size() + ecoregionTiles.size() + surfaceWaterTiles.size();
         }
 
-        private static <T> Map<TileKey, T> newLruTileMap(int maxEntries) {
+        private static <K, V> Map<K, V> newLruTileMap(int maxEntries) {
             int boundedMaxEntries = Math.max(1, maxEntries);
             return new LinkedHashMap<>(16, 0.75f, true) {
                 @Override
-                protected boolean removeEldestEntry(Map.Entry<TileKey, T> eldest) {
+                protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
                     return size() > boundedMaxEntries;
                 }
             };
         }
+    }
+
+    private record SourceTileKey(int sourceZoom, TileKey tileKey) {
     }
 
     private static final class ChunkCacheState {

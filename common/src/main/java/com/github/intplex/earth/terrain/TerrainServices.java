@@ -16,8 +16,10 @@ public final class TerrainServices {
     public static synchronized void bootstrap(Path gameDir) {
         TerrainServices.gameDir = gameDir;
         TerrainServices.runtimeConfig = TerrariumRuntimeConfig.load(gameDir);
+        BadTerrainTileRegistry.initialize(gameDir);
         syncEarthProfile(EarthGenerationProfile.defaults());
         EcoregionBiomeMappings.validateStartupBiomeMapping();
+        BadTerrainTileRegistry.validateStartupRegistry();
     }
 
     public static TerrariumTileService tileService() {
@@ -125,6 +127,7 @@ public final class TerrainServices {
         runtimeConfig = TerrariumRuntimeConfig.defaults();
         EarthGenConfig.setActiveZoom(EarthGenConfig.DEFAULT_ZOOM);
         EarthGenConfig.resetActiveTerrainProfile();
+        BadTerrainTileRegistry.resetForTesting();
     }
 
     public static synchronized void shutdown() {

@@ -87,6 +87,30 @@ class OceanBathymetryRecoveryTest {
     }
 
     @Test
+    void bilinearSupportsArbitrarySourceZoomWithoutClamp() {
+        int worldZoom = 9;
+        int sourceZoom = 8;
+        int blockX = blockFromGlobalPixel(200, worldZoom);
+        int blockZ = blockFromGlobalPixel(400, worldZoom);
+
+        OptionalDouble recovered = OceanBathymetryRecovery.sampleBilinearMeters(
+            blockX,
+            blockZ,
+            worldZoom,
+            sourceZoom,
+            (tileKey, localX, localY) -> {
+                int sourceGlobalX = tileKey.x() * EarthGenConfig.TILE_SIZE + localX;
+                int sourceGlobalY = tileKey.y() * EarthGenConfig.TILE_SIZE + localY;
+                return sourceGlobalX * 10.0 + sourceGlobalY;
+            },
+            OceanBathymetryRecovery.InterpolationClamp.UNCLAMPED
+        );
+
+        assertTrue(recovered.isPresent());
+        assertEquals(1200.0, recovered.getAsDouble(), 1e-9);
+    }
+
+    @Test
     void bilinearCrossesTileBoundaries() {
         int zoom = 12;
         int blockX = blockFromGlobalPixel(1022, zoom);
@@ -133,6 +157,25 @@ class OceanBathymetryRecoveryTest {
 
         assertTrue(recovered.isPresent());
         assertEquals(0.0, recovered.getAsDouble(), 1e-9);
+    }
+
+    @Test
+    void unclampedInterpolationRetainsPositiveMeters() {
+        int zoom = 11;
+        int blockX = blockFromGlobalPixel(21, zoom);
+        int blockZ = blockFromGlobalPixel(41, zoom);
+
+        OptionalDouble recovered = OceanBathymetryRecovery.sampleBilinearMeters(
+            blockX,
+            blockZ,
+            zoom,
+            10,
+            (tileKey, localX, localY) -> 120.0,
+            OceanBathymetryRecovery.InterpolationClamp.UNCLAMPED
+        );
+
+        assertTrue(recovered.isPresent());
+        assertEquals(120.0, recovered.getAsDouble(), 1e-9);
     }
 
     @Test

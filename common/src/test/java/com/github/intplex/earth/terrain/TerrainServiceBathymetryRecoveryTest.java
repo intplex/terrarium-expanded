@@ -86,8 +86,89 @@ class TerrainServiceBathymetryRecoveryTest {
         assertEquals(EarthGenConfig.mapMetersToTerrainY(0.0), terrainY);
     }
 
+    @Test
+    void badTileRecoveryAppliesAtZoomNineFromZoomEight() throws Exception {
+        installServices(
+            9,
+            key -> createTerrariumPngForMeters(0.0),
+            key -> createTerrariumPngForMeters(-200.0),
+            8,
+            0x112233,
+            key -> createSurfaceWaterPng(0xFFFFFFFF)
+        );
+
+        int blockX = blockFromTilePixel(9, 306, 8);
+        int blockZ = blockFromTilePixel(9, 200, 8);
+        int terrainY = TerrainService.terrainYAtXZ(blockX, blockZ);
+
+        assertEquals(EarthGenConfig.mapMetersToTerrainY(-200.0), terrainY);
+    }
+
+    @Test
+    void badTileRecoveryOnlyAppliesForBathymetry() throws Exception {
+        installServices(
+            9,
+            key -> createTerrariumPngForMeters(1000.0),
+            key -> createTerrariumPngForMeters(-200.0),
+            8,
+            0x112233,
+            key -> createSurfaceWaterPng(0xFFFFFFFF)
+        );
+
+        int blockX = blockFromTilePixel(9, 306, 8);
+        int blockZ = blockFromTilePixel(9, 200, 8);
+        int terrainY = TerrainService.terrainYAtXZ(blockX, blockZ);
+
+        assertEquals(EarthGenConfig.mapMetersToTerrainY(1000.0), terrainY);
+    }
+
+    @Test
+    void badTileRecoveryDoesNotAffectTilesOutsideRegistry() throws Exception {
+        installServices(
+            9,
+            key -> createTerrariumPngForMeters(1000.0),
+            key -> createTerrariumPngForMeters(-200.0),
+            8,
+            0x112233,
+            key -> createSurfaceWaterPng(0xFFFFFFFF)
+        );
+
+        int blockX = blockFromTilePixel(9, 304, 8);
+        int blockZ = blockFromTilePixel(9, 200, 8);
+        int terrainY = TerrainService.terrainYAtXZ(blockX, blockZ);
+
+        assertEquals(EarthGenConfig.mapMetersToTerrainY(1000.0), terrainY);
+    }
+
+    @Test
+    void badTileRecoveryFallsBackToOriginalWhenSourceTilesFail() throws Exception {
+        installServices(
+            9,
+            key -> createTerrariumPngForMeters(0.0),
+            key -> {
+                throw new IOException("synthetic source failure");
+            },
+            8,
+            0x112233,
+            key -> createSurfaceWaterPng(0xFFFFFFFF)
+        );
+
+        int blockX = blockFromTilePixel(9, 306, 8);
+        int blockZ = blockFromTilePixel(9, 200, 8);
+        int terrainY = TerrainService.terrainYAtXZ(blockX, blockZ);
+
+        assertEquals(EarthGenConfig.mapMetersToTerrainY(0.0), terrainY);
+    }
+
     private void installServices(int zoom, double activeMeters, double recoveryMeters, int ecoregionColorRgb, int surfaceWaterArgb) throws IOException {
-        installServices(zoom, activeMeters, recoveryMeters, ecoregionColorRgb, key -> createSurfaceWaterPng(surfaceWaterArgb));
+        installServices(
+            zoom,
+            key -> createTerrariumPngForMeters(activeMeters),
+            key -> createTerrariumPngForMeters(recoveryMeters),
+            OceanBathymetryRecovery.SOURCE_ZOOM,
+            ecoregionColorRgb,
+            key -> createSurfaceWaterPng(surfaceWaterArgb)
+        );
     }
 
     private void installServices(
@@ -97,25 +178,43 @@ class TerrainServiceBathymetryRecoveryTest {
         int ecoregionColorRgb,
         SurfaceWaterTileService.TileDownloader surfaceWaterDownloader
     ) throws IOException {
+        installServices(
+            zoom,
+            key -> createTerrariumPngForMeters(activeMeters),
+            key -> createTerrariumPngForMeters(recoveryMeters),
+            OceanBathymetryRecovery.SOURCE_ZOOM,
+            ecoregionColorRgb,
+            surfaceWaterDownloader
+        );
+    }
+
+    private void installServices(
+        int zoom,
+        TerrariumTileService.TileDownloader activeTerrainDownloader,
+        TerrariumTileService.TileDownloader sourceTerrainDownloader,
+        int sourceZoom,
+        int ecoregionColorRgb,
+        SurfaceWaterTileService.TileDownloader surfaceWaterDownloader
+    ) throws IOException {
         EarthGenConfig.setActiveZoom(zoom);
         TerrariumTileService activeTerrainService = TerrariumTileService.forTesting(
             new TerrariumTileService.Config(
                 tempDir.resolve("terrarium-active"),
                 Executors.newSingleThreadExecutor(),
-                key -> createTerrariumPngForMeters(activeMeters),
+                activeTerrainDownloader,
                 64,
                 0,
                 zoom
             )
         );
-        TerrariumTileService recoveryTerrainService = TerrariumTileService.forTesting(
+        TerrariumTileService sourceTerrainService = TerrariumTileService.forTesting(
             new TerrariumTileService.Config(
-                tempDir.resolve("terrarium-recovery"),
+                tempDir.resolve("terrarium-source-" + sourceZoom),
                 Executors.newSingleThreadExecutor(),
-                key -> createTerrariumPngForMeters(recoveryMeters),
+                sourceTerrainDownloader,
                 64,
                 0,
-                OceanBathymetryRecovery.SOURCE_ZOOM
+                sourceZoom
             )
         );
         EcoregionTileService ecoregionTileService = EcoregionTileService.forTesting(
@@ -140,11 +239,16 @@ class TerrainServiceBathymetryRecoveryTest {
 
         TerrainServices.overrideServicesForTesting(
             activeTerrainService,
-            recoveryTerrainService,
+            sourceTerrainService,
             ecoregionTileService,
             surfaceWaterTileService
         );
         TerrainService.clearCaches();
+    }
+
+    private static int blockFromTilePixel(int zoom, int tileCoordinate, int pixelCoordinate) {
+        int globalPixel = tileCoordinate * EarthGenConfig.TILE_SIZE + pixelCoordinate;
+        return globalPixel - EarthGenConfig.halfSpanForZoom(zoom);
     }
 
     private static byte[] createTerrariumPngForMeters(double meters) throws IOException {
