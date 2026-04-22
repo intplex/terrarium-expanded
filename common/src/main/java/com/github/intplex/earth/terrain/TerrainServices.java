@@ -131,6 +131,7 @@ public final class TerrainServices {
     }
 
     public static synchronized void shutdown() {
+        BadTerrainTileRegistry.shutdown();
         EarthRuntimeContext context = runtimeContext;
         runtimeContext = null;
         if (context != null) {

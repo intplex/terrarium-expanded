@@ -1,16 +1,20 @@
 package com.github.intplex.earth.terrain;
 
 import com.github.intplex.earth.EarthGenConfig;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -69,7 +73,7 @@ class BadTerrainTileRegistryTest {
             IllegalStateException.class,
             () -> BadTerrainTileRegistry.parseMappingsGeoJson(new StringReader(geoJson))
         );
-        assertTrue(exception.getMessage().contains("source_zoom < target_zoom"));
+        assertTrue(exception.getMessage().contains("source_zoom < min_target_zoom"));
     }
 
     @Test
@@ -164,37 +168,97 @@ class BadTerrainTileRegistryTest {
     }
 
     @Test
-    void startupRegistrySeedMatchesLegacyZoomNineCoverage() {
-        InputStream stream = BadTerrainTileRegistryTest.class.getResourceAsStream(BadTerrainTileRegistry.RESOURCE_PATH);
-        assertNotNull(stream);
-        Map<BadTerrainTileRegistry.TargetTile, Integer> mappings;
-        try (InputStream input = stream;
-             InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
-            mappings = BadTerrainTileRegistry.parseMappingsGeoJson(reader);
-        } catch (java.io.IOException exception) {
-            throw new RuntimeException(exception);
-        }
+    void startupValidationIsLazyAndResolvesKnownBundledOverrides(@TempDir Path tempDir) throws IOException {
+        Path gameDir = prepareGameDir(tempDir);
+        BadTerrainTileRegistry.initialize(gameDir);
+        BadTerrainTileRegistry.validateStartupRegistry();
 
-        Set<BadTerrainTileRegistry.TargetTile> expectedTargetTiles = Set.of(
-            new BadTerrainTileRegistry.TargetTile(9, new TileKey(305, 199)),
-            new BadTerrainTileRegistry.TargetTile(9, new TileKey(306, 199)),
-            new BadTerrainTileRegistry.TargetTile(9, new TileKey(307, 199)),
-            new BadTerrainTileRegistry.TargetTile(9, new TileKey(305, 200)),
-            new BadTerrainTileRegistry.TargetTile(9, new TileKey(306, 200)),
-            new BadTerrainTileRegistry.TargetTile(9, new TileKey(307, 200)),
-            new BadTerrainTileRegistry.TargetTile(9, new TileKey(306, 201)),
-            new BadTerrainTileRegistry.TargetTile(9, new TileKey(307, 201)),
-            new BadTerrainTileRegistry.TargetTile(9, new TileKey(306, 202)),
-            new BadTerrainTileRegistry.TargetTile(9, new TileKey(307, 202))
+        assertEquals(0, BadTerrainTileRegistry.memoizedTargetTileCountForTesting());
+        assertEquals(Set.of(8), BadTerrainTileRegistry.sourceZoomsForTargetZoom(9));
+        assertEquals(Set.of(8), BadTerrainTileRegistry.sourceZoomsForTargetZoom(10));
+        assertEquals(Set.of(8), BadTerrainTileRegistry.sourceZoomsForTargetZoom(11));
+
+        OptionalInt sourceZoom = BadTerrainTileRegistry.sourceZoomFor(9, new TileKey(306, 200));
+        assertTrue(sourceZoom.isPresent());
+        assertEquals(8, sourceZoom.orElseThrow());
+        assertEquals(1, BadTerrainTileRegistry.memoizedTargetTileCountForTesting());
+    }
+
+    @Test
+    void sourceZoomForMemoizesMisses(@TempDir Path tempDir) throws IOException {
+        Path gameDir = prepareGameDir(tempDir);
+        BadTerrainTileRegistry.initialize(gameDir);
+        BadTerrainTileRegistry.validateStartupRegistry();
+
+        assertTrue(BadTerrainTileRegistry.sourceZoomFor(9, new TileKey(0, 0)).isEmpty());
+        assertEquals(1, BadTerrainTileRegistry.memoizedTargetTileCountForTesting());
+        assertTrue(BadTerrainTileRegistry.sourceZoomFor(9, new TileKey(0, 0)).isEmpty());
+        assertEquals(1, BadTerrainTileRegistry.memoizedTargetTileCountForTesting());
+    }
+
+    @Test
+    void resolvedEntriesArePersistedAndLoadedFromDiskCache(@TempDir Path tempDir) throws IOException {
+        Path gameDir = prepareGameDir(tempDir);
+        BadTerrainTileRegistry.initialize(gameDir);
+        BadTerrainTileRegistry.validateStartupRegistry();
+        assertEquals(8, BadTerrainTileRegistry.sourceZoomFor(9, new TileKey(306, 200)).orElseThrow());
+
+        BadTerrainTileRegistry.flushCacheForTesting();
+        Path cacheFile = BadTerrainTileRegistry.cacheFilePathForTesting();
+        assertNotNull(cacheFile);
+        assertTrue(Files.isRegularFile(cacheFile));
+
+        BadTerrainTileRegistry.resetForTesting();
+        BadTerrainTileRegistry.initialize(gameDir);
+        BadTerrainTileRegistry.validateStartupRegistry();
+        assertEquals(1, BadTerrainTileRegistry.memoizedTargetTileCountForTesting());
+        assertEquals(8, BadTerrainTileRegistry.sourceZoomFor(9, new TileKey(306, 200)).orElseThrow());
+    }
+
+    @Test
+    void cacheKeyChangesWhenExternalGeoJsonChanges(@TempDir Path tempDir) throws IOException {
+        Path gameDir = prepareGameDir(tempDir);
+        BadTerrainTileRegistry.initialize(gameDir);
+        BadTerrainTileRegistry.validateStartupRegistry();
+        Path cacheFileWithoutExternal = BadTerrainTileRegistry.cacheFilePathForTesting();
+        assertNotNull(cacheFileWithoutExternal);
+
+        Path externalPath = gameDir.resolve("config").resolve(BadTerrainTileRegistry.EXTERNAL_CONFIG_FILE_NAME);
+        Files.writeString(
+            externalPath,
+            featureCollection(polygonFeature(8, 9, 9, tilePolygonCoordinates(9, 320, 200))),
+            StandardCharsets.UTF_8
         );
 
-        assertEquals(expectedTargetTiles.size(), mappings.size());
-        assertEquals(expectedTargetTiles, mappings.keySet());
-        for (Integer sourceZoom : mappings.values()) {
-            assertEquals(8, sourceZoom);
-        }
-        assertEquals(Set.of(8), BadTerrainTileRegistry.sourceZoomsForTargetZoom(9));
+        BadTerrainTileRegistry.resetForTesting();
+        BadTerrainTileRegistry.initialize(gameDir);
+        BadTerrainTileRegistry.validateStartupRegistry();
+        Path cacheFileWithExternal = BadTerrainTileRegistry.cacheFilePathForTesting();
+        assertNotNull(cacheFileWithExternal);
+        assertNotEquals(cacheFileWithoutExternal, cacheFileWithExternal);
+    }
+
+    @Test
+    void corruptCacheFileFallsBackToLazyRecompute(@TempDir Path tempDir) throws IOException {
+        Path gameDir = prepareGameDir(tempDir);
+        BadTerrainTileRegistry.initialize(gameDir);
+        BadTerrainTileRegistry.validateStartupRegistry();
         assertEquals(8, BadTerrainTileRegistry.sourceZoomFor(9, new TileKey(306, 200)).orElseThrow());
+        BadTerrainTileRegistry.flushCacheForTesting();
+        Path cacheFile = BadTerrainTileRegistry.cacheFilePathForTesting();
+        assertNotNull(cacheFile);
+
+        Files.writeString(cacheFile, "corrupted-cache", StandardCharsets.UTF_8);
+        BadTerrainTileRegistry.resetForTesting();
+        BadTerrainTileRegistry.initialize(gameDir);
+        BadTerrainTileRegistry.validateStartupRegistry();
+        assertEquals(8, BadTerrainTileRegistry.sourceZoomFor(9, new TileKey(306, 200)).orElseThrow());
+    }
+
+    private static Path prepareGameDir(Path tempDir) throws IOException {
+        Path gameDir = tempDir.resolve("game");
+        Files.createDirectories(gameDir.resolve("config"));
+        return gameDir;
     }
 
     private static String featureCollection(String... features) {

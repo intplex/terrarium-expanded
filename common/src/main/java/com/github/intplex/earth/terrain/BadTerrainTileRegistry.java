@@ -6,25 +6,40 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import java.awt.geom.Path2D;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
-import java.awt.geom.Area;
-import java.awt.geom.Path2D;
-import java.awt.geom.Rectangle2D;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +47,18 @@ public final class BadTerrainTileRegistry {
     static final String RESOURCE_PATH = "/data/terrarium_expanded/terrain/bad_tile_recovery.geojson";
     static final String EXTERNAL_CONFIG_FILE_NAME = "bad_tile_recovery.geojson";
     static final int DEFAULT_MIN_TARGET_ZOOM = 9;
+
     private static final Logger LOGGER = LoggerFactory.getLogger("terrarium_expanded.worldgen");
-    private static volatile Map<TargetTile, Integer> cachedSourceZoomByTargetTile;
+    private static final int NO_SOURCE_ZOOM = -1;
+    private static final int INDEX_BUCKETS_PER_AXIS = 64;
+    private static final int CACHE_MAGIC = 0x54585247; // TXRG
+    private static final int CACHE_SCHEMA_VERSION = 1;
+    private static final String CACHE_FILE_PREFIX = "registry-v" + CACHE_SCHEMA_VERSION + "-";
+    private static final String CACHE_FILE_SUFFIX = ".bin";
+    private static final int CACHE_FLUSH_ENTRY_THRESHOLD = 256;
+    private static final long CACHE_FLUSH_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(5);
+
+    private static volatile RegistryRuntime runtime;
     private static volatile Path initializedGameDir;
 
     private BadTerrainTileRegistry() {
@@ -45,30 +70,30 @@ public final class BadTerrainTileRegistry {
             if (Objects.equals(initializedGameDir, normalizedGameDir)) {
                 return;
             }
+            flushRuntimeLocked();
             initializedGameDir = normalizedGameDir;
-            cachedSourceZoomByTargetTile = null;
+            runtime = null;
+        }
+    }
+
+    public static void shutdown() {
+        synchronized (BadTerrainTileRegistry.class) {
+            flushRuntimeLocked();
         }
     }
 
     public static void validateStartupRegistry() {
-        requireSourceZoomByTargetTile();
+        requireRuntime();
     }
 
     public static OptionalInt sourceZoomFor(int targetZoom, TileKey targetTileKey) {
         int validatedZoom = EarthGenConfig.validateZoom(targetZoom);
-        Integer sourceZoom = requireSourceZoomByTargetTile().get(new TargetTile(validatedZoom, targetTileKey));
-        return sourceZoom == null ? OptionalInt.empty() : OptionalInt.of(sourceZoom);
+        return requireRuntime().sourceZoomFor(validatedZoom, Objects.requireNonNull(targetTileKey, "targetTileKey"));
     }
 
     public static Set<Integer> sourceZoomsForTargetZoom(int targetZoom) {
         int validatedZoom = EarthGenConfig.validateZoom(targetZoom);
-        Set<Integer> sourceZooms = new TreeSet<>();
-        for (Map.Entry<TargetTile, Integer> entry : requireSourceZoomByTargetTile().entrySet()) {
-            if (entry.getKey().targetZoom() == validatedZoom) {
-                sourceZooms.add(entry.getValue());
-            }
-        }
-        return Set.copyOf(sourceZooms);
+        return requireRuntime().sourceZoomsForTargetZoom(validatedZoom);
     }
 
     static Map<TargetTile, Integer> parseMappingsGeoJson(Reader reader) {
@@ -76,92 +101,295 @@ public final class BadTerrainTileRegistry {
     }
 
     static Map<TargetTile, Integer> loadMappingsForTesting(String bundledGeoJson, String externalGeoJson) {
-        Map<TargetTile, Integer> bundled = parseMappingsGeoJson(
+        GeoJsonDefinition bundled = parseDefinition(
             new StringReader(Objects.requireNonNull(bundledGeoJson, "bundledGeoJson")),
             "bundled test geojson"
         );
         if (externalGeoJson == null || externalGeoJson.isBlank()) {
-            return bundled;
+            return compileRules(bundled.rules());
         }
         try {
-            Map<TargetTile, Integer> external = parseMappingsGeoJson(
+            GeoJsonDefinition external = parseDefinition(
                 new StringReader(externalGeoJson),
                 "external test geojson"
             );
-            return mergeMappings(bundled, external);
+            return compileRules(mergeRules(bundled.rules(), external.rules()));
         } catch (IllegalStateException exception) {
-            return bundled;
+            return compileRules(bundled.rules());
         }
     }
 
     static void resetForTesting() {
         synchronized (BadTerrainTileRegistry.class) {
+            flushRuntimeLocked();
             initializedGameDir = null;
-            cachedSourceZoomByTargetTile = null;
+            runtime = null;
         }
     }
 
-    private static Map<TargetTile, Integer> requireSourceZoomByTargetTile() {
-        Map<TargetTile, Integer> local = cachedSourceZoomByTargetTile;
+    static int memoizedTargetTileCountForTesting() {
+        RegistryRuntime local = runtime;
+        return local == null ? 0 : local.memoizedTargetTileCount();
+    }
+
+    static Path cacheFilePathForTesting() {
+        RegistryRuntime local = runtime;
+        return local == null ? null : local.cacheFile();
+    }
+
+    static void flushCacheForTesting() {
+        RegistryRuntime local = runtime;
+        if (local != null) {
+            local.flushResolvedCache(true);
+        }
+    }
+
+    private static RegistryRuntime requireRuntime() {
+        RegistryRuntime local = runtime;
         if (local != null) {
             return local;
         }
         synchronized (BadTerrainTileRegistry.class) {
-            local = cachedSourceZoomByTargetTile;
+            local = runtime;
             if (local == null) {
-                local = loadSourceZoomByTargetTile(initializedGameDir);
-                cachedSourceZoomByTargetTile = local;
-                LOGGER.info(
-                    "[TX-TERRAIN] bathymetry source-zoom override registry loaded entries={} external={}",
-                    local.size(),
-                    externalConfigPath(initializedGameDir)
-                );
+                local = loadRuntime(initializedGameDir);
+                runtime = local;
             }
             return local;
         }
     }
 
-    private static Map<TargetTile, Integer> loadSourceZoomByTargetTile(Path gameDir) {
-        Map<TargetTile, Integer> bundledMappings = loadBundledMappings();
+    private static void flushRuntimeLocked() {
+        RegistryRuntime local = runtime;
+        runtime = null;
+        if (local != null) {
+            local.flushResolvedCache(true);
+        }
+    }
+
+    private static RegistryRuntime loadRuntime(Path gameDir) {
+        LoadedGeoJson bundled = loadBundledDefinition();
+        LoadedGeoJson external = loadExternalDefinition(gameDir);
+        List<FeatureRule> mergedRules = mergeRules(
+            bundled.definition().rules(),
+            external == null ? List.of() : external.definition().rules()
+        );
+        Map<Integer, ZoomIndex> zoomIndices = buildZoomIndices(mergedRules);
+        String cacheKey = buildCacheKey(bundled.bytes(), external == null ? null : external.bytes());
+        Path cacheFile = cacheFilePath(gameDir, cacheKey);
+        Map<TargetTile, Integer> persistedResolvedEntries = readResolvedCache(cacheFile);
+        RegistryRuntime built = new RegistryRuntime(zoomIndices, cacheFile, persistedResolvedEntries);
+        LOGGER.info(
+            "[TX-TERRAIN] bathymetry source-zoom override registry validated rules={} target_zooms={} memoized_entries={} external={} cache={}",
+            mergedRules.size(),
+            zoomIndices.keySet(),
+            persistedResolvedEntries.size(),
+            externalConfigPath(gameDir),
+            cacheFile
+        );
+        return built;
+    }
+
+    private static LoadedGeoJson loadBundledDefinition() {
+        InputStream stream = BadTerrainTileRegistry.class.getResourceAsStream(RESOURCE_PATH);
+        if (stream == null) {
+            throw new IllegalStateException("Missing bundled bathymetry override resource: " + RESOURCE_PATH);
+        }
+        try (InputStream input = stream) {
+            byte[] bytes = input.readAllBytes();
+            GeoJsonDefinition definition = parseDefinition(
+                new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8),
+                RESOURCE_PATH
+            );
+            return new LoadedGeoJson(bytes, definition);
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed loading bundled bathymetry override resource: " + RESOURCE_PATH, exception);
+        }
+    }
+
+    private static LoadedGeoJson loadExternalDefinition(Path gameDir) {
         Path externalPath = externalConfigPath(gameDir);
         if (externalPath == null || !Files.isRegularFile(externalPath)) {
-            return bundledMappings;
+            return null;
         }
 
-        try (Reader reader = Files.newBufferedReader(externalPath, StandardCharsets.UTF_8)) {
-            Map<TargetTile, Integer> externalMappings = parseMappingsGeoJson(reader, externalPath.toString());
-            Map<TargetTile, Integer> mergedMappings = mergeMappings(bundledMappings, externalMappings);
-            LOGGER.info(
-                "[TX-TERRAIN] loaded external bathymetry source-zoom overrides path={} entries={} merged_entries={}",
-                externalPath,
-                externalMappings.size(),
-                mergedMappings.size()
+        try {
+            byte[] bytes = Files.readAllBytes(externalPath);
+            GeoJsonDefinition definition = parseDefinition(
+                new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8),
+                externalPath.toString()
             );
-            return mergedMappings;
+            LOGGER.info(
+                "[TX-TERRAIN] loaded external bathymetry source-zoom overrides path={} rules={}",
+                externalPath,
+                definition.rules().size()
+            );
+            return new LoadedGeoJson(bytes, definition);
         } catch (Exception exception) {
             LOGGER.warn(
                 "[TX-TERRAIN] ignoring invalid external bathymetry override file path={} error={}",
                 externalPath,
                 exception.toString()
             );
-            return bundledMappings;
+            return null;
         }
     }
 
-    private static Map<TargetTile, Integer> loadBundledMappings() {
-        InputStream stream = BadTerrainTileRegistry.class.getResourceAsStream(RESOURCE_PATH);
-        if (stream == null) {
-            throw new IllegalStateException("Missing bundled bathymetry override resource: " + RESOURCE_PATH);
+    private static List<FeatureRule> mergeRules(List<FeatureRule> bundledRules, List<FeatureRule> externalRules) {
+        List<FeatureRule> merged = new ArrayList<>(bundledRules.size() + externalRules.size());
+        merged.addAll(bundledRules);
+        merged.addAll(externalRules);
+        return List.copyOf(merged);
+    }
+
+    private static Map<Integer, ZoomIndex> buildZoomIndices(List<FeatureRule> rules) {
+        Map<Integer, List<PolygonRule>> polygonsByTargetZoom = new LinkedHashMap<>();
+        for (FeatureRule rule : rules) {
+            for (int targetZoom = rule.minTargetZoom(); targetZoom <= rule.maxTargetZoom(); targetZoom++) {
+                List<PolygonRule> polygons = polygonsByTargetZoom.computeIfAbsent(targetZoom, ignored -> new ArrayList<>());
+                for (ProjectedPolygon polygon : rule.polygons()) {
+                    if (polygon.maxX() <= 0.0 || polygon.minX() >= 1.0 || polygon.maxY() <= 0.0 || polygon.minY() >= 1.0) {
+                        continue;
+                    }
+                    polygons.add(new PolygonRule(rule.sourceZoom(), polygon.path(), polygon.minX(), polygon.maxX(), polygon.minY(), polygon.maxY()));
+                }
+            }
         }
-        try (InputStream input = stream;
-             InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
-            return parseMappingsGeoJson(reader, RESOURCE_PATH);
-        } catch (IOException exception) {
-            throw new IllegalStateException("Failed loading bundled bathymetry override resource: " + RESOURCE_PATH, exception);
+
+        Map<Integer, ZoomIndex> zoomIndices = new LinkedHashMap<>();
+        for (Map.Entry<Integer, List<PolygonRule>> entry : polygonsByTargetZoom.entrySet()) {
+            zoomIndices.put(entry.getKey(), ZoomIndex.create(entry.getKey(), entry.getValue()));
+        }
+        return Map.copyOf(zoomIndices);
+    }
+
+    private static String buildCacheKey(byte[] bundledBytes, byte[] externalBytes) {
+        MessageDigest digest = newSha256Digest();
+        digest.update(new byte[] { (byte) CACHE_SCHEMA_VERSION });
+        updateDigestWithBytes(digest, bundledBytes);
+        if (externalBytes != null) {
+            digest.update((byte) 1);
+            updateDigestWithBytes(digest, externalBytes);
+        } else {
+            digest.update((byte) 0);
+        }
+        byte[] hash = digest.digest();
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+    }
+
+    private static MessageDigest newSha256Digest() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("SHA-256 digest is unavailable", exception);
         }
     }
 
-    private static Map<TargetTile, Integer> parseMappingsGeoJson(Reader reader, String sourceLabel) {
+    private static void updateDigestWithBytes(MessageDigest digest, byte[] bytes) {
+        byte[] lengthPrefix = ByteBuffer.allocate(Integer.BYTES).putInt(bytes.length).array();
+        digest.update(lengthPrefix);
+        digest.update(bytes);
+    }
+
+    private static Map<TargetTile, Integer> readResolvedCache(Path cacheFile) {
+        if (cacheFile == null || !Files.isRegularFile(cacheFile)) {
+            return Map.of();
+        }
+        try (DataInputStream input = new DataInputStream(new BufferedInputStream(Files.newInputStream(cacheFile)))) {
+            int magic = input.readInt();
+            if (magic != CACHE_MAGIC) {
+                throw new IllegalStateException("unexpected cache magic");
+            }
+            int schemaVersion = input.readInt();
+            if (schemaVersion != CACHE_SCHEMA_VERSION) {
+                throw new IllegalStateException("unexpected cache schema version");
+            }
+            int entryCount = input.readInt();
+            if (entryCount < 0) {
+                throw new IllegalStateException("negative cache entry count");
+            }
+            Map<TargetTile, Integer> loaded = new HashMap<>(Math.max(16, entryCount));
+            for (int index = 0; index < entryCount; index++) {
+                int targetZoom = input.readInt();
+                int tileX = input.readInt();
+                int tileY = input.readInt();
+                int sourceZoom = input.readInt();
+                if (!EarthGenConfig.isSupportedZoom(targetZoom) || !EarthGenConfig.isSupportedZoom(sourceZoom)) {
+                    continue;
+                }
+                if (sourceZoom >= targetZoom) {
+                    continue;
+                }
+                TargetTile target = new TargetTile(targetZoom, new TileKey(tileX, tileY));
+                loaded.merge(target, sourceZoom, Math::min);
+            }
+            return Map.copyOf(loaded);
+        } catch (Exception exception) {
+            LOGGER.warn(
+                "[TX-TERRAIN] ignoring invalid bad terrain cache file path={} error={}",
+                cacheFile,
+                exception.toString()
+            );
+            return Map.of();
+        }
+    }
+
+    private static void writeResolvedCache(Path cacheFile, Map<TargetTile, Integer> resolvedHits) throws IOException {
+        if (cacheFile == null) {
+            return;
+        }
+        Files.createDirectories(cacheFile.getParent());
+        cleanupStaleCacheFiles(cacheFile.getParent(), cacheFile.getFileName().toString());
+
+        Path tempFile = cacheFile.resolveSibling(cacheFile.getFileName() + ".part");
+        try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(tempFile)))) {
+            output.writeInt(CACHE_MAGIC);
+            output.writeInt(CACHE_SCHEMA_VERSION);
+            output.writeInt(resolvedHits.size());
+            for (Map.Entry<TargetTile, Integer> entry : resolvedHits.entrySet()) {
+                TargetTile target = entry.getKey();
+                output.writeInt(target.targetZoom());
+                output.writeInt(target.tileKey().x());
+                output.writeInt(target.tileKey().y());
+                output.writeInt(entry.getValue());
+            }
+        }
+        try {
+            Files.move(tempFile, cacheFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException exception) {
+            Files.move(tempFile, cacheFile, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private static void cleanupStaleCacheFiles(Path cacheDirectory, String activeFileName) {
+        try {
+            if (!Files.isDirectory(cacheDirectory)) {
+                return;
+            }
+            try (var stream = Files.list(cacheDirectory)) {
+                stream
+                    .filter(path -> path.getFileName().toString().startsWith(CACHE_FILE_PREFIX))
+                    .filter(path -> !path.getFileName().toString().equals(activeFileName))
+                    .forEach(path -> {
+                        try {
+                            Files.deleteIfExists(path);
+                        } catch (IOException ignored) {
+                        }
+                    });
+            }
+        } catch (IOException ignored) {
+        }
+    }
+
+    private static Path cacheFilePath(Path gameDir, String cacheKey) {
+        if (gameDir == null) {
+            return null;
+        }
+        Path cacheDirectory = gameDir.resolve(Path.of("cache", "terrarium_expanded", "terrain", "bad_tile_registry"));
+        return cacheDirectory.resolve(CACHE_FILE_PREFIX + cacheKey + CACHE_FILE_SUFFIX);
+    }
+
+    private static GeoJsonDefinition parseDefinition(Reader reader, String sourceLabel) {
         Objects.requireNonNull(reader, "reader");
         Objects.requireNonNull(sourceLabel, "sourceLabel");
 
@@ -198,22 +426,20 @@ public final class BadTerrainTileRegistry {
                             + maxTargetZoom
                     );
                 }
-                for (int targetZoom = minTargetZoom; targetZoom <= maxTargetZoom; targetZoom++) {
-                    if (sourceZoom >= targetZoom) {
-                        throw new IllegalStateException(
-                            featureContext
-                                + " requires source_zoom < target_zoom but got source_zoom="
-                                + sourceZoom
-                                + " target_zoom="
-                                + targetZoom
-                        );
-                    }
+                if (sourceZoom >= minTargetZoom) {
+                    throw new IllegalStateException(
+                        featureContext
+                            + " requires source_zoom < min_target_zoom but got source_zoom="
+                            + sourceZoom
+                            + " min_target_zoom="
+                            + minTargetZoom
+                    );
                 }
 
                 List<ProjectedPolygon> polygons = parsePolygons(geometry, featureContext);
                 rules.add(new FeatureRule(sourceZoom, minTargetZoom, maxTargetZoom, polygons));
             }
-            return compileRules(rules);
+            return new GeoJsonDefinition(List.copyOf(rules));
         } catch (JsonParseException exception) {
             throw new IllegalStateException("Failed parsing GeoJSON from " + sourceLabel + ": " + exception.getMessage(), exception);
         } catch (ClassCastException | IllegalStateException exception) {
@@ -222,6 +448,10 @@ public final class BadTerrainTileRegistry {
             }
             throw new IllegalStateException("Invalid GeoJSON structure in " + sourceLabel, exception);
         }
+    }
+
+    private static Map<TargetTile, Integer> parseMappingsGeoJson(Reader reader, String sourceLabel) {
+        return compileRules(parseDefinition(reader, sourceLabel).rules());
     }
 
     private static Map<TargetTile, Integer> compileRules(List<FeatureRule> rules) {
@@ -246,10 +476,7 @@ public final class BadTerrainTileRegistry {
                         double tileMinY = tileY * tileSize;
                         for (int tileX = minTileX; tileX <= maxTileX; tileX++) {
                             double tileMinX = tileX * tileSize;
-                            Rectangle2D.Double tileBounds = new Rectangle2D.Double(tileMinX, tileMinY, tileSize, tileSize);
-                            Area intersection = new Area(polygon.path());
-                            intersection.intersect(new Area(tileBounds));
-                            if (intersection.isEmpty()) {
+                            if (!polygon.path().intersects(tileMinX, tileMinY, tileSize, tileSize)) {
                                 continue;
                             }
                             TargetTile target = new TargetTile(targetZoom, new TileKey(tileX, tileY));
@@ -260,20 +487,6 @@ public final class BadTerrainTileRegistry {
             }
         }
         return Map.copyOf(mappings);
-    }
-
-    static Map<TargetTile, Integer> mergeMappings(
-        Map<TargetTile, Integer> bundledMappings,
-        Map<TargetTile, Integer> externalMappings
-    ) {
-        if (externalMappings == null || externalMappings.isEmpty()) {
-            return Map.copyOf(Objects.requireNonNull(bundledMappings, "bundledMappings"));
-        }
-        Map<TargetTile, Integer> mergedMappings = new HashMap<>(Objects.requireNonNull(bundledMappings, "bundledMappings"));
-        for (Map.Entry<TargetTile, Integer> entry : externalMappings.entrySet()) {
-            mergedMappings.merge(entry.getKey(), entry.getValue(), Math::min);
-        }
-        return Map.copyOf(mergedMappings);
     }
 
     private static List<ProjectedPolygon> parsePolygons(JsonObject geometry, String featureContext) {
@@ -576,8 +789,14 @@ public final class BadTerrainTileRegistry {
     public record TargetTile(int targetZoom, TileKey tileKey) {
         public TargetTile {
             targetZoom = EarthGenConfig.validateZoom(targetZoom);
-            tileKey = java.util.Objects.requireNonNull(tileKey, "tileKey");
+            tileKey = Objects.requireNonNull(tileKey, "tileKey");
         }
+    }
+
+    private record GeoJsonDefinition(List<FeatureRule> rules) {
+    }
+
+    private record LoadedGeoJson(byte[] bytes, GeoJsonDefinition definition) {
     }
 
     private record FeatureRule(int sourceZoom, int minTargetZoom, int maxTargetZoom, List<ProjectedPolygon> polygons) {
@@ -587,5 +806,277 @@ public final class BadTerrainTileRegistry {
     }
 
     private record ProjectedRing(double[] xs, double[] ys, double minX, double maxX, double minY, double maxY) {
+    }
+
+    private record PolygonRule(int sourceZoom, Path2D.Double path, double minX, double maxX, double minY, double maxY) {
+    }
+
+    private static final class ZoomIndex {
+        private final int targetZoom;
+        private final int tileCount;
+        private final double tileSize;
+        private final int bucketCountPerAxis;
+        private final double bucketSize;
+        private final List<PolygonRule> polygonsById;
+        private final Map<Integer, int[]> bucketToPolygonIds;
+        private final Set<Integer> sourceZooms;
+
+        private ZoomIndex(
+            int targetZoom,
+            int tileCount,
+            double tileSize,
+            int bucketCountPerAxis,
+            double bucketSize,
+            List<PolygonRule> polygonsById,
+            Map<Integer, int[]> bucketToPolygonIds,
+            Set<Integer> sourceZooms
+        ) {
+            this.targetZoom = targetZoom;
+            this.tileCount = tileCount;
+            this.tileSize = tileSize;
+            this.bucketCountPerAxis = bucketCountPerAxis;
+            this.bucketSize = bucketSize;
+            this.polygonsById = polygonsById;
+            this.bucketToPolygonIds = bucketToPolygonIds;
+            this.sourceZooms = sourceZooms;
+        }
+
+        static ZoomIndex create(int targetZoom, List<PolygonRule> polygons) {
+            int tileCount = EarthGenConfig.tileCountPerAxis(targetZoom);
+            int bucketCount = Math.max(1, Math.min(INDEX_BUCKETS_PER_AXIS, tileCount));
+            double bucketSize = 1.0 / bucketCount;
+            List<PolygonRule> indexedPolygons = new ArrayList<>(polygons);
+            Map<Integer, List<Integer>> bucketLists = new HashMap<>();
+            Set<Integer> sourceZooms = new TreeSet<>();
+
+            for (int polygonId = 0; polygonId < indexedPolygons.size(); polygonId++) {
+                PolygonRule polygon = indexedPolygons.get(polygonId);
+                sourceZooms.add(polygon.sourceZoom());
+                int minBucketX = bucketIndexFromMin(Math.max(0.0, polygon.minX()), bucketCount);
+                int maxBucketX = bucketIndexFromMax(Math.min(1.0, polygon.maxX()), bucketCount);
+                int minBucketY = bucketIndexFromMin(Math.max(0.0, polygon.minY()), bucketCount);
+                int maxBucketY = bucketIndexFromMax(Math.min(1.0, polygon.maxY()), bucketCount);
+                if (maxBucketX < minBucketX || maxBucketY < minBucketY) {
+                    continue;
+                }
+                for (int bucketY = minBucketY; bucketY <= maxBucketY; bucketY++) {
+                    for (int bucketX = minBucketX; bucketX <= maxBucketX; bucketX++) {
+                        int bucketId = bucketId(bucketX, bucketY, bucketCount);
+                        bucketLists.computeIfAbsent(bucketId, ignored -> new ArrayList<>()).add(polygonId);
+                    }
+                }
+            }
+
+            Map<Integer, int[]> bucketToPolygonIds = new HashMap<>(bucketLists.size());
+            for (Map.Entry<Integer, List<Integer>> entry : bucketLists.entrySet()) {
+                List<Integer> ids = entry.getValue();
+                int[] array = new int[ids.size()];
+                for (int index = 0; index < ids.size(); index++) {
+                    array[index] = ids.get(index);
+                }
+                bucketToPolygonIds.put(entry.getKey(), array);
+            }
+
+            return new ZoomIndex(
+                targetZoom,
+                tileCount,
+                1.0 / tileCount,
+                bucketCount,
+                bucketSize,
+                List.copyOf(indexedPolygons),
+                Map.copyOf(bucketToPolygonIds),
+                Set.copyOf(sourceZooms)
+            );
+        }
+
+        Set<Integer> sourceZooms() {
+            return sourceZooms;
+        }
+
+        int resolveSourceZoom(TileKey tileKey) {
+            if (tileKey.x() < 0 || tileKey.x() >= tileCount || tileKey.y() < 0 || tileKey.y() >= tileCount) {
+                return NO_SOURCE_ZOOM;
+            }
+
+            double tileMinX = tileKey.x() * tileSize;
+            double tileMinY = tileKey.y() * tileSize;
+            double tileMaxX = tileMinX + tileSize;
+            double tileMaxY = tileMinY + tileSize;
+
+            int minBucketX = bucketIndexFromMin(tileMinX, bucketCountPerAxis);
+            int maxBucketX = bucketIndexFromMax(tileMaxX, bucketCountPerAxis);
+            int minBucketY = bucketIndexFromMin(tileMinY, bucketCountPerAxis);
+            int maxBucketY = bucketIndexFromMax(tileMaxY, bucketCountPerAxis);
+            if (maxBucketX < minBucketX || maxBucketY < minBucketY) {
+                return NO_SOURCE_ZOOM;
+            }
+
+            int bestSourceZoom = NO_SOURCE_ZOOM;
+            Set<Integer> seenPolygonIds = new HashSet<>(32);
+            for (int bucketY = minBucketY; bucketY <= maxBucketY; bucketY++) {
+                for (int bucketX = minBucketX; bucketX <= maxBucketX; bucketX++) {
+                    int bucketId = bucketId(bucketX, bucketY, bucketCountPerAxis);
+                    int[] polygonIds = bucketToPolygonIds.get(bucketId);
+                    if (polygonIds == null) {
+                        continue;
+                    }
+                    for (int polygonId : polygonIds) {
+                        if (!seenPolygonIds.add(polygonId)) {
+                            continue;
+                        }
+                        PolygonRule polygon = polygonsById.get(polygonId);
+                        if (tileMaxX <= polygon.minX() || tileMinX >= polygon.maxX() || tileMaxY <= polygon.minY() || tileMinY >= polygon.maxY()) {
+                            continue;
+                        }
+                        if (!polygon.path().intersects(tileMinX, tileMinY, tileSize, tileSize)) {
+                            continue;
+                        }
+                        if (bestSourceZoom == NO_SOURCE_ZOOM || polygon.sourceZoom() < bestSourceZoom) {
+                            bestSourceZoom = polygon.sourceZoom();
+                            if (bestSourceZoom == EarthGenConfig.MIN_ZOOM) {
+                                return bestSourceZoom;
+                            }
+                        }
+                    }
+                }
+            }
+            return bestSourceZoom;
+        }
+
+        private static int bucketId(int bucketX, int bucketY, int bucketCountPerAxis) {
+            return bucketY * bucketCountPerAxis + bucketX;
+        }
+
+        private static int bucketIndexFromMin(double unit, int bucketCountPerAxis) {
+            int value = (int) Math.floor(unit / (1.0 / bucketCountPerAxis));
+            return clampBucketIndex(value, bucketCountPerAxis);
+        }
+
+        private static int bucketIndexFromMax(double unit, int bucketCountPerAxis) {
+            if (unit <= 0.0) {
+                return -1;
+            }
+            double exclusiveMax = unit >= 1.0 ? 1.0 : Math.nextDown(unit);
+            int value = (int) Math.floor(exclusiveMax / (1.0 / bucketCountPerAxis));
+            return clampBucketIndex(value, bucketCountPerAxis);
+        }
+
+        private static int clampBucketIndex(int value, int bucketCountPerAxis) {
+            if (value < 0) {
+                return 0;
+            }
+            if (value >= bucketCountPerAxis) {
+                return bucketCountPerAxis - 1;
+            }
+            return value;
+        }
+    }
+
+    private static final class RegistryRuntime {
+        private final Map<Integer, ZoomIndex> zoomIndices;
+        private final Map<Integer, Set<Integer>> sourceZoomsByTargetZoom;
+        private final ConcurrentMap<TargetTile, Integer> memoizedSourceZoomByTargetTile;
+        private final Path cacheFile;
+        private final Object flushLock = new Object();
+        private volatile long lastFlushNanos = System.nanoTime();
+        private volatile int dirtyResolvedEntries;
+
+        private RegistryRuntime(Map<Integer, ZoomIndex> zoomIndices, Path cacheFile, Map<TargetTile, Integer> persistedResolvedEntries) {
+            this.zoomIndices = zoomIndices;
+            this.sourceZoomsByTargetZoom = collectSourceZooms(zoomIndices);
+            this.memoizedSourceZoomByTargetTile = new ConcurrentHashMap<>();
+            this.memoizedSourceZoomByTargetTile.putAll(persistedResolvedEntries);
+            this.cacheFile = cacheFile;
+        }
+
+        OptionalInt sourceZoomFor(int targetZoom, TileKey tileKey) {
+            TargetTile target = new TargetTile(targetZoom, tileKey);
+            Integer cached = memoizedSourceZoomByTargetTile.get(target);
+            if (cached != null) {
+                return toOptionalInt(cached);
+            }
+
+            ZoomIndex zoomIndex = zoomIndices.get(targetZoom);
+            int resolved = zoomIndex == null ? NO_SOURCE_ZOOM : zoomIndex.resolveSourceZoom(tileKey);
+            Integer existing = memoizedSourceZoomByTargetTile.putIfAbsent(target, resolved);
+            int effective = existing == null ? resolved : existing;
+            if (existing == null && effective != NO_SOURCE_ZOOM) {
+                dirtyResolvedEntries++;
+                maybeFlushResolvedCache();
+            }
+            return toOptionalInt(effective);
+        }
+
+        Set<Integer> sourceZoomsForTargetZoom(int targetZoom) {
+            Set<Integer> sourceZooms = sourceZoomsByTargetZoom.get(targetZoom);
+            if (sourceZooms == null) {
+                return Set.of();
+            }
+            return sourceZooms;
+        }
+
+        int memoizedTargetTileCount() {
+            return memoizedSourceZoomByTargetTile.size();
+        }
+
+        Path cacheFile() {
+            return cacheFile;
+        }
+
+        void maybeFlushResolvedCache() {
+            if (cacheFile == null) {
+                return;
+            }
+            int dirtyCount = dirtyResolvedEntries;
+            if (dirtyCount <= 0) {
+                return;
+            }
+            long now = System.nanoTime();
+            if (dirtyCount < CACHE_FLUSH_ENTRY_THRESHOLD && now - lastFlushNanos < CACHE_FLUSH_INTERVAL_NANOS) {
+                return;
+            }
+            flushResolvedCache(false);
+        }
+
+        void flushResolvedCache(boolean force) {
+            if (cacheFile == null) {
+                return;
+            }
+            synchronized (flushLock) {
+                if (!force && dirtyResolvedEntries <= 0) {
+                    return;
+                }
+                Map<TargetTile, Integer> resolvedHits = new LinkedHashMap<>();
+                for (Map.Entry<TargetTile, Integer> entry : memoizedSourceZoomByTargetTile.entrySet()) {
+                    if (entry.getValue() == null || entry.getValue() == NO_SOURCE_ZOOM) {
+                        continue;
+                    }
+                    resolvedHits.put(entry.getKey(), entry.getValue());
+                }
+                try {
+                    writeResolvedCache(cacheFile, resolvedHits);
+                    dirtyResolvedEntries = 0;
+                    lastFlushNanos = System.nanoTime();
+                } catch (IOException exception) {
+                    LOGGER.warn(
+                        "[TX-TERRAIN] failed writing bad terrain cache path={} error={}",
+                        cacheFile,
+                        exception.toString()
+                    );
+                }
+            }
+        }
+
+        private static OptionalInt toOptionalInt(int sourceZoom) {
+            return sourceZoom == NO_SOURCE_ZOOM ? OptionalInt.empty() : OptionalInt.of(sourceZoom);
+        }
+
+        private static Map<Integer, Set<Integer>> collectSourceZooms(Map<Integer, ZoomIndex> zoomIndices) {
+            Map<Integer, Set<Integer>> sourceZooms = new HashMap<>();
+            for (Map.Entry<Integer, ZoomIndex> entry : zoomIndices.entrySet()) {
+                sourceZooms.put(entry.getKey(), entry.getValue().sourceZooms());
+            }
+            return Collections.unmodifiableMap(sourceZooms);
+        }
     }
 }

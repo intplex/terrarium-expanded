@@ -239,11 +239,20 @@ class TerrainServicesRuntimeContextTest {
         assertEquals(1, context.services().tileService().configuredPrefetchRadius());
         assertEquals(5, context.services().tileService().configuredIoThreads());
 
-        assertNotNull(context.services().recoveryTileService());
-        assertEquals(recoveryBudget, context.services().recoveryTileService().configuredMemoryCacheMaxWeightBytes());
-        assertEquals(31, context.services().recoveryTileService().configuredMemoryCacheTtlSeconds());
-        assertEquals(2, context.services().recoveryTileService().configuredPrefetchRadius());
-        assertEquals(5, context.services().recoveryTileService().configuredIoThreads());
+        TerrariumTileService sourceZoomTen = context.services().recoveryTileService();
+        TerrariumTileService sourceZoomEight = context.services().terrainSourceTileService(8);
+        assertNotNull(sourceZoomTen);
+        assertNotNull(sourceZoomEight);
+        assertEquals(
+            recoveryBudget,
+            sourceZoomTen.configuredMemoryCacheMaxWeightBytes() + sourceZoomEight.configuredMemoryCacheMaxWeightBytes()
+        );
+        assertEquals(31, sourceZoomTen.configuredMemoryCacheTtlSeconds());
+        assertEquals(2, sourceZoomTen.configuredPrefetchRadius());
+        assertEquals(5, sourceZoomTen.configuredIoThreads());
+        assertEquals(31, sourceZoomEight.configuredMemoryCacheTtlSeconds());
+        assertEquals(2, sourceZoomEight.configuredPrefetchRadius());
+        assertEquals(5, sourceZoomEight.configuredIoThreads());
 
         assertEquals(surfaceBudget, context.services().surfaceWaterTileService().configuredMemoryCacheMaxWeightBytes());
         assertEquals(31, context.services().surfaceWaterTileService().configuredMemoryCacheTtlSeconds());
