@@ -15,6 +15,7 @@ class EarthGenConfigTest {
     @AfterEach
     void restoreActiveDefaults() {
         EarthGenConfig.setActiveZoom(EarthGenConfig.DEFAULT_ZOOM);
+        EarthGenConfig.setActiveMaxTerrainY(EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y);
         EarthGenConfig.resetActiveTerrainProfile();
     }
 
@@ -195,10 +196,35 @@ class EarthGenConfigTest {
     @Test
     void terrainProfileValidationRejectsInvalidValues() {
         assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateMaxMountainY(EarthGenConfig.SEA_LEVEL - 1));
-        assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateMaxMountainY(EarthGenConfig.MAX_TERRAIN_Y + 1));
+        assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateMaxMountainY(EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y + 1));
         assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateOceanFloorY(EarthGenConfig.MIN_TERRAIN_Y - 1));
         assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateOceanFloorY(EarthGenConfig.SEA_LEVEL));
         assertDoesNotThrow(() -> EarthGenConfig.validateMaxMountainY(128));
         assertDoesNotThrow(() -> EarthGenConfig.validateOceanFloorY(20));
+    }
+
+    @Test
+    void dynamicMaxTerrainYAllowsHigherMountainCeiling() {
+        EarthGenConfig.setActiveMaxTerrainY(511);
+        EarthGenConfig.setActiveTerrainProfile(511, EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y);
+
+        assertEquals(511, EarthGenConfig.activeMaxTerrainY());
+        assertEquals(511, EarthGenConfig.activeMaxMountainY());
+        assertEquals(511, EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS));
+    }
+
+    @Test
+    void configuredMountainCeilingIsCappedByActiveTerrainY() {
+        EarthGenConfig.setActiveMaxTerrainY(255);
+        EarthGenConfig.setActiveTerrainProfile(400, EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y);
+        assertEquals(255, EarthGenConfig.activeMaxMountainY());
+
+        EarthGenConfig.setActiveMaxTerrainY(511);
+        assertEquals(400, EarthGenConfig.activeMaxMountainY());
+    }
+
+    @Test
+    void maxTerrainYFromNoiseSettingsUsesInclusiveTopBlock() {
+        assertEquals(511, EarthGenConfig.maxTerrainYFromNoiseSettings(-64, 576));
     }
 }

@@ -38,7 +38,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
             Codec.intRange(EarthGenConfig.MIN_ZOOM, EarthGenConfig.MAX_ZOOM)
                 .optionalFieldOf("zoom", EarthGenConfig.DEFAULT_ZOOM)
                 .forGetter(EcoregionBiomeSource::zoom),
-            Codec.intRange(EarthGenConfig.MIN_MAX_MOUNTAIN_Y, EarthGenConfig.MAX_TERRAIN_Y)
+            Codec.intRange(EarthGenConfig.MIN_MAX_MOUNTAIN_Y, EarthGenConfig.ABSOLUTE_MAX_TERRAIN_Y)
                 .optionalFieldOf("max_mountain_y", EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y)
                 .forGetter(EcoregionBiomeSource::maxMountainY),
             Codec.intRange(EarthGenConfig.MIN_TERRAIN_Y, EarthGenConfig.MAX_OCEAN_FLOOR_Y)
