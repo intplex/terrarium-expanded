@@ -1,5 +1,6 @@
 package com.github.intplex.mixin;
 
+import com.github.intplex.earth.EarthGenConfig;
 import com.github.intplex.earth.biome.EcoregionBiomeSource;
 import com.github.intplex.earth.terrain.EarthWorldgenToggles;
 import com.github.intplex.earth.terrain.InlandWaterChunkPostProcessor;
@@ -25,6 +26,7 @@ import net.minecraft.world.level.levelgen.DensityFunctions;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseChunk;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
+import net.minecraft.world.level.levelgen.NoiseSettings;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.blending.Blender;
@@ -106,16 +108,24 @@ abstract class NoiseBasedChunkGeneratorMixin {
         Aquifer.FluidPicker fluidPicker,
         Blender blender
     ) {
+        EarthGenConfig.setActiveMaxTerrainY(
+            EarthGenConfig.maxTerrainYFromVerticalRange(chunkAccess.getMinBuildHeight(), chunkAccess.getHeight())
+        );
+
         EarthWorldgenToggles toggles = earthWorldgenToggles();
         if (toggles == null) {
             return NoiseChunk.forChunk(chunkAccess, randomState, beardifierOrMarker, settings, fluidPicker, blender);
         }
 
+        NoiseSettings sourceNoiseSettings = settings.noiseSettings();
+        NoiseSettings adjustedNoiseSettings = terrariumExpanded$noiseSettingsForChunk(settings, chunkAccess);
+
         NoiseGeneratorSettings adjustedSettings = settings;
         boolean aquifersEnabled = toggles.aquifers();
-        if (settings.aquifersEnabled() != aquifersEnabled || !settings.oreVeinsEnabled()) {
+        boolean noiseSettingsChanged = !adjustedNoiseSettings.equals(sourceNoiseSettings);
+        if (noiseSettingsChanged || settings.aquifersEnabled() != aquifersEnabled || !settings.oreVeinsEnabled()) {
             adjustedSettings = new NoiseGeneratorSettings(
-                settings.noiseSettings(),
+                adjustedNoiseSettings,
                 settings.defaultBlock(),
                 settings.defaultFluid(),
                 settings.noiseRouter(),
@@ -148,6 +158,26 @@ abstract class NoiseBasedChunkGeneratorMixin {
         );
     }
 
+    @Redirect(
+        method = "fillFromNoise",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/level/levelgen/NoiseGeneratorSettings;noiseSettings()Lnet/minecraft/world/level/levelgen/NoiseSettings;"
+        )
+    )
+    private NoiseSettings terrariumExpanded$useExpandedNoiseSettingsDuringChunkFill(
+        NoiseGeneratorSettings settings,
+        Blender blender,
+        RandomState randomState,
+        StructureManager structureManager,
+        ChunkAccess chunkAccess
+    ) {
+        if (earthWorldgenToggles() == null) {
+            return settings.noiseSettings();
+        }
+        return terrariumExpanded$noiseSettingsForChunk(settings, chunkAccess);
+    }
+
     @Inject(method = "fillFromNoise", at = @At("RETURN"), cancellable = true)
     private void terrariumExpanded$fillInlandWater(
         Blender blender,
@@ -174,6 +204,21 @@ abstract class NoiseBasedChunkGeneratorMixin {
             return earthBiomeSource.worldgenToggles();
         }
         return null;
+    }
+
+    private static NoiseSettings terrariumExpanded$noiseSettingsForChunk(NoiseGeneratorSettings settings, ChunkAccess chunkAccess) {
+        NoiseSettings sourceNoiseSettings = settings.noiseSettings();
+        int chunkMinY = chunkAccess.getMinBuildHeight();
+        int chunkHeight = chunkAccess.getHeight();
+        if (sourceNoiseSettings.minY() == chunkMinY && sourceNoiseSettings.height() == chunkHeight) {
+            return sourceNoiseSettings;
+        }
+        return NoiseSettings.create(
+            chunkMinY,
+            chunkHeight,
+            sourceNoiseSettings.noiseSizeHorizontal(),
+            sourceNoiseSettings.noiseSizeVertical()
+        );
     }
 
     private static boolean shouldKeepCarver(Holder<ConfiguredWorldCarver<?>> holder, EarthWorldgenToggles toggles) {

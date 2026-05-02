@@ -82,7 +82,7 @@ public record EarthGenerationProfile(
 
     public EarthGenerationProfile {
         zoom = EarthGenConfig.validateZoom(zoom);
-        maxMountainY = EarthGenConfig.validateMaxMountainY(maxMountainY);
+        maxMountainY = EarthGenConfig.validateMaxMountainY(maxMountainY, EarthGenConfig.ABSOLUTE_MAX_TERRAIN_Y);
         oceanFloorY = EarthGenConfig.validateOceanFloorY(oceanFloorY);
         terrainBaseUrl = normalizeUrl(terrainBaseUrl, "terrain_base_url");
         biomesBaseUrl = normalizeUrl(biomesBaseUrl, "biomes_base_url");

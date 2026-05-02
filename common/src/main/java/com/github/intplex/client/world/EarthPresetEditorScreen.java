@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -20,10 +21,13 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.client.gui.screens.worldselection.WorldCreationContext;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.biome.BiomeSource;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 
 public final class EarthPresetEditorScreen extends Screen {
@@ -60,14 +64,6 @@ public final class EarthPresetEditorScreen extends Screen {
     private static final Component VILLAGES_LABEL = Component.translatable("terrarium_expanded.customize.earth.villages");
     private static final Component WORLD_BORDER_LABEL =
         Component.translatable("terrarium_expanded.customize.earth.world_border");
-    private static final Component INVALID_HEIGHT_INPUT =
-        Component.translatable(
-            "terrarium_expanded.customize.earth.invalid_height_input",
-            EarthGenConfig.MIN_MAX_MOUNTAIN_Y,
-            EarthGenConfig.MAX_TERRAIN_Y,
-            EarthGenConfig.MIN_TERRAIN_Y,
-            EarthGenConfig.MAX_OCEAN_FLOOR_Y
-        );
     private static final Component INVALID_URL_INPUT =
         Component.translatable("terrarium_expanded.customize.earth.invalid_url_input");
     private static final Component INVALID_GEO_INPUT =
@@ -86,6 +82,7 @@ public final class EarthPresetEditorScreen extends Screen {
 
     private final CreateWorldScreen parent;
     private final boolean biomesOPlentyLoaded;
+    private final int maxTerrainYLimit;
 
     private int selectedZoom;
     private int selectedMaxMountainY;
@@ -124,6 +121,7 @@ public final class EarthPresetEditorScreen extends Screen {
     private CycleButton<Boolean> worldBorderButton;
     private Button doneButton;
     private Component validationMessage;
+    private ValidationKind validationKind = ValidationKind.NONE;
 
     private int fullWidth;
     private int halfWidth;
@@ -136,13 +134,13 @@ public final class EarthPresetEditorScreen extends Screen {
     private int viewportTop;
     private int viewportBottom;
     private int buttonY;
-    private int validationY;
 
     private int zoomRowY;
     private int biomeIntegrationLabelY;
     private int biomeIntegrationRowY;
     private int worldSizeInfoY;
     private int scaleInfoY;
+    private int heightValidationY;
     private int shapeLabelY;
     private int shapeRowY;
     private int spawnLabelY;
@@ -170,8 +168,10 @@ public final class EarthPresetEditorScreen extends Screen {
         super(TITLE);
         this.parent = parent;
         this.biomesOPlentyLoaded = isModLoadedSafely("biomesoplenty");
+        this.maxTerrainYLimit = initialSettings.maxTerrainYLimit();
+        EarthGenConfig.setActiveMaxTerrainY(maxTerrainYLimit);
         this.selectedZoom = EarthGenConfig.validateZoom(initialSettings.zoom());
-        this.selectedMaxMountainY = EarthGenConfig.validateMaxMountainY(initialSettings.maxMountainY());
+        this.selectedMaxMountainY = EarthGenConfig.validateMaxMountainY(initialSettings.maxMountainY(), maxTerrainYLimit);
         this.selectedOceanFloorY = EarthGenConfig.validateOceanFloorY(initialSettings.oceanFloorY());
         this.selectedSpawnLatitude = initialSettings.spawnLatitude();
         this.selectedSpawnLongitude = initialSettings.spawnLongitude();
@@ -326,7 +326,6 @@ public final class EarthPresetEditorScreen extends Screen {
         titleY = 14;
         contentTop = titleY + 22;
         buttonY = height - 28;
-        validationY = buttonY + 22;
         viewportTop = contentTop;
         viewportBottom = buttonY - 8;
 
@@ -341,6 +340,10 @@ public final class EarthPresetEditorScreen extends Screen {
         y += 10;
         scaleInfoY = y;
         y += SECTION_GAP;
+        heightValidationY = y;
+        if (validationKind == ValidationKind.HEIGHT && validationMessage != null) {
+            y += heightValidationBlockHeight(validationMessage) + ROW_GAP;
+        }
         shapeLabelY = y;
         y += LABEL_GAP;
         shapeRowY = y;
@@ -446,18 +449,25 @@ public final class EarthPresetEditorScreen extends Screen {
     }
 
     private void updateValidationState() {
+        ValidationKind previousKind = validationKind;
+        int previousHeightValidationPixels = heightValidationBlockHeight(validationMessage);
+
         OptionalInt parsedMaxMountainY = parseMaxMountainY(maxMountainYBox.getValue());
         OptionalInt parsedOceanFloorY = parseOceanFloorY(oceanFloorYBox.getValue());
         OptionalDouble parsedSpawnLatitude = parseSpawnLatitude(spawnLatitudeBox.getValue());
         OptionalDouble parsedSpawnLongitude = parseSpawnLongitude(spawnLongitudeBox.getValue());
         if (parsedMaxMountainY.isEmpty() || parsedOceanFloorY.isEmpty()) {
             doneButton.active = false;
-            validationMessage = INVALID_HEIGHT_INPUT;
+            validationMessage = invalidHeightInput();
+            validationKind = ValidationKind.HEIGHT;
+            reflowLayoutIfNeeded(previousKind, previousHeightValidationPixels);
             return;
         }
         if (parsedSpawnLatitude.isEmpty() || parsedSpawnLongitude.isEmpty()) {
             doneButton.active = false;
             validationMessage = INVALID_GEO_INPUT;
+            validationKind = ValidationKind.GEO;
+            reflowLayoutIfNeeded(previousKind, previousHeightValidationPixels);
             return;
         }
 
@@ -484,10 +494,13 @@ public final class EarthPresetEditorScreen extends Screen {
             );
             doneButton.active = true;
             validationMessage = null;
+            validationKind = ValidationKind.NONE;
         } catch (IllegalArgumentException exception) {
             doneButton.active = false;
             validationMessage = INVALID_URL_INPUT;
+            validationKind = ValidationKind.URL;
         }
+        reflowLayoutIfNeeded(previousKind, previousHeightValidationPixels);
     }
 
     private void applyAndClose() {
@@ -533,10 +546,12 @@ public final class EarthPresetEditorScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (maxScroll > 0 && mouseY >= viewportTop && mouseY <= viewportBottom) {
+        if (maxScroll > 0) {
             int delta = (int) Math.round(-scrollY * 18.0);
-            setScrollOffset(scrollOffset + delta);
-            return true;
+            if (delta != 0) {
+                setScrollOffset(scrollOffset + delta);
+                return true;
+            }
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
@@ -661,7 +676,33 @@ public final class EarthPresetEditorScreen extends Screen {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         if (validationMessage != null) {
-            guiGraphics.drawCenteredString(font, validationMessage, centerX, validationY, withOpaqueAlpha(0xFF6B6B));
+            if (validationKind == ValidationKind.HEIGHT) {
+                renderHeightValidation(guiGraphics, validationMessage);
+            } else {
+                renderFooterValidation(guiGraphics, validationMessage, centerX);
+            }
+        }
+    }
+
+    private void renderHeightValidation(GuiGraphics guiGraphics, Component message) {
+        List<FormattedCharSequence> lines = font.split(message, fullWidth);
+        int lineHeight = font.lineHeight + 1;
+        int startY = scrolledY(heightValidationY);
+        for (int i = 0; i < lines.size(); i++) {
+            int lineY = startY + i * lineHeight;
+            if (lineY >= viewportTop - 10 && lineY <= viewportBottom) {
+                guiGraphics.drawString(font, lines.get(i), leftX, lineY, withOpaqueAlpha(0xFF6B6B));
+            }
+        }
+    }
+
+    private void renderFooterValidation(GuiGraphics guiGraphics, Component message, int centerX) {
+        List<FormattedCharSequence> lines = font.split(message, fullWidth);
+        int lineHeight = font.lineHeight + 1;
+        int totalHeight = lines.size() * lineHeight;
+        int startY = buttonY - totalHeight - 3;
+        for (int i = 0; i < lines.size(); i++) {
+            guiGraphics.drawCenteredString(font, lines.get(i), centerX, startY + i * lineHeight, withOpaqueAlpha(0xFF6B6B));
         }
     }
 
@@ -714,15 +755,25 @@ public final class EarthPresetEditorScreen extends Screen {
         );
     }
 
-    private static OptionalInt parseMaxMountainY(String raw) {
+    private OptionalInt parseMaxMountainY(String raw) {
         if (raw == null || raw.isBlank()) {
             return OptionalInt.empty();
         }
         try {
-            return OptionalInt.of(EarthGenConfig.validateMaxMountainY(Integer.parseInt(raw.trim())));
+            return OptionalInt.of(EarthGenConfig.validateMaxMountainY(Integer.parseInt(raw.trim()), maxTerrainYLimit));
         } catch (IllegalArgumentException ignored) {
             return OptionalInt.empty();
         }
+    }
+
+    private Component invalidHeightInput() {
+        return Component.translatable(
+            "terrarium_expanded.customize.earth.invalid_height_input",
+            EarthGenConfig.MIN_MAX_MOUNTAIN_Y,
+            maxTerrainYLimit,
+            EarthGenConfig.MIN_TERRAIN_Y,
+            EarthGenConfig.MAX_OCEAN_FLOOR_Y
+        );
     }
 
     private static OptionalInt parseOceanFloorY(String raw) {
@@ -784,11 +835,14 @@ public final class EarthPresetEditorScreen extends Screen {
         if (!(currentGenerator instanceof NoiseBasedChunkGenerator noiseBased)) {
             return PresetSettings.defaults();
         }
+        int maxTerrainYLimit = resolveMaxTerrainYLimit(context, noiseBased);
+        EarthGenConfig.setActiveMaxTerrainY(maxTerrainYLimit);
         BiomeSource currentBiomeSource = noiseBased.getBiomeSource();
         if (currentBiomeSource instanceof EcoregionBiomeSource ecoregionBiomeSource) {
+            int clampedMaxMountainY = Math.min(ecoregionBiomeSource.maxMountainY(), maxTerrainYLimit);
             return new PresetSettings(
                 ecoregionBiomeSource.zoom(),
-                ecoregionBiomeSource.maxMountainY(),
+                clampedMaxMountainY,
                 ecoregionBiomeSource.oceanFloorY(),
                 ecoregionBiomeSource.terrainBaseUrl(),
                 ecoregionBiomeSource.biomesBaseUrl(),
@@ -798,10 +852,51 @@ public final class EarthPresetEditorScreen extends Screen {
                 ecoregionBiomeSource.spawnLatitude(),
                 ecoregionBiomeSource.spawnLongitude(),
                 ecoregionBiomeSource.biomeIntegration(),
-                ecoregionBiomeSource.worldgenToggles()
+                ecoregionBiomeSource.worldgenToggles(),
+                maxTerrainYLimit
             );
         }
         return PresetSettings.defaults();
+    }
+
+    private static int resolveMaxTerrainYLimit(WorldCreationContext context, NoiseBasedChunkGenerator generator) {
+        try {
+            // Datapack dimension definitions override world preset dimensions at world creation time.
+            // Prefer the datapack LevelStem registry for the most accurate build-height view in UI.
+            Integer fromDatapack = maxTerrainYFromLevelStemRegistry(context.datapackDimensions());
+            if (fromDatapack != null) {
+                return fromDatapack.intValue();
+            }
+
+            Integer fromSelectedDimensions = context.selectedDimensions()
+                .get(LevelStem.OVERWORLD)
+                .map(EarthPresetEditorScreen::maxTerrainYFromLevelStem)
+                .orElse(null);
+            if (fromSelectedDimensions != null) {
+                return fromSelectedDimensions.intValue();
+            }
+
+            return EarthGenConfig.maxTerrainYFromVerticalRange(
+                generator.generatorSettings().value().noiseSettings().minY(),
+                generator.generatorSettings().value().noiseSettings().height()
+            );
+        } catch (RuntimeException ignored) {
+            return EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y;
+        }
+    }
+
+    private static Integer maxTerrainYFromLevelStemRegistry(Registry<LevelStem> stems) {
+        if (stems == null) {
+            return null;
+        }
+        return stems.getOptional(LevelStem.OVERWORLD)
+            .map(EarthPresetEditorScreen::maxTerrainYFromLevelStem)
+            .orElse(null);
+    }
+
+    private static int maxTerrainYFromLevelStem(LevelStem stem) {
+        DimensionType type = stem.type().value();
+        return EarthGenConfig.maxTerrainYFromVerticalRange(type.minY(), type.height());
     }
 
     private static List<Integer> supportedZooms() {
@@ -832,6 +927,34 @@ public final class EarthPresetEditorScreen extends Screen {
         }
     }
 
+    private int heightValidationBlockHeight(Component message) {
+        if (message == null || font == null) {
+            return 0;
+        }
+        int lineHeight = font.lineHeight + 1;
+        return font.split(message, fullWidth).size() * lineHeight;
+    }
+
+    private void reflowLayoutIfNeeded(ValidationKind previousKind, int previousHeightValidationPixels) {
+        int currentHeightValidationPixels = heightValidationBlockHeight(validationMessage);
+        boolean heightBlockWasVisible = previousKind == ValidationKind.HEIGHT && previousHeightValidationPixels > 0;
+        boolean heightBlockIsVisible = validationKind == ValidationKind.HEIGHT && currentHeightValidationPixels > 0;
+        boolean heightBlockSizeChanged = previousHeightValidationPixels != currentHeightValidationPixels;
+        if (!heightBlockWasVisible && !heightBlockIsVisible && !heightBlockSizeChanged) {
+            return;
+        }
+        layoutScreen();
+        updateScrollLimits();
+        refreshScrollableWidgetPositions();
+    }
+
+    private enum ValidationKind {
+        NONE,
+        HEIGHT,
+        URL,
+        GEO
+    }
+
     private record PresetSettings(
         int zoom,
         int maxMountainY,
@@ -844,7 +967,8 @@ public final class EarthPresetEditorScreen extends Screen {
         double spawnLatitude,
         double spawnLongitude,
         BiomeIntegrationMode biomeIntegration,
-        EarthWorldgenToggles worldgenToggles
+        EarthWorldgenToggles worldgenToggles,
+        int maxTerrainYLimit
     ) {
         private static final PresetSettings DEFAULT = new PresetSettings(
             EarthGenConfig.DEFAULT_ZOOM,
@@ -858,7 +982,8 @@ public final class EarthPresetEditorScreen extends Screen {
             EarthGenerationProfile.DEFAULT_SPAWN_LATITUDE,
             EarthGenerationProfile.DEFAULT_SPAWN_LONGITUDE,
             BiomeIntegrationMode.AUTO,
-            EarthWorldgenToggles.defaults()
+            EarthWorldgenToggles.defaults(),
+            EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y
         );
 
         private static PresetSettings defaults() {

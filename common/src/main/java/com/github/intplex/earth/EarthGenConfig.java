@@ -31,10 +31,14 @@ public final class EarthGenConfig {
     public static final double MAX_MERCATOR_LATITUDE = 85.0511287798066;
 
     public static final int SEA_LEVEL = 63;
-    public static final int MAX_TERRAIN_Y = 256;
+    /**
+     * Vanilla noise settings enforce an absolute upper build limit of y=2031
+     * (i.e. min_y + height - 1 <= 2031). This is an engine cap, not a per-world cap.
+     */
+    public static final int ABSOLUTE_MAX_TERRAIN_Y = 2031;
     public static final int MIN_Y = -64;
     public static final int MIN_TERRAIN_Y = 0;
-    public static final int DEFAULT_MAX_MOUNTAIN_Y = MAX_TERRAIN_Y;
+    public static final int DEFAULT_MAX_MOUNTAIN_Y = 256;
     public static final int DEFAULT_OCEAN_FLOOR_Y = MIN_TERRAIN_Y;
     public static final int MIN_MAX_MOUNTAIN_Y = SEA_LEVEL;
     public static final int MAX_OCEAN_FLOOR_Y = SEA_LEVEL - 1;
@@ -43,6 +47,8 @@ public final class EarthGenConfig {
     public static final double OCEAN_FLOOR_DEPTH_METERS = 4000.0;
     private static final double EARTH_EQUATOR_CIRCUMFERENCE_METERS = 40075016.68557849;
     private static volatile int activeZoom = DEFAULT_ZOOM;
+    private static volatile int activeMaxTerrainY = DEFAULT_MAX_MOUNTAIN_Y;
+    private static volatile int configuredMaxMountainY = DEFAULT_MAX_MOUNTAIN_Y;
     private static volatile int activeMaxMountainY = DEFAULT_MAX_MOUNTAIN_Y;
     private static volatile int activeOceanFloorY = DEFAULT_OCEAN_FLOOR_Y;
 
@@ -80,14 +86,27 @@ public final class EarthGenConfig {
         return activeMaxMountainY;
     }
 
+    public static int activeMaxTerrainY() {
+        return activeMaxTerrainY;
+    }
+
     public static int activeOceanFloorY() {
         return activeOceanFloorY;
     }
 
     public static int validateMaxMountainY(int y) {
-        if (y < MIN_MAX_MOUNTAIN_Y || y > MAX_TERRAIN_Y) {
+        return validateMaxMountainY(y, activeMaxTerrainY);
+    }
+
+    public static int validateMaxMountainY(int y, int maxTerrainY) {
+        if (maxTerrainY < MIN_MAX_MOUNTAIN_Y || maxTerrainY > ABSOLUTE_MAX_TERRAIN_Y) {
             throw new IllegalArgumentException(
-                "Unsupported max_mountain_y " + y + "; supported range is " + MIN_MAX_MOUNTAIN_Y + "-" + MAX_TERRAIN_Y
+                "Unsupported max terrain Y " + maxTerrainY + "; supported range is " + MIN_MAX_MOUNTAIN_Y + "-" + ABSOLUTE_MAX_TERRAIN_Y
+            );
+        }
+        if (y < MIN_MAX_MOUNTAIN_Y || y > maxTerrainY) {
+            throw new IllegalArgumentException(
+                "Unsupported max_mountain_y " + y + "; supported range is " + MIN_MAX_MOUNTAIN_Y + "-" + maxTerrainY
             );
         }
         return y;
@@ -103,16 +122,45 @@ public final class EarthGenConfig {
     }
 
     public static boolean setActiveTerrainProfile(int maxMountainY, int oceanFloorY) {
-        int validatedMaxMountainY = validateMaxMountainY(maxMountainY);
+        int validatedMaxMountainY = validateMaxMountainY(maxMountainY, ABSOLUTE_MAX_TERRAIN_Y);
+        int resolvedMaxMountainY = Math.min(validatedMaxMountainY, activeMaxTerrainY);
         int validatedOceanFloorY = validateOceanFloorY(oceanFloorY);
-        boolean changed = activeMaxMountainY != validatedMaxMountainY || activeOceanFloorY != validatedOceanFloorY;
-        activeMaxMountainY = validatedMaxMountainY;
+        boolean changed = configuredMaxMountainY != validatedMaxMountainY
+            || activeMaxMountainY != resolvedMaxMountainY
+            || activeOceanFloorY != validatedOceanFloorY;
+        configuredMaxMountainY = validatedMaxMountainY;
+        activeMaxMountainY = resolvedMaxMountainY;
         activeOceanFloorY = validatedOceanFloorY;
         return changed;
     }
 
+    public static boolean setActiveMaxTerrainY(int maxTerrainY) {
+        int validatedMaxTerrainY = validateMaxTerrainY(maxTerrainY);
+        boolean changed = activeMaxTerrainY != validatedMaxTerrainY;
+        activeMaxTerrainY = validatedMaxTerrainY;
+        int resolvedMaxMountainY = Math.min(configuredMaxMountainY, validatedMaxTerrainY);
+        if (activeMaxMountainY != resolvedMaxMountainY) {
+            activeMaxMountainY = resolvedMaxMountainY;
+            changed = true;
+        }
+        return changed;
+    }
+
+    public static int maxTerrainYFromBuildHeight(int maxBuildHeightExclusive) {
+        return validateMaxTerrainY(maxBuildHeightExclusive - 1);
+    }
+
+    public static int maxTerrainYFromVerticalRange(int minY, int height) {
+        return validateMaxTerrainY(minY + height - 1);
+    }
+
+    public static int maxTerrainYFromNoiseSettings(int minY, int height) {
+        return maxTerrainYFromVerticalRange(minY, height);
+    }
+
     public static void resetActiveTerrainProfile() {
-        activeMaxMountainY = DEFAULT_MAX_MOUNTAIN_Y;
+        configuredMaxMountainY = DEFAULT_MAX_MOUNTAIN_Y;
+        activeMaxMountainY = Math.min(configuredMaxMountainY, activeMaxTerrainY);
         activeOceanFloorY = DEFAULT_OCEAN_FLOOR_Y;
     }
 
@@ -243,6 +291,15 @@ public final class EarthGenConfig {
         double clamped = Math.min(-meters, OCEAN_FLOOR_DEPTH_METERS) / OCEAN_FLOOR_DEPTH_METERS;
         // 0 => SEA_LEVEL - seaLevelOffset, 1.0 => active ocean floor Y
         return (int) (baseY + clamped * (oceanFloorY - baseY));
+    }
+
+    private static int validateMaxTerrainY(int y) {
+        if (y < MIN_MAX_MOUNTAIN_Y || y > ABSOLUTE_MAX_TERRAIN_Y) {
+            throw new IllegalArgumentException(
+                "Unsupported max terrain Y " + y + "; supported range is " + MIN_MAX_MOUNTAIN_Y + "-" + ABSOLUTE_MAX_TERRAIN_Y
+            );
+        }
+        return y;
     }
 
     private static GlobalPixel toGlobalPixelOrNull(int blockX, int blockZ, int zoom) {
