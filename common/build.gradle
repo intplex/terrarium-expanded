@@ -29,3 +29,7 @@ sourceSets {
 tasks.named("processResources") {
     dependsOn(tasks.named("generateEarthOverworldNoiseSettings"))
 }
+
+tasks.named("sourcesJar") {
+    dependsOn(tasks.named("generateEarthOverworldNoiseSettings"))
+}

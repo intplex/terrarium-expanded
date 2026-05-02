@@ -31,7 +31,7 @@ The Earth preset (`data/terrarium_expanded/worldgen/world_preset/earth.json`) us
 - `world_border`
 - `spawn_latitude`
 - `spawn_longitude`
-- `biome_integration` (`auto`, `vanilla`, `expanded`)
+- `biome_integration` (`auto`, `vanilla`, `biomes_o_plenty`, `regions_unexplored`; legacy `expanded` reads as `biomes_o_plenty`)
 - `generation` toggles:
   - `caves`
   - `canyons`
@@ -96,7 +96,7 @@ Note: if any in-bounds sample in a snapshot lacks usable surface-water data, inl
 `EcoregionBiomeSource#getNoiseBiome` does:
 
 1. Sample ecoregion color from reduced tiles (source zoom 8).
-2. Resolve color to biome from `color_biome_map.csv` through `EcoregionBiomeMappings` (mode depends on `biome_integration` and mod availability).
+2. Resolve color to biome from `color_biome_map.csv` through `EcoregionBiomeMappings` (mode depends on `biome_integration`, provider priority, and mod availability).
 3. If color is unmapped/unavailable, fall back to ocean biome selection using:
    - terrain-derived depth tier
    - WOA23 SST temperature tiering

@@ -41,10 +41,10 @@ class EcoregionBiomeSourceZoomTest {
             mapping(Map.of()),
             EcoregionBiomeSource.SamplingAdapters.defaults(),
             new EarthGenerationProfile(11, EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y, EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y),
-            BiomeIntegrationMode.EXPANDED
+            BiomeIntegrationMode.BIOMES_O_PLENTY
         );
         assertEquals(11, source.zoom());
-        assertEquals(BiomeIntegrationMode.EXPANDED, source.biomeIntegration());
+        assertEquals(BiomeIntegrationMode.BIOMES_O_PLENTY, source.biomeIntegration());
     }
 
     @Test

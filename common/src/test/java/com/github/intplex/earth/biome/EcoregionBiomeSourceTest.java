@@ -236,13 +236,13 @@ class EcoregionBiomeSourceTest {
     }
 
     @Test
-    void expandedModeFailsFastWhenPreferredIsMissing() {
+    void biomesOPlentyModeFailsFastWhenPreferredIsMissing() {
         Holder<Biome> preferred = dummyBiomeHolder();
         Holder<Biome> fallback = dummyBiomeHolder();
         IllegalStateException exception = assertThrows(
             IllegalStateException.class,
             () -> resolveModeTestMapping(
-                BiomeIntegrationMode.EXPANDED,
+                BiomeIntegrationMode.BIOMES_O_PLENTY,
                 preferred,
                 false,
                 fallback,
@@ -279,11 +279,15 @@ class EcoregionBiomeSourceTest {
             Map.of(
                 MODE_TEST_COLOR,
                 new EcoregionBiomeMappings.BiomeSelectionIds(
-                    Identifier.parse("biomesoplenty:maple_woods"),
-                    Identifier.parse("minecraft:plains")
+                    Identifier.parse("minecraft:plains"),
+                    Map.of(
+                        EcoregionBiomeMappings.BiomeProvider.BIOMES_O_PLENTY,
+                        new EcoregionBiomeMappings.ProviderBiome(Identifier.parse("biomesoplenty:maple_woods"), 100)
+                    )
                 )
             ),
             mode,
+            Set.of(EcoregionBiomeMappings.BiomeProvider.BIOMES_O_PLENTY),
             biomeId -> {
                 if ("biomesoplenty:maple_woods".equals(biomeId.toString())) {
                     if (preferredAvailable) {

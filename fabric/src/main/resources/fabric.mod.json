@@ -32,7 +32,8 @@
     "fabric-api": "*"
   },
   "recommends": {
-    "biomesoplenty": "*"
+    "biomesoplenty": "*",
+    "regions_unexplored": "*"
   },
   "suggests": {
     "another-mod": "*"

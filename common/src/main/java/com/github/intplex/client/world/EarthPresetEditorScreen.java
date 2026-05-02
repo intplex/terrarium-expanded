@@ -52,6 +52,8 @@ public final class EarthPresetEditorScreen extends Screen {
         Component.translatable("terrarium_expanded.customize.earth.biome_integration");
     private static final Component BIOMES_O_PLENTY_MISSING_WARNING =
         Component.translatable("terrarium_expanded.customize.earth.biome_integration.bop_missing");
+    private static final Component REGIONS_UNEXPLORED_MISSING_WARNING =
+        Component.translatable("terrarium_expanded.customize.earth.biome_integration.regions_unexplored_missing");
     private static final Component TOGGLES_HEADER =
         Component.translatable("terrarium_expanded.customize.earth.generation_settings");
     private static final Component CAVES_LABEL = Component.translatable("terrarium_expanded.customize.earth.caves");
@@ -82,6 +84,9 @@ public final class EarthPresetEditorScreen extends Screen {
 
     private final CreateWorldScreen parent;
     private final boolean biomesOPlentyLoaded;
+    private final boolean regionsUnexploredLoaded;
+    private final String biomesOPlentyVersion;
+    private final String regionsUnexploredVersion;
     private final int maxTerrainYLimit;
 
     private int selectedZoom;
@@ -168,6 +173,9 @@ public final class EarthPresetEditorScreen extends Screen {
         super(TITLE);
         this.parent = parent;
         this.biomesOPlentyLoaded = isModLoadedSafely("biomesoplenty");
+        this.regionsUnexploredLoaded = isModLoadedSafely("regions_unexplored");
+        this.biomesOPlentyVersion = modVersionSafely("biomesoplenty");
+        this.regionsUnexploredVersion = modVersionSafely("regions_unexplored");
         this.maxTerrainYLimit = initialSettings.maxTerrainYLimit();
         EarthGenConfig.setActiveMaxTerrainY(maxTerrainYLimit);
         this.selectedZoom = EarthGenConfig.validateZoom(initialSettings.zoom());
@@ -208,7 +216,12 @@ public final class EarthPresetEditorScreen extends Screen {
         addRenderableWidget(zoomButton);
 
         biomeIntegrationButton = CycleButton.<BiomeIntegrationMode>builder(this::biomeIntegrationModeLabel, selectedBiomeIntegration)
-            .withValues(List.of(BiomeIntegrationMode.AUTO, BiomeIntegrationMode.VANILLA, BiomeIntegrationMode.EXPANDED))
+            .withValues(List.of(
+                BiomeIntegrationMode.AUTO,
+                BiomeIntegrationMode.VANILLA,
+                BiomeIntegrationMode.BIOMES_O_PLENTY,
+                BiomeIntegrationMode.REGIONS_UNEXPLORED
+            ))
             .create(leftX, biomeIntegrationRowY, halfWidth, ROW_HEIGHT, BIOME_INTEGRATION_LABEL, (button, value) -> {
                 selectedBiomeIntegration = value;
                 updateValidationState();
@@ -666,8 +679,10 @@ public final class EarthPresetEditorScreen extends Screen {
             scaleInfoY,
             0xAFAFAF
         );
-        if (selectedBiomeIntegration == BiomeIntegrationMode.EXPANDED && !biomesOPlentyLoaded) {
-            drawLabelIfVisible(guiGraphics, BIOMES_O_PLENTY_MISSING_WARNING, rightX, biomeIntegrationRowY + 6, 0xFFAA4D);
+        Component biomeProviderStatus = biomeProviderStatusLabel();
+        if (biomeProviderStatus != null) {
+            int color = selectedProviderMissing() ? 0xFFAA4D : 0xAFAFAF;
+            drawLabelIfVisible(guiGraphics, biomeProviderStatus, rightX, biomeIntegrationRowY + 6, color);
         }
 
         renderScrollbar(guiGraphics);
@@ -915,8 +930,41 @@ public final class EarthPresetEditorScreen extends Screen {
         return switch (mode) {
             case AUTO -> Component.translatable("terrarium_expanded.customize.earth.biome_integration.auto");
             case VANILLA -> Component.translatable("terrarium_expanded.customize.earth.biome_integration.vanilla");
-            case EXPANDED -> Component.translatable("terrarium_expanded.customize.earth.biome_integration.biomes_o_plenty");
+            case BIOMES_O_PLENTY -> Component.translatable("terrarium_expanded.customize.earth.biome_integration.biomes_o_plenty");
+            case REGIONS_UNEXPLORED -> Component.translatable("terrarium_expanded.customize.earth.biome_integration.regions_unexplored");
         };
+    }
+
+    private Component biomeProviderStatusLabel() {
+        return switch (selectedBiomeIntegration) {
+            case BIOMES_O_PLENTY -> biomesOPlentyLoaded
+                ? Component.literal("Biomes O' Plenty detected: " + biomesOPlentyVersion)
+                : BIOMES_O_PLENTY_MISSING_WARNING;
+            case REGIONS_UNEXPLORED -> regionsUnexploredLoaded
+                ? Component.literal("Regions Unexplored detected: " + regionsUnexploredVersion)
+                : REGIONS_UNEXPLORED_MISSING_WARNING;
+            case AUTO -> autoBiomeProviderStatusLabel();
+            case VANILLA -> null;
+        };
+    }
+
+    private Component autoBiomeProviderStatusLabel() {
+        List<String> detected = new ArrayList<>();
+        if (biomesOPlentyLoaded) {
+            detected.add("Biomes O' Plenty " + biomesOPlentyVersion);
+        }
+        if (regionsUnexploredLoaded) {
+            detected.add("Regions Unexplored " + regionsUnexploredVersion);
+        }
+        if (detected.isEmpty()) {
+            return Component.literal("Auto: vanilla biomes");
+        }
+        return Component.literal("Auto: " + String.join(", ", detected));
+    }
+
+    private boolean selectedProviderMissing() {
+        return (selectedBiomeIntegration == BiomeIntegrationMode.BIOMES_O_PLENTY && !biomesOPlentyLoaded)
+            || (selectedBiomeIntegration == BiomeIntegrationMode.REGIONS_UNEXPLORED && !regionsUnexploredLoaded);
     }
 
     private static boolean isModLoadedSafely(String modId) {
@@ -924,6 +972,14 @@ public final class EarthPresetEditorScreen extends Screen {
             return Platform.isModLoaded(modId);
         } catch (RuntimeException | LinkageError exception) {
             return false;
+        }
+    }
+
+    private static String modVersionSafely(String modId) {
+        try {
+            return Platform.getOptionalMod(modId).map(dev.architectury.platform.Mod::getVersion).orElse("<unknown>");
+        } catch (RuntimeException | LinkageError exception) {
+            return "<unknown>";
         }
     }
 

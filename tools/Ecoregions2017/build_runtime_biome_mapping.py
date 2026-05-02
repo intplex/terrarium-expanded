@@ -16,6 +16,9 @@ class MappingRow:
     biome_name: str
     realm: str
     bop_biome_id: str
+    bop_priority: str
+    regions_unexplored_biome_id: str
+    regions_unexplored_priority: str
     minecraft_biome_id: str
 
 
@@ -45,9 +48,26 @@ def normalize_optional_biome_id(raw: str, label: str) -> str:
     return value
 
 
-def load_valid_bop_biome_ids(path: Path) -> set[str]:
+def normalize_optional_priority(raw: str, biome_id: str, biome_label: str, priority_label: str) -> str:
+    value = raw.strip()
+    if not biome_id:
+        if value:
+            raise ValueError(f"{priority_label} must be blank when {biome_label} is blank")
+        return ""
+    if not value:
+        raise ValueError(f"{priority_label} cannot be blank when {biome_label} is set")
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise ValueError(f"Invalid {priority_label} {raw!r}; expected non-negative integer") from exc
+    if parsed < 0:
+        raise ValueError(f"Invalid {priority_label} {raw!r}; expected non-negative integer")
+    return str(parsed)
+
+
+def load_valid_biome_ids(path: Path, label: str) -> set[str]:
     if not path.exists():
-        raise ValueError(f"Missing Biomes O' Plenty biome list CSV: {path}")
+        raise ValueError(f"Missing {label} biome list CSV: {path}")
     with path.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
         if "biome_id" not in set(reader.fieldnames or []):
@@ -62,7 +82,33 @@ def load_valid_bop_biome_ids(path: Path) -> set[str]:
     return valid_ids
 
 
-def load_rows(batch_dir: Path, valid_bop_biome_ids: set[str]) -> list[MappingRow]:
+def validate_provider_biome(
+    biome_id: str,
+    valid_ids: set[str],
+    namespace: str,
+    column_name: str,
+    path: Path,
+    line_number: int,
+) -> None:
+    if not biome_id:
+        return
+    if not biome_id.startswith(f"{namespace}:"):
+        raise ValueError(
+            f"{column_name} must use '{namespace}:' namespace "
+            f"({path}:{line_number}, value={biome_id!r})"
+        )
+    if biome_id not in valid_ids:
+        raise ValueError(
+            f"Unknown {column_name} in batch CSV "
+            f"({path}:{line_number}, value={biome_id!r})"
+        )
+
+
+def load_rows(
+    batch_dir: Path,
+    valid_bop_biome_ids: set[str],
+    valid_regions_unexplored_biome_ids: set[str],
+) -> list[MappingRow]:
     batch_paths = sorted(batch_dir.glob("unique_ecoregions_batch_*.csv"))
     if not batch_paths:
         raise ValueError(f"No batch files found in {batch_dir}")
@@ -77,10 +123,14 @@ def load_rows(batch_dir: Path, valid_bop_biome_ids: set[str]) -> list[MappingRow
                 "BIOME_NAME",
                 "REALM",
                 "BIOMES_O_PLENTY_BIOME",
+                "BIOMES_O_PLENTY_BIOME_PRIORITY",
+                "REGIONS_UNEXPLORED_BIOME",
+                "REGIONS_UNEXPLORED_BIOME_PRIORITY",
                 "MINECRAFT_BIOME",
             }
             if not required.issubset(set(reader.fieldnames or [])):
-                raise ValueError(f"{path} missing columns {sorted(required)}")
+                missing = sorted(required.difference(set(reader.fieldnames or [])))
+                raise ValueError(f"{path} missing columns {missing}")
 
             for line_number, row in enumerate(reader, start=2):
                 color_hex = normalize_color_hex(row["UNIQUE_ECOREGION_COLOR"])
@@ -91,26 +141,51 @@ def load_rows(batch_dir: Path, valid_bop_biome_ids: set[str]) -> list[MappingRow
                     row["BIOMES_O_PLENTY_BIOME"],
                     "BIOMES_O_PLENTY_BIOME",
                 )
+                bop_priority = normalize_optional_priority(
+                    row["BIOMES_O_PLENTY_BIOME_PRIORITY"],
+                    bop_biome_id,
+                    "BIOMES_O_PLENTY_BIOME",
+                    "BIOMES_O_PLENTY_BIOME_PRIORITY",
+                )
+                regions_unexplored_biome_id = normalize_optional_biome_id(
+                    row["REGIONS_UNEXPLORED_BIOME"],
+                    "REGIONS_UNEXPLORED_BIOME",
+                )
+                regions_unexplored_priority = normalize_optional_priority(
+                    row["REGIONS_UNEXPLORED_BIOME_PRIORITY"],
+                    regions_unexplored_biome_id,
+                    "REGIONS_UNEXPLORED_BIOME",
+                    "REGIONS_UNEXPLORED_BIOME_PRIORITY",
+                )
                 minecraft_biome_id = normalize_biome_id(row["MINECRAFT_BIOME"], "MINECRAFT_BIOME")
+                validate_provider_biome(
+                    bop_biome_id,
+                    valid_bop_biome_ids,
+                    "biomesoplenty",
+                    "BIOMES_O_PLENTY_BIOME",
+                    path,
+                    line_number,
+                )
+                validate_provider_biome(
+                    regions_unexplored_biome_id,
+                    valid_regions_unexplored_biome_ids,
+                    "regions_unexplored",
+                    "REGIONS_UNEXPLORED_BIOME",
+                    path,
+                    line_number,
+                )
+
                 mapping = MappingRow(
                     color_hex=color_hex,
                     eco_name=eco_name,
                     biome_name=biome_name,
                     realm=realm,
                     bop_biome_id=bop_biome_id,
+                    bop_priority=bop_priority,
+                    regions_unexplored_biome_id=regions_unexplored_biome_id,
+                    regions_unexplored_priority=regions_unexplored_priority,
                     minecraft_biome_id=minecraft_biome_id,
                 )
-                if bop_biome_id:
-                    if not bop_biome_id.startswith("biomesoplenty:"):
-                        raise ValueError(
-                            "BIOMES_O_PLENTY_BIOME must use 'biomesoplenty:' namespace "
-                            f"({path}:{line_number}, value={bop_biome_id!r})"
-                        )
-                    if bop_biome_id not in valid_bop_biome_ids:
-                        raise ValueError(
-                            "Unknown BIOMES_O_PLENTY_BIOME in batch CSV "
-                            f"({path}:{line_number}, value={bop_biome_id!r})"
-                        )
                 existing = by_color.get(color_hex)
                 if existing is not None and existing != mapping:
                     raise ValueError(
@@ -133,6 +208,9 @@ def write_rows(rows: list[MappingRow], out_csv: Path) -> None:
                 "BIOME_NAME",
                 "REALM",
                 "BIOMES_O_PLENTY_BIOME",
+                "BIOMES_O_PLENTY_BIOME_PRIORITY",
+                "REGIONS_UNEXPLORED_BIOME",
+                "REGIONS_UNEXPLORED_BIOME_PRIORITY",
                 "MINECRAFT_BIOME",
             ],
         )
@@ -145,6 +223,9 @@ def write_rows(rows: list[MappingRow], out_csv: Path) -> None:
                     "BIOME_NAME": row.biome_name,
                     "REALM": row.realm,
                     "BIOMES_O_PLENTY_BIOME": row.bop_biome_id,
+                    "BIOMES_O_PLENTY_BIOME_PRIORITY": row.bop_priority,
+                    "REGIONS_UNEXPLORED_BIOME": row.regions_unexplored_biome_id,
+                    "REGIONS_UNEXPLORED_BIOME_PRIORITY": row.regions_unexplored_priority,
                     "MINECRAFT_BIOME": row.minecraft_biome_id,
                 }
             )
@@ -184,13 +265,23 @@ def parse_args() -> argparse.Namespace:
         default=script_dir / "biomes_o_plenty_biomes.csv",
         help="CSV containing valid Biomes O' Plenty biome IDs (column: biome_id).",
     )
+    parser.add_argument(
+        "--regions-unexplored-biomes-csv",
+        type=Path,
+        default=script_dir / "regions_unexplored_biomes.csv",
+        help="CSV containing valid Regions Unexplored biome IDs (column: biome_id).",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    valid_bop_biome_ids = load_valid_bop_biome_ids(args.bop_biomes_csv)
-    rows = load_rows(args.batch_dir, valid_bop_biome_ids)
+    valid_bop_biome_ids = load_valid_biome_ids(args.bop_biomes_csv, "Biomes O' Plenty")
+    valid_regions_unexplored_biome_ids = load_valid_biome_ids(
+        args.regions_unexplored_biomes_csv,
+        "Regions Unexplored",
+    )
+    rows = load_rows(args.batch_dir, valid_bop_biome_ids, valid_regions_unexplored_biome_ids)
     write_rows(rows, args.out_csv)
     print(f"Wrote {len(rows)} rows to {args.out_csv}")
     return 0

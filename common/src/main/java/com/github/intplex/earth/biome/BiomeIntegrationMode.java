@@ -6,7 +6,8 @@ import java.util.Locale;
 public enum BiomeIntegrationMode {
     AUTO("auto"),
     VANILLA("vanilla"),
-    EXPANDED("expanded");
+    BIOMES_O_PLENTY("biomes_o_plenty"),
+    REGIONS_UNEXPLORED("regions_unexplored");
 
     public static final Codec<BiomeIntegrationMode> CODEC = Codec.STRING.xmap(
         BiomeIntegrationMode::fromSerializedName,
@@ -28,13 +29,16 @@ public enum BiomeIntegrationMode {
             throw new IllegalArgumentException("biome_integration must not be null");
         }
         String normalized = raw.trim().toLowerCase(Locale.ROOT);
+        if ("expanded".equals(normalized)) {
+            return BIOMES_O_PLENTY;
+        }
         for (BiomeIntegrationMode mode : values()) {
             if (mode.serializedName.equals(normalized)) {
                 return mode;
             }
         }
         throw new IllegalArgumentException(
-            "Unsupported biome_integration '" + raw + "'; expected one of: auto, vanilla, expanded"
+            "Unsupported biome_integration '" + raw + "'; expected one of: auto, vanilla, biomes_o_plenty, regions_unexplored"
         );
     }
 }
