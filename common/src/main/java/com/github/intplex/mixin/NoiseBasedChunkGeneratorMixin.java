@@ -109,7 +109,7 @@ abstract class NoiseBasedChunkGeneratorMixin {
         Blender blender
     ) {
         EarthGenConfig.setActiveMaxTerrainY(
-            EarthGenConfig.maxTerrainYFromVerticalRange(chunkAccess.getMinBuildHeight(), chunkAccess.getHeight())
+            EarthGenConfig.maxTerrainYFromVerticalRange(chunkAccess.getMinY(), chunkAccess.getHeight())
         );
 
         EarthWorldgenToggles toggles = earthWorldgenToggles();
@@ -208,7 +208,7 @@ abstract class NoiseBasedChunkGeneratorMixin {
 
     private static NoiseSettings terrariumExpanded$noiseSettingsForChunk(NoiseGeneratorSettings settings, ChunkAccess chunkAccess) {
         NoiseSettings sourceNoiseSettings = settings.noiseSettings();
-        int chunkMinY = chunkAccess.getMinBuildHeight();
+        int chunkMinY = chunkAccess.getMinY();
         int chunkHeight = chunkAccess.getHeight();
         if (sourceNoiseSettings.minY() == chunkMinY && sourceNoiseSettings.height() == chunkHeight) {
             return sourceNoiseSettings;
