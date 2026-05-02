@@ -120,3 +120,5 @@ runs/
 
 *.tmp.md
 *.lpk
+
+*.log.gz

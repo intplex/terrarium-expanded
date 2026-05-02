@@ -16,7 +16,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Produce 100-row batches of tools/Ecoregions2017/ecoregions-unique-colors.csv "
-            "and add blank BIOMES_O_PLENTY_BIOME/MINECRAFT_BIOME columns so you can fill them manually."
+            "and add blank provider biome/priority columns so you can fill them manually."
         )
     )
     parser.add_argument(
@@ -44,10 +44,15 @@ def main() -> int:
     with args.csv.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
         fieldnames = list(reader.fieldnames or [])
-        if "BIOMES_O_PLENTY_BIOME" not in fieldnames:
-            fieldnames.append("BIOMES_O_PLENTY_BIOME")
-        if "MINECRAFT_BIOME" not in fieldnames:
-            fieldnames.append("MINECRAFT_BIOME")
+        for column in [
+            "BIOMES_O_PLENTY_BIOME",
+            "BIOMES_O_PLENTY_BIOME_PRIORITY",
+            "REGIONS_UNEXPLORED_BIOME",
+            "REGIONS_UNEXPLORED_BIOME_PRIORITY",
+            "MINECRAFT_BIOME",
+        ]:
+            if column not in fieldnames:
+                fieldnames.append(column)
         rows = list(reader)
 
     for idx, chunk in enumerate(chunked(rows, args.batch_size), start=1):
@@ -56,10 +61,9 @@ def main() -> int:
             writer = csv.DictWriter(handle, fieldnames=fieldnames)
             writer.writeheader()
             for row in chunk:
-                if "BIOMES_O_PLENTY_BIOME" not in row:
-                    row["BIOMES_O_PLENTY_BIOME"] = ""
-                if "MINECRAFT_BIOME" not in row:
-                    row["MINECRAFT_BIOME"] = ""
+                for column in fieldnames:
+                    if column not in row:
+                        row[column] = ""
                 writer.writerow(row)
         print(f"Wrote {batch_path} ({len(chunk)} rows)")
 

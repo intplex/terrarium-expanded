@@ -1,19 +1,21 @@
 package com.github.intplex.earth.biome;
 
 import dev.architectury.platform.Platform;
+import dev.architectury.platform.Mod;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.util.function.Function;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
@@ -26,10 +28,15 @@ import org.slf4j.LoggerFactory;
 
 public final class EcoregionBiomeMappings {
     static final String RESOURCE_PATH = "/data/terrarium_expanded/ecoregions/color_biome_map.csv";
-    static final String CSV_HEADER = "UNIQUE_ECOREGION_COLOR,ECO_NAME,BIOME_NAME,REALM,BIOMES_O_PLENTY_BIOME,MINECRAFT_BIOME";
+    static final String CSV_HEADER =
+        "UNIQUE_ECOREGION_COLOR,ECO_NAME,BIOME_NAME,REALM,BIOMES_O_PLENTY_BIOME,BIOMES_O_PLENTY_BIOME_PRIORITY,REGIONS_UNEXPLORED_BIOME,REGIONS_UNEXPLORED_BIOME_PRIORITY,MINECRAFT_BIOME";
     static final String BIOMES_O_PLENTY_MOD_ID = "biomesoplenty";
+    static final String REGIONS_UNEXPLORED_MOD_ID = "regions_unexplored";
+    private static final List<BiomeProvider> AUTO_PROVIDER_TIE_BREAK_ORDER =
+        List.of(BiomeProvider.REGIONS_UNEXPLORED, BiomeProvider.BIOMES_O_PLENTY);
     private static final Logger LOGGER = LoggerFactory.getLogger("terrarium_expanded.worldgen");
     private static volatile Map<Integer, BiomeSelectionIds> cachedColorToBiomeIds;
+    private static volatile boolean loggedProviderState;
 
     private EcoregionBiomeMappings() {
     }
@@ -39,9 +46,9 @@ public final class EcoregionBiomeMappings {
     }
 
     public static ResolvedBiomeMapping resolveForBiomeLookup(HolderGetter<Biome> biomeLookup, BiomeIntegrationMode integrationMode) {
-        BiomeIntegrationMode effectiveMode =
-            effectiveIntegrationMode(integrationMode, isModLoadedSafely(BIOMES_O_PLENTY_MOD_ID));
-        return resolveMappings(requireColorToBiomeIds(), effectiveMode, biomeLookup);
+        Set<BiomeProvider> loadedProviders = loadedProviders();
+        logProviderStateOnce(loadedProviders);
+        return resolveMappings(requireColorToBiomeIds(), integrationMode, loadedProviders, biomeLookup);
     }
 
     public static ResolvedBiomeMapping resolveForBiomeLookup(HolderGetter<Biome> biomeLookup) {
@@ -87,13 +94,16 @@ public final class EcoregionBiomeMappings {
                     continue;
                 }
                 List<String> cells = parseCsvRow(line);
-                if (cells.size() != 6) {
+                if (cells.size() != 9) {
                     throw new IllegalStateException("Malformed CSV row at line " + lineNumber + ": " + line);
                 }
 
                 String colorHex = cells.get(0).trim();
                 String bopBiomeId = cells.get(4).trim();
-                String minecraftBiomeId = cells.get(5).trim();
+                String bopPriority = cells.get(5).trim();
+                String regionsUnexploredBiomeId = cells.get(6).trim();
+                String regionsUnexploredPriority = cells.get(7).trim();
+                String minecraftBiomeId = cells.get(8).trim();
                 int color = parseColor(colorHex, lineNumber);
                 if (minecraftBiomeId.isEmpty()) {
                     throw new IllegalStateException("Blank MINECRAFT_BIOME at line " + lineNumber);
@@ -104,27 +114,23 @@ public final class EcoregionBiomeMappings {
                     throw new IllegalStateException("Invalid MINECRAFT_BIOME '" + minecraftBiomeId + "' at line " + lineNumber);
                 }
 
-                ResourceLocation preferredBiomeLocation = minecraftBiomeLocation;
-                if (!bopBiomeId.isEmpty()) {
-                    ResourceLocation bopBiomeLocation = ResourceLocation.tryParse(bopBiomeId);
-                    if (bopBiomeLocation == null) {
-                        throw new IllegalStateException(
-                            "Invalid BIOMES_O_PLENTY_BIOME '" + bopBiomeId + "' at line " + lineNumber
-                        );
-                    }
-                    if (!BIOMES_O_PLENTY_MOD_ID.equals(bopBiomeLocation.getNamespace())) {
-                        throw new IllegalStateException(
-                            "Invalid BIOMES_O_PLENTY_BIOME namespace '" + bopBiomeId + "' at line "
-                                + lineNumber
-                                + "; expected "
-                                + BIOMES_O_PLENTY_MOD_ID
-                                + ":..."
-                        );
-                    }
-                    preferredBiomeLocation = bopBiomeLocation;
-                }
+                Map<BiomeProvider, ProviderBiome> providerBiomes = new HashMap<>();
+                putProviderBiomeIfPresent(
+                    providerBiomes,
+                    BiomeProvider.BIOMES_O_PLENTY,
+                    bopBiomeId,
+                    bopPriority,
+                    lineNumber
+                );
+                putProviderBiomeIfPresent(
+                    providerBiomes,
+                    BiomeProvider.REGIONS_UNEXPLORED,
+                    regionsUnexploredBiomeId,
+                    regionsUnexploredPriority,
+                    lineNumber
+                );
 
-                BiomeSelectionIds mapping = new BiomeSelectionIds(preferredBiomeLocation, minecraftBiomeLocation);
+                BiomeSelectionIds mapping = new BiomeSelectionIds(minecraftBiomeLocation, Map.copyOf(providerBiomes));
 
                 BiomeSelectionIds previous = mappings.putIfAbsent(color, mapping);
                 if (previous != null && !previous.equals(mapping)) {
@@ -164,7 +170,21 @@ public final class EcoregionBiomeMappings {
         BiomeIntegrationMode integrationMode,
         HolderGetter<Biome> biomeLookup
     ) {
-        return resolveMappings(byColor, integrationMode, biomeId -> requireBiomeHolder(biomeLookup, biomeId));
+        return resolveMappings(
+            byColor,
+            integrationMode,
+            Set.of(BiomeProvider.BIOMES_O_PLENTY, BiomeProvider.REGIONS_UNEXPLORED),
+            biomeLookup
+        );
+    }
+
+    static ResolvedBiomeMapping resolveMappings(
+        Map<Integer, BiomeSelectionIds> byColor,
+        BiomeIntegrationMode integrationMode,
+        Set<BiomeProvider> loadedProviders,
+        HolderGetter<Biome> biomeLookup
+    ) {
+        return resolveMappings(byColor, integrationMode, loadedProviders, biomeId -> requireBiomeHolder(biomeLookup, biomeId));
     }
 
     static ResolvedBiomeMapping resolveMappings(
@@ -172,10 +192,29 @@ public final class EcoregionBiomeMappings {
         BiomeIntegrationMode integrationMode,
         Function<ResourceLocation, Holder<Biome>> biomeResolver
     ) {
+        return resolveMappings(
+            byColor,
+            integrationMode,
+            Set.of(BiomeProvider.BIOMES_O_PLENTY, BiomeProvider.REGIONS_UNEXPLORED),
+            biomeResolver
+        );
+    }
+
+    static ResolvedBiomeMapping resolveMappings(
+        Map<Integer, BiomeSelectionIds> byColor,
+        BiomeIntegrationMode integrationMode,
+        Set<BiomeProvider> loadedProviders,
+        Function<ResourceLocation, Holder<Biome>> biomeResolver
+    ) {
         Map<Integer, Holder<Biome>> resolved = new HashMap<>();
         Set<Holder<Biome>> possibleBiomes = new LinkedHashSet<>();
         for (Map.Entry<Integer, BiomeSelectionIds> entry : byColor.entrySet()) {
-            Holder<Biome> holder = resolvePreferredOrFallback(entry.getValue(), integrationMode, biomeResolver);
+            Holder<Biome> holder = resolvePreferredOrFallback(
+                entry.getValue(),
+                integrationMode == null ? BiomeIntegrationMode.AUTO : integrationMode,
+                loadedProviders == null ? Set.of() : loadedProviders,
+                biomeResolver
+            );
             resolved.put(entry.getKey(), holder);
             possibleBiomes.add(holder);
         }
@@ -221,11 +260,29 @@ public final class EcoregionBiomeMappings {
         );
     }
 
-    static BiomeIntegrationMode effectiveIntegrationMode(BiomeIntegrationMode requestedMode, boolean biomesOPlentyLoaded) {
-        if (requestedMode == BiomeIntegrationMode.AUTO && !biomesOPlentyLoaded) {
+    static BiomeIntegrationMode effectiveIntegrationMode(
+        BiomeIntegrationMode requestedMode,
+        boolean biomesOPlentyLoaded,
+        boolean regionsUnexploredLoaded
+    ) {
+        if (requestedMode == BiomeIntegrationMode.AUTO && !biomesOPlentyLoaded && !regionsUnexploredLoaded) {
             return BiomeIntegrationMode.VANILLA;
         }
         return requestedMode;
+    }
+
+    static BiomeIntegrationMode effectiveIntegrationMode(BiomeIntegrationMode requestedMode, boolean biomesOPlentyLoaded) {
+        return effectiveIntegrationMode(requestedMode, biomesOPlentyLoaded, false);
+    }
+
+    private static Set<BiomeProvider> loadedProviders() {
+        Set<BiomeProvider> loaded = new LinkedHashSet<>();
+        for (BiomeProvider provider : BiomeProvider.values()) {
+            if (isModLoadedSafely(provider.modId())) {
+                loaded.add(provider);
+            }
+        }
+        return Set.copyOf(loaded);
     }
 
     private static boolean isModLoadedSafely(String modId) {
@@ -237,15 +294,53 @@ public final class EcoregionBiomeMappings {
         }
     }
 
+    private static Optional<String> modVersion(String modId) {
+        try {
+            return Platform.getOptionalMod(modId).map(Mod::getVersion);
+        } catch (RuntimeException | LinkageError exception) {
+            LOGGER.debug("[TX-BIOME] could not determine version for {}: {}", modId, exception.toString());
+            return Optional.empty();
+        }
+    }
+
+    private static void logProviderStateOnce(Set<BiomeProvider> loadedProviders) {
+        if (loggedProviderState) {
+            return;
+        }
+        synchronized (EcoregionBiomeMappings.class) {
+            if (loggedProviderState) {
+                return;
+            }
+            LOGGER.info(
+                "[TX-BIOME] Biomes O' Plenty loaded={} version={}; Regions Unexplored loaded={} version={}",
+                loadedProviders.contains(BiomeProvider.BIOMES_O_PLENTY),
+                modVersion(BIOMES_O_PLENTY_MOD_ID).orElse("<unknown>"),
+                loadedProviders.contains(BiomeProvider.REGIONS_UNEXPLORED),
+                modVersion(REGIONS_UNEXPLORED_MOD_ID).orElse("<unknown>")
+            );
+            loggedProviderState = true;
+        }
+    }
+
     private static Holder<Biome> resolvePreferredOrFallback(
         BiomeSelectionIds selection,
         BiomeIntegrationMode integrationMode,
+        Set<BiomeProvider> loadedProviders,
         Function<ResourceLocation, Holder<Biome>> biomeResolver
     ) {
         if (integrationMode == BiomeIntegrationMode.VANILLA) {
             return requireFallbackBiomeHolder(biomeResolver, selection);
         }
-        return requirePreferredBiomeHolder(biomeResolver, selection, integrationMode);
+        ResourceLocation preferredBiomeId = switch (integrationMode) {
+            case AUTO -> selection.autoBiomeId(loadedProviders);
+            case BIOMES_O_PLENTY -> selection.providerBiomeIdOrFallback(BiomeProvider.BIOMES_O_PLENTY);
+            case REGIONS_UNEXPLORED -> selection.providerBiomeIdOrFallback(BiomeProvider.REGIONS_UNEXPLORED);
+            case VANILLA -> selection.fallbackBiomeId();
+        };
+        if (preferredBiomeId.equals(selection.fallbackBiomeId())) {
+            return requireFallbackBiomeHolder(biomeResolver, selection);
+        }
+        return requirePreferredBiomeHolder(biomeResolver, preferredBiomeId, selection.fallbackBiomeId(), integrationMode);
     }
 
     private static Holder<Biome> requireFallbackBiomeHolder(
@@ -264,19 +359,20 @@ public final class EcoregionBiomeMappings {
 
     private static Holder<Biome> requirePreferredBiomeHolder(
         Function<ResourceLocation, Holder<Biome>> biomeResolver,
-        BiomeSelectionIds selection,
+        ResourceLocation preferredBiomeId,
+        ResourceLocation fallbackBiomeId,
         BiomeIntegrationMode integrationMode
     ) {
         try {
-            return requireBiomeHolder(biomeResolver, selection.preferredBiomeId());
+            return requireBiomeHolder(biomeResolver, preferredBiomeId);
         } catch (RuntimeException preferredException) {
             throw new IllegalStateException(
                 "Unknown preferred biome id in ecoregion mapping (mode="
                     + integrationMode.serializedName()
                     + "): "
-                    + selection.preferredBiomeId()
+                    + preferredBiomeId
                     + " fallback="
-                    + selection.fallbackBiomeId(),
+                    + fallbackBiomeId,
                 preferredException
             );
         }
@@ -322,6 +418,57 @@ public final class EcoregionBiomeMappings {
         }
     }
 
+    private static void putProviderBiomeIfPresent(
+        Map<BiomeProvider, ProviderBiome> providerBiomes,
+        BiomeProvider provider,
+        String biomeId,
+        String priority,
+        int lineNumber
+    ) {
+        if (biomeId.isEmpty()) {
+            if (!priority.isEmpty()) {
+                throw new IllegalStateException("Blank " + provider.columnName() + " with nonblank priority at line " + lineNumber);
+            }
+            return;
+        }
+        if (priority.isEmpty()) {
+            throw new IllegalStateException("Blank " + provider.priorityColumnName() + " at line " + lineNumber);
+        }
+        ResourceLocation biomeLocation = ResourceLocation.tryParse(biomeId);
+        if (biomeLocation == null) {
+            throw new IllegalStateException("Invalid " + provider.columnName() + " '" + biomeId + "' at line " + lineNumber);
+        }
+        if (!provider.modId().equals(biomeLocation.getNamespace())) {
+            throw new IllegalStateException(
+                "Invalid "
+                    + provider.columnName()
+                    + " namespace '"
+                    + biomeId
+                    + "' at line "
+                    + lineNumber
+                    + "; expected "
+                    + provider.modId()
+                    + ":..."
+            );
+        }
+        providerBiomes.put(provider, new ProviderBiome(biomeLocation, parsePriority(priority, provider.priorityColumnName(), lineNumber)));
+    }
+
+    private static int parsePriority(String raw, String columnName, int lineNumber) {
+        try {
+            int value = Integer.parseInt(raw);
+            if (value < 0) {
+                throw new NumberFormatException("negative");
+            }
+            return value;
+        } catch (NumberFormatException exception) {
+            throw new IllegalStateException(
+                "Invalid " + columnName + " '" + raw + "' at line " + lineNumber + "; expected non-negative integer",
+                exception
+            );
+        }
+    }
+
     private static List<String> parseCsvRow(String line) {
         List<String> cells = new ArrayList<>();
         StringBuilder cell = new StringBuilder();
@@ -355,7 +502,67 @@ public final class EcoregionBiomeMappings {
         return cells;
     }
 
-    public record BiomeSelectionIds(ResourceLocation preferredBiomeId, ResourceLocation fallbackBiomeId) {
+    public enum BiomeProvider {
+        BIOMES_O_PLENTY(BIOMES_O_PLENTY_MOD_ID, "BIOMES_O_PLENTY_BIOME", "BIOMES_O_PLENTY_BIOME_PRIORITY"),
+        REGIONS_UNEXPLORED(REGIONS_UNEXPLORED_MOD_ID, "REGIONS_UNEXPLORED_BIOME", "REGIONS_UNEXPLORED_BIOME_PRIORITY");
+
+        private final String modId;
+        private final String columnName;
+        private final String priorityColumnName;
+
+        BiomeProvider(String modId, String columnName, String priorityColumnName) {
+            this.modId = modId;
+            this.columnName = columnName;
+            this.priorityColumnName = priorityColumnName;
+        }
+
+        String modId() {
+            return modId;
+        }
+
+        String columnName() {
+            return columnName;
+        }
+
+        String priorityColumnName() {
+            return priorityColumnName;
+        }
+    }
+
+    public record ProviderBiome(ResourceLocation biomeId, int priority) {
+    }
+
+    public record BiomeSelectionIds(ResourceLocation fallbackBiomeId, Map<BiomeProvider, ProviderBiome> providerBiomes) {
+        public BiomeSelectionIds {
+            providerBiomes = providerBiomes == null ? Map.of() : Map.copyOf(providerBiomes);
+        }
+
+        ResourceLocation providerBiomeIdOrFallback(BiomeProvider provider) {
+            ProviderBiome providerBiome = providerBiomes.get(provider);
+            return providerBiome == null ? fallbackBiomeId : providerBiome.biomeId();
+        }
+
+        ResourceLocation autoBiomeId(Set<BiomeProvider> loadedProviders) {
+            ProviderBiome bestProviderBiome = null;
+            int bestTieBreakIndex = Integer.MAX_VALUE;
+            for (BiomeProvider provider : AUTO_PROVIDER_TIE_BREAK_ORDER) {
+                if (!loadedProviders.contains(provider)) {
+                    continue;
+                }
+                ProviderBiome providerBiome = providerBiomes.get(provider);
+                if (providerBiome == null) {
+                    continue;
+                }
+                int tieBreakIndex = AUTO_PROVIDER_TIE_BREAK_ORDER.indexOf(provider);
+                if (bestProviderBiome == null
+                    || providerBiome.priority() < bestProviderBiome.priority()
+                    || (providerBiome.priority() == bestProviderBiome.priority() && tieBreakIndex < bestTieBreakIndex)) {
+                    bestProviderBiome = providerBiome;
+                    bestTieBreakIndex = tieBreakIndex;
+                }
+            }
+            return bestProviderBiome == null ? fallbackBiomeId : bestProviderBiome.biomeId();
+        }
     }
 
     public record ResolvedBiomeMapping(

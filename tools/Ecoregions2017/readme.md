@@ -21,7 +21,13 @@ Default output:
 
 ## Build Runtime Color->Biome Mapping
 
-After filling `BIOMES_O_PLENTY_BIOME` and `MINECRAFT_BIOME` in each batch CSV, generate the runtime mapping resource consumed by the mod:
+After filling provider biome columns, their priority columns, and `MINECRAFT_BIOME` in each batch CSV, generate the runtime mapping resource consumed by the mod:
+
+- `BIOMES_O_PLENTY_BIOME` + `BIOMES_O_PLENTY_BIOME_PRIORITY`
+- `REGIONS_UNEXPLORED_BIOME` + `REGIONS_UNEXPLORED_BIOME_PRIORITY`
+- `MINECRAFT_BIOME`
+
+Lower priority numbers win in `auto` mode when multiple loaded providers have mappings for the same ecoregion.
 
 ```powershell
 python tools/Ecoregions2017/build_runtime_biome_mapping.py
