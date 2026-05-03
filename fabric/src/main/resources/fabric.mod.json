@@ -33,9 +33,7 @@
   },
   "recommends": {
     "biomesoplenty": "*",
-    "regions_unexplored": "*"
-  },
-  "suggests": {
-    "another-mod": "*"
+    "regions_unexplored": "*",
+    "natures_spirit": "*"
   }
 }

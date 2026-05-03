@@ -37,6 +37,10 @@ class EcoregionBiomeMappingsTest {
             BiomeIntegrationMode.AUTO,
             EcoregionBiomeMappings.effectiveIntegrationMode(BiomeIntegrationMode.AUTO, false, true)
         );
+        assertEquals(
+            BiomeIntegrationMode.AUTO,
+            EcoregionBiomeMappings.effectiveIntegrationMode(BiomeIntegrationMode.AUTO, false, false, true)
+        );
     }
 
     @Test
@@ -45,11 +49,16 @@ class EcoregionBiomeMappingsTest {
     }
 
     @Test
+    void naturesSpiritModeDeserializes() {
+        assertEquals(BiomeIntegrationMode.NATURES_SPIRIT, BiomeIntegrationMode.fromSerializedName("natures_spirit"));
+    }
+
+    @Test
     void parseMappingsCsvParsesValidRows() {
         String csv = HEADER + """
 
-            #112233,Test Eco,Test Biome,Nearctic,, ,regions_unexplored:rainforest,90,minecraft:plains
-            #AABBCC,Other Eco,Other Biome,Palearctic,biomesoplenty:maple_woods,100,regions_unexplored:maple_forest,90,minecraft:forest
+            #112233,Test Eco,Test Biome,Nearctic,, ,regions_unexplored:rainforest,90,natures_spirit:tropical_woods,80,minecraft:plains
+            #AABBCC,Other Eco,Other Biome,Palearctic,biomesoplenty:maple_woods,100,regions_unexplored:maple_forest,90,natures_spirit:maple_woodlands,80,minecraft:forest
             """;
 
         Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> mappings =
@@ -69,6 +78,13 @@ class EcoregionBiomeMappingsTest {
             mappings.get(0xAABBCC)
                 .providerBiomes()
                 .get(EcoregionBiomeMappings.BiomeProvider.BIOMES_O_PLENTY)
+                .biomeId()
+        );
+        assertEquals(
+            ResourceLocation.parse("natures_spirit:maple_woodlands"),
+            mappings.get(0xAABBCC)
+                .providerBiomes()
+                .get(EcoregionBiomeMappings.BiomeProvider.NATURES_SPIRIT)
                 .biomeId()
         );
     }
@@ -91,7 +107,7 @@ class EcoregionBiomeMappingsTest {
     void parseMappingsCsvRejectsBlankBiome() {
         String csv = HEADER + """
 
-            #112233,Test Eco,Test Biome,Nearctic,biomesoplenty:maple_woods,100,regions_unexplored:maple_forest,90,
+            #112233,Test Eco,Test Biome,Nearctic,biomesoplenty:maple_woods,100,regions_unexplored:maple_forest,90,natures_spirit:maple_woodlands,80,
             """;
 
         IllegalStateException exception = assertThrows(
@@ -105,7 +121,7 @@ class EcoregionBiomeMappingsTest {
     void parseMappingsCsvAcceptsBlankProviderBiomesAndPriorities() {
         String csv = HEADER + """
 
-            #112233,Test Eco,Test Biome,Nearctic,,,,,minecraft:plains
+            #112233,Test Eco,Test Biome,Nearctic,,,,,,,minecraft:plains
             """;
 
         Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> mappings =
@@ -118,7 +134,7 @@ class EcoregionBiomeMappingsTest {
     void parseMappingsCsvRejectsBlankPriorityForProviderBiome() {
         String csv = HEADER + """
 
-            #112233,Test Eco,Test Biome,Nearctic,biomesoplenty:maple_woods,,regions_unexplored:maple_forest,90,minecraft:forest
+            #112233,Test Eco,Test Biome,Nearctic,biomesoplenty:maple_woods,,regions_unexplored:maple_forest,90,natures_spirit:maple_woodlands,80,minecraft:forest
             """;
 
         IllegalStateException exception = assertThrows(
@@ -132,7 +148,7 @@ class EcoregionBiomeMappingsTest {
     void parseMappingsCsvRejectsPriorityWithoutProviderBiome() {
         String csv = HEADER + """
 
-            #112233,Test Eco,Test Biome,Nearctic,,100,regions_unexplored:maple_forest,90,minecraft:forest
+            #112233,Test Eco,Test Biome,Nearctic,,100,regions_unexplored:maple_forest,90,natures_spirit:maple_woodlands,80,minecraft:forest
             """;
 
         IllegalStateException exception = assertThrows(
@@ -146,7 +162,7 @@ class EcoregionBiomeMappingsTest {
     void parseMappingsCsvHandlesQuotedBiomeNameWithComma() {
         String csv = HEADER + """
 
-            #112233,Test Eco,"Mediterranean Forests, Woodlands & Scrub",Nearctic,biomesoplenty:maple_woods,100,regions_unexplored:maple_forest,90,minecraft:forest
+            #112233,Test Eco,"Mediterranean Forests, Woodlands & Scrub",Nearctic,biomesoplenty:maple_woods,100,regions_unexplored:maple_forest,90,natures_spirit:chaparral,80,minecraft:forest
             """;
 
         Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> mappings =
@@ -158,7 +174,7 @@ class EcoregionBiomeMappingsTest {
     void parseMappingsCsvRejectsInvalidProviderBiome() {
         String csv = HEADER + """
 
-            #112233,Test Eco,Test Biome,Nearctic,not a biome,100,regions_unexplored:maple_forest,90,minecraft:plains
+            #112233,Test Eco,Test Biome,Nearctic,not a biome,100,regions_unexplored:maple_forest,90,natures_spirit:maple_woodlands,80,minecraft:plains
             """;
 
         IllegalStateException exception = assertThrows(
@@ -172,7 +188,7 @@ class EcoregionBiomeMappingsTest {
     void parseMappingsCsvRejectsWrongProviderNamespace() {
         String csv = HEADER + """
 
-            #112233,Test Eco,Test Biome,Nearctic,biomesoplenty:maple_woods,100,minecraft:plains,90,minecraft:plains
+            #112233,Test Eco,Test Biome,Nearctic,biomesoplenty:maple_woods,100,minecraft:plains,90,natures_spirit:maple_woodlands,80,minecraft:plains
             """;
 
         IllegalStateException exception = assertThrows(
@@ -183,11 +199,25 @@ class EcoregionBiomeMappingsTest {
     }
 
     @Test
+    void parseMappingsCsvRejectsDuplicateProviderPriority() {
+        String csv = HEADER + """
+
+            #112233,Test Eco,Test Biome,Nearctic,biomesoplenty:maple_woods,1,regions_unexplored:maple_forest,2,natures_spirit:maple_woodlands,2,minecraft:forest
+            """;
+
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> EcoregionBiomeMappings.parseMappingsCsv(new StringReader(csv))
+        );
+        assertTrue(exception.getMessage().contains("Duplicate provider biome priority 2"));
+    }
+
+    @Test
     void parseMappingsCsvRejectsConflictingDuplicateColor() {
         String csv = HEADER + """
 
-            #112233,Test Eco,Test Biome,Nearctic,biomesoplenty:maple_woods,100,regions_unexplored:maple_forest,90,minecraft:forest
-            #112233,Test Eco,Test Biome,Nearctic,biomesoplenty:origin_valley,100,regions_unexplored:maple_forest,90,minecraft:forest
+            #112233,Test Eco,Test Biome,Nearctic,biomesoplenty:maple_woods,100,regions_unexplored:maple_forest,90,natures_spirit:maple_woodlands,80,minecraft:forest
+            #112233,Test Eco,Test Biome,Nearctic,biomesoplenty:origin_valley,100,regions_unexplored:maple_forest,90,natures_spirit:maple_woodlands,80,minecraft:forest
             """;
 
         IllegalStateException exception = assertThrows(
@@ -222,6 +252,41 @@ class EcoregionBiomeMappingsTest {
         );
 
         assertEquals(regionsHolder, resolved.byColor().get(0x010203));
+    }
+
+    @Test
+    void resolveMappingsAutoUsesNaturesSpiritWhenLowestPriorityLoadedProvider() {
+        Holder<Biome> bopHolder = dummyBiomeHolder();
+        Holder<Biome> regionsHolder = dummyBiomeHolder();
+        Holder<Biome> naturesSpiritHolder = dummyBiomeHolder();
+        Holder<Biome> fallbackHolder = dummyBiomeHolder();
+
+        EcoregionBiomeMappings.ResolvedBiomeMapping resolved = EcoregionBiomeMappings.resolveMappings(
+            Map.of(0x010203, selection(100, 90, 80)),
+            BiomeIntegrationMode.AUTO,
+            Set.of(
+                EcoregionBiomeMappings.BiomeProvider.BIOMES_O_PLENTY,
+                EcoregionBiomeMappings.BiomeProvider.REGIONS_UNEXPLORED,
+                EcoregionBiomeMappings.BiomeProvider.NATURES_SPIRIT
+            ),
+            biomeId -> {
+                if ("biomesoplenty:maple_woods".equals(biomeId.toString())) {
+                    return bopHolder;
+                }
+                if ("regions_unexplored:maple_forest".equals(biomeId.toString())) {
+                    return regionsHolder;
+                }
+                if ("natures_spirit:maple_woodlands".equals(biomeId.toString())) {
+                    return naturesSpiritHolder;
+                }
+                if ("minecraft:plains".equals(biomeId.toString())) {
+                    return fallbackHolder;
+                }
+                return dummyBiomeHolder();
+            }
+        );
+
+        assertEquals(naturesSpiritHolder, resolved.byColor().get(0x010203));
     }
 
     @Test
@@ -338,6 +403,50 @@ class EcoregionBiomeMappingsTest {
     }
 
     @Test
+    void explicitNaturesSpiritModeUsesNaturesSpiritBiome() {
+        Holder<Biome> naturesSpiritHolder = dummyBiomeHolder();
+        Holder<Biome> fallbackHolder = dummyBiomeHolder();
+
+        EcoregionBiomeMappings.ResolvedBiomeMapping resolved = EcoregionBiomeMappings.resolveMappings(
+            Map.of(0x010203, selection(100, 90, 80)),
+            BiomeIntegrationMode.NATURES_SPIRIT,
+            Set.of(),
+            biomeId -> {
+                if ("natures_spirit:maple_woodlands".equals(biomeId.toString())) {
+                    return naturesSpiritHolder;
+                }
+                if ("minecraft:plains".equals(biomeId.toString())) {
+                    return fallbackHolder;
+                }
+                return dummyBiomeHolder();
+            }
+        );
+
+        assertEquals(naturesSpiritHolder, resolved.byColor().get(0x010203));
+    }
+
+    @Test
+    void explicitNaturesSpiritModeUsesFallbackWhenNaturesSpiritColumnBlank() {
+        Holder<Biome> fallbackHolder = dummyBiomeHolder();
+        EcoregionBiomeMappings.BiomeSelectionIds selection =
+            new EcoregionBiomeMappings.BiomeSelectionIds(ResourceLocation.parse("minecraft:plains"), Map.of());
+
+        EcoregionBiomeMappings.ResolvedBiomeMapping resolved = EcoregionBiomeMappings.resolveMappings(
+            Map.of(0x010203, selection),
+            BiomeIntegrationMode.NATURES_SPIRIT,
+            Set.of(),
+            biomeId -> {
+                if ("minecraft:plains".equals(biomeId.toString())) {
+                    return fallbackHolder;
+                }
+                return dummyBiomeHolder();
+            }
+        );
+
+        assertEquals(fallbackHolder, resolved.byColor().get(0x010203));
+    }
+
+    @Test
     void resolveMappingsFailsWhenPreferredBiomeHolderIsUnboundInAutoMode() {
         Holder<Biome> fallbackHolder = dummyBiomeHolder();
         Holder<Biome> unboundPreferredHolder = Holder.Reference.createStandAlone(
@@ -420,13 +529,19 @@ class EcoregionBiomeMappingsTest {
     }
 
     private static EcoregionBiomeMappings.BiomeSelectionIds selection(int bopPriority, int regionsPriority) {
+        return selection(bopPriority, regionsPriority, 80);
+    }
+
+    private static EcoregionBiomeMappings.BiomeSelectionIds selection(int bopPriority, int regionsPriority, int naturesSpiritPriority) {
         return new EcoregionBiomeMappings.BiomeSelectionIds(
             ResourceLocation.parse("minecraft:plains"),
             Map.of(
                 EcoregionBiomeMappings.BiomeProvider.BIOMES_O_PLENTY,
                 new EcoregionBiomeMappings.ProviderBiome(ResourceLocation.parse("biomesoplenty:maple_woods"), bopPriority),
                 EcoregionBiomeMappings.BiomeProvider.REGIONS_UNEXPLORED,
-                new EcoregionBiomeMappings.ProviderBiome(ResourceLocation.parse("regions_unexplored:maple_forest"), regionsPriority)
+                new EcoregionBiomeMappings.ProviderBiome(ResourceLocation.parse("regions_unexplored:maple_forest"), regionsPriority),
+                EcoregionBiomeMappings.BiomeProvider.NATURES_SPIRIT,
+                new EcoregionBiomeMappings.ProviderBiome(ResourceLocation.parse("natures_spirit:maple_woodlands"), naturesSpiritPriority)
             )
         );
     }

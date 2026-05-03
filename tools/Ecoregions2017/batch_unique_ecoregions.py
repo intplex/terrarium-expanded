@@ -49,6 +49,8 @@ def main() -> int:
             "BIOMES_O_PLENTY_BIOME_PRIORITY",
             "REGIONS_UNEXPLORED_BIOME",
             "REGIONS_UNEXPLORED_BIOME_PRIORITY",
+            "NATURES_SPIRIT_BIOME",
+            "NATURES_SPIRIT_BIOME_PRIORITY",
             "MINECRAFT_BIOME",
         ]:
             if column not in fieldnames:

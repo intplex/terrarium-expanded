@@ -29,11 +29,12 @@ import org.slf4j.LoggerFactory;
 public final class EcoregionBiomeMappings {
     static final String RESOURCE_PATH = "/data/terrarium_expanded/ecoregions/color_biome_map.csv";
     static final String CSV_HEADER =
-        "UNIQUE_ECOREGION_COLOR,ECO_NAME,BIOME_NAME,REALM,BIOMES_O_PLENTY_BIOME,BIOMES_O_PLENTY_BIOME_PRIORITY,REGIONS_UNEXPLORED_BIOME,REGIONS_UNEXPLORED_BIOME_PRIORITY,MINECRAFT_BIOME";
+        "UNIQUE_ECOREGION_COLOR,ECO_NAME,BIOME_NAME,REALM,BIOMES_O_PLENTY_BIOME,BIOMES_O_PLENTY_BIOME_PRIORITY,REGIONS_UNEXPLORED_BIOME,REGIONS_UNEXPLORED_BIOME_PRIORITY,NATURES_SPIRIT_BIOME,NATURES_SPIRIT_BIOME_PRIORITY,MINECRAFT_BIOME";
     static final String BIOMES_O_PLENTY_MOD_ID = "biomesoplenty";
     static final String REGIONS_UNEXPLORED_MOD_ID = "regions_unexplored";
+    static final String NATURES_SPIRIT_MOD_ID = "natures_spirit";
     private static final List<BiomeProvider> AUTO_PROVIDER_TIE_BREAK_ORDER =
-        List.of(BiomeProvider.REGIONS_UNEXPLORED, BiomeProvider.BIOMES_O_PLENTY);
+        List.of(BiomeProvider.REGIONS_UNEXPLORED, BiomeProvider.BIOMES_O_PLENTY, BiomeProvider.NATURES_SPIRIT);
     private static final Logger LOGGER = LoggerFactory.getLogger("terrarium_expanded.worldgen");
     private static volatile Map<Integer, BiomeSelectionIds> cachedColorToBiomeIds;
     private static volatile boolean loggedProviderState;
@@ -94,7 +95,7 @@ public final class EcoregionBiomeMappings {
                     continue;
                 }
                 List<String> cells = parseCsvRow(line);
-                if (cells.size() != 9) {
+                if (cells.size() != 11) {
                     throw new IllegalStateException("Malformed CSV row at line " + lineNumber + ": " + line);
                 }
 
@@ -103,7 +104,9 @@ public final class EcoregionBiomeMappings {
                 String bopPriority = cells.get(5).trim();
                 String regionsUnexploredBiomeId = cells.get(6).trim();
                 String regionsUnexploredPriority = cells.get(7).trim();
-                String minecraftBiomeId = cells.get(8).trim();
+                String naturesSpiritBiomeId = cells.get(8).trim();
+                String naturesSpiritPriority = cells.get(9).trim();
+                String minecraftBiomeId = cells.get(10).trim();
                 int color = parseColor(colorHex, lineNumber);
                 if (minecraftBiomeId.isEmpty()) {
                     throw new IllegalStateException("Blank MINECRAFT_BIOME at line " + lineNumber);
@@ -129,6 +132,14 @@ public final class EcoregionBiomeMappings {
                     regionsUnexploredPriority,
                     lineNumber
                 );
+                putProviderBiomeIfPresent(
+                    providerBiomes,
+                    BiomeProvider.NATURES_SPIRIT,
+                    naturesSpiritBiomeId,
+                    naturesSpiritPriority,
+                    lineNumber
+                );
+                validateUniqueProviderPriorities(providerBiomes, lineNumber);
 
                 BiomeSelectionIds mapping = new BiomeSelectionIds(minecraftBiomeLocation, Map.copyOf(providerBiomes));
 
@@ -173,7 +184,7 @@ public final class EcoregionBiomeMappings {
         return resolveMappings(
             byColor,
             integrationMode,
-            Set.of(BiomeProvider.BIOMES_O_PLENTY, BiomeProvider.REGIONS_UNEXPLORED),
+            Set.of(BiomeProvider.BIOMES_O_PLENTY, BiomeProvider.REGIONS_UNEXPLORED, BiomeProvider.NATURES_SPIRIT),
             biomeLookup
         );
     }
@@ -195,7 +206,7 @@ public final class EcoregionBiomeMappings {
         return resolveMappings(
             byColor,
             integrationMode,
-            Set.of(BiomeProvider.BIOMES_O_PLENTY, BiomeProvider.REGIONS_UNEXPLORED),
+            Set.of(BiomeProvider.BIOMES_O_PLENTY, BiomeProvider.REGIONS_UNEXPLORED, BiomeProvider.NATURES_SPIRIT),
             biomeResolver
         );
     }
@@ -263,16 +274,28 @@ public final class EcoregionBiomeMappings {
     static BiomeIntegrationMode effectiveIntegrationMode(
         BiomeIntegrationMode requestedMode,
         boolean biomesOPlentyLoaded,
-        boolean regionsUnexploredLoaded
+        boolean regionsUnexploredLoaded,
+        boolean naturesSpiritLoaded
     ) {
-        if (requestedMode == BiomeIntegrationMode.AUTO && !biomesOPlentyLoaded && !regionsUnexploredLoaded) {
+        if (requestedMode == BiomeIntegrationMode.AUTO
+            && !biomesOPlentyLoaded
+            && !regionsUnexploredLoaded
+            && !naturesSpiritLoaded) {
             return BiomeIntegrationMode.VANILLA;
         }
         return requestedMode;
     }
 
+    static BiomeIntegrationMode effectiveIntegrationMode(
+        BiomeIntegrationMode requestedMode,
+        boolean biomesOPlentyLoaded,
+        boolean regionsUnexploredLoaded
+    ) {
+        return effectiveIntegrationMode(requestedMode, biomesOPlentyLoaded, regionsUnexploredLoaded, false);
+    }
+
     static BiomeIntegrationMode effectiveIntegrationMode(BiomeIntegrationMode requestedMode, boolean biomesOPlentyLoaded) {
-        return effectiveIntegrationMode(requestedMode, biomesOPlentyLoaded, false);
+        return effectiveIntegrationMode(requestedMode, biomesOPlentyLoaded, false, false);
     }
 
     private static Set<BiomeProvider> loadedProviders() {
@@ -312,11 +335,13 @@ public final class EcoregionBiomeMappings {
                 return;
             }
             LOGGER.info(
-                "[TX-BIOME] Biomes O' Plenty loaded={} version={}; Regions Unexplored loaded={} version={}",
+                "[TX-BIOME] Biomes O' Plenty loaded={} version={}; Regions Unexplored loaded={} version={}; Nature's Spirit loaded={} version={}",
                 loadedProviders.contains(BiomeProvider.BIOMES_O_PLENTY),
                 modVersion(BIOMES_O_PLENTY_MOD_ID).orElse("<unknown>"),
                 loadedProviders.contains(BiomeProvider.REGIONS_UNEXPLORED),
-                modVersion(REGIONS_UNEXPLORED_MOD_ID).orElse("<unknown>")
+                modVersion(REGIONS_UNEXPLORED_MOD_ID).orElse("<unknown>"),
+                loadedProviders.contains(BiomeProvider.NATURES_SPIRIT),
+                modVersion(NATURES_SPIRIT_MOD_ID).orElse("<unknown>")
             );
             loggedProviderState = true;
         }
@@ -335,6 +360,7 @@ public final class EcoregionBiomeMappings {
             case AUTO -> selection.autoBiomeId(loadedProviders);
             case BIOMES_O_PLENTY -> selection.providerBiomeIdOrFallback(BiomeProvider.BIOMES_O_PLENTY);
             case REGIONS_UNEXPLORED -> selection.providerBiomeIdOrFallback(BiomeProvider.REGIONS_UNEXPLORED);
+            case NATURES_SPIRIT -> selection.providerBiomeIdOrFallback(BiomeProvider.NATURES_SPIRIT);
             case VANILLA -> selection.fallbackBiomeId();
         };
         if (preferredBiomeId.equals(selection.fallbackBiomeId())) {
@@ -469,6 +495,25 @@ public final class EcoregionBiomeMappings {
         }
     }
 
+    private static void validateUniqueProviderPriorities(Map<BiomeProvider, ProviderBiome> providerBiomes, int lineNumber) {
+        Map<Integer, BiomeProvider> byPriority = new HashMap<>();
+        for (Map.Entry<BiomeProvider, ProviderBiome> entry : providerBiomes.entrySet()) {
+            BiomeProvider existing = byPriority.putIfAbsent(entry.getValue().priority(), entry.getKey());
+            if (existing != null) {
+                throw new IllegalStateException(
+                    "Duplicate provider biome priority "
+                        + entry.getValue().priority()
+                        + " at line "
+                        + lineNumber
+                        + ": "
+                        + existing.priorityColumnName()
+                        + " and "
+                        + entry.getKey().priorityColumnName()
+                );
+            }
+        }
+    }
+
     private static List<String> parseCsvRow(String line) {
         List<String> cells = new ArrayList<>();
         StringBuilder cell = new StringBuilder();
@@ -504,7 +549,8 @@ public final class EcoregionBiomeMappings {
 
     public enum BiomeProvider {
         BIOMES_O_PLENTY(BIOMES_O_PLENTY_MOD_ID, "BIOMES_O_PLENTY_BIOME", "BIOMES_O_PLENTY_BIOME_PRIORITY"),
-        REGIONS_UNEXPLORED(REGIONS_UNEXPLORED_MOD_ID, "REGIONS_UNEXPLORED_BIOME", "REGIONS_UNEXPLORED_BIOME_PRIORITY");
+        REGIONS_UNEXPLORED(REGIONS_UNEXPLORED_MOD_ID, "REGIONS_UNEXPLORED_BIOME", "REGIONS_UNEXPLORED_BIOME_PRIORITY"),
+        NATURES_SPIRIT(NATURES_SPIRIT_MOD_ID, "NATURES_SPIRIT_BIOME", "NATURES_SPIRIT_BIOME_PRIORITY");
 
         private final String modId;
         private final String columnName;

@@ -25,9 +25,10 @@ After filling provider biome columns, their priority columns, and `MINECRAFT_BIO
 
 - `BIOMES_O_PLENTY_BIOME` + `BIOMES_O_PLENTY_BIOME_PRIORITY`
 - `REGIONS_UNEXPLORED_BIOME` + `REGIONS_UNEXPLORED_BIOME_PRIORITY`
+- `NATURES_SPIRIT_BIOME` + `NATURES_SPIRIT_BIOME_PRIORITY`
 - `MINECRAFT_BIOME`
 
-Lower priority numbers win in `auto` mode when multiple loaded providers have mappings for the same ecoregion.
+Lower priority numbers win in `auto` mode when multiple loaded providers have mappings for the same ecoregion. Provider priority values must be unique within each row.
 
 ```powershell
 python tools/Ecoregions2017/build_runtime_biome_mapping.py

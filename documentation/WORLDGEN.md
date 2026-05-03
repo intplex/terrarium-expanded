@@ -31,7 +31,7 @@ The Earth preset (`data/terrarium_expanded/worldgen/world_preset/earth.json`) us
 - `world_border`
 - `spawn_latitude`
 - `spawn_longitude`
-- `biome_integration` (`auto`, `vanilla`, `biomes_o_plenty`, `regions_unexplored`; legacy `expanded` reads as `biomes_o_plenty`)
+- `biome_integration` (`auto`, `vanilla`, `biomes_o_plenty`, `regions_unexplored`, `natures_spirit`; legacy `expanded` reads as `biomes_o_plenty`)
 - `generation` toggles:
   - `caves`
   - `canyons`
