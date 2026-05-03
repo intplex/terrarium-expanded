@@ -19,6 +19,8 @@ class MappingRow:
     bop_priority: str
     regions_unexplored_biome_id: str
     regions_unexplored_priority: str
+    natures_spirit_biome_id: str
+    natures_spirit_priority: str
     minecraft_biome_id: str
 
 
@@ -104,10 +106,31 @@ def validate_provider_biome(
         )
 
 
+def validate_unique_provider_priorities(row: dict[str, str], path: Path, line_number: int) -> None:
+    priority_columns = [
+        "BIOMES_O_PLENTY_BIOME_PRIORITY",
+        "REGIONS_UNEXPLORED_BIOME_PRIORITY",
+        "NATURES_SPIRIT_BIOME_PRIORITY",
+    ]
+    by_priority: dict[str, str] = {}
+    for column in priority_columns:
+        value = row.get(column, "").strip()
+        if not value:
+            continue
+        existing = by_priority.get(value)
+        if existing is not None:
+            raise ValueError(
+                f"Duplicate provider biome priority {value!r} in batch CSV "
+                f"({path}:{line_number}, columns={existing},{column})"
+            )
+        by_priority[value] = column
+
+
 def load_rows(
     batch_dir: Path,
     valid_bop_biome_ids: set[str],
     valid_regions_unexplored_biome_ids: set[str],
+    valid_natures_spirit_biome_ids: set[str],
 ) -> list[MappingRow]:
     batch_paths = sorted(batch_dir.glob("unique_ecoregions_batch_*.csv"))
     if not batch_paths:
@@ -126,6 +149,8 @@ def load_rows(
                 "BIOMES_O_PLENTY_BIOME_PRIORITY",
                 "REGIONS_UNEXPLORED_BIOME",
                 "REGIONS_UNEXPLORED_BIOME_PRIORITY",
+                "NATURES_SPIRIT_BIOME",
+                "NATURES_SPIRIT_BIOME_PRIORITY",
                 "MINECRAFT_BIOME",
             }
             if not required.issubset(set(reader.fieldnames or [])):
@@ -157,6 +182,16 @@ def load_rows(
                     "REGIONS_UNEXPLORED_BIOME",
                     "REGIONS_UNEXPLORED_BIOME_PRIORITY",
                 )
+                natures_spirit_biome_id = normalize_optional_biome_id(
+                    row["NATURES_SPIRIT_BIOME"],
+                    "NATURES_SPIRIT_BIOME",
+                )
+                natures_spirit_priority = normalize_optional_priority(
+                    row["NATURES_SPIRIT_BIOME_PRIORITY"],
+                    natures_spirit_biome_id,
+                    "NATURES_SPIRIT_BIOME",
+                    "NATURES_SPIRIT_BIOME_PRIORITY",
+                )
                 minecraft_biome_id = normalize_biome_id(row["MINECRAFT_BIOME"], "MINECRAFT_BIOME")
                 validate_provider_biome(
                     bop_biome_id,
@@ -174,6 +209,23 @@ def load_rows(
                     path,
                     line_number,
                 )
+                validate_provider_biome(
+                    natures_spirit_biome_id,
+                    valid_natures_spirit_biome_ids,
+                    "natures_spirit",
+                    "NATURES_SPIRIT_BIOME",
+                    path,
+                    line_number,
+                )
+                validate_unique_provider_priorities(
+                    {
+                        "BIOMES_O_PLENTY_BIOME_PRIORITY": bop_priority,
+                        "REGIONS_UNEXPLORED_BIOME_PRIORITY": regions_unexplored_priority,
+                        "NATURES_SPIRIT_BIOME_PRIORITY": natures_spirit_priority,
+                    },
+                    path,
+                    line_number,
+                )
 
                 mapping = MappingRow(
                     color_hex=color_hex,
@@ -184,6 +236,8 @@ def load_rows(
                     bop_priority=bop_priority,
                     regions_unexplored_biome_id=regions_unexplored_biome_id,
                     regions_unexplored_priority=regions_unexplored_priority,
+                    natures_spirit_biome_id=natures_spirit_biome_id,
+                    natures_spirit_priority=natures_spirit_priority,
                     minecraft_biome_id=minecraft_biome_id,
                 )
                 existing = by_color.get(color_hex)
@@ -211,6 +265,8 @@ def write_rows(rows: list[MappingRow], out_csv: Path) -> None:
                 "BIOMES_O_PLENTY_BIOME_PRIORITY",
                 "REGIONS_UNEXPLORED_BIOME",
                 "REGIONS_UNEXPLORED_BIOME_PRIORITY",
+                "NATURES_SPIRIT_BIOME",
+                "NATURES_SPIRIT_BIOME_PRIORITY",
                 "MINECRAFT_BIOME",
             ],
         )
@@ -226,6 +282,8 @@ def write_rows(rows: list[MappingRow], out_csv: Path) -> None:
                     "BIOMES_O_PLENTY_BIOME_PRIORITY": row.bop_priority,
                     "REGIONS_UNEXPLORED_BIOME": row.regions_unexplored_biome_id,
                     "REGIONS_UNEXPLORED_BIOME_PRIORITY": row.regions_unexplored_priority,
+                    "NATURES_SPIRIT_BIOME": row.natures_spirit_biome_id,
+                    "NATURES_SPIRIT_BIOME_PRIORITY": row.natures_spirit_priority,
                     "MINECRAFT_BIOME": row.minecraft_biome_id,
                 }
             )
@@ -271,6 +329,12 @@ def parse_args() -> argparse.Namespace:
         default=script_dir / "regions_unexplored_biomes.csv",
         help="CSV containing valid Regions Unexplored biome IDs (column: biome_id).",
     )
+    parser.add_argument(
+        "--natures-spirit-biomes-csv",
+        type=Path,
+        default=script_dir / "natures_spirit_biomes.csv",
+        help="CSV containing valid Nature's Spirit biome IDs (column: biome_id).",
+    )
     return parser.parse_args()
 
 
@@ -281,7 +345,16 @@ def main() -> int:
         args.regions_unexplored_biomes_csv,
         "Regions Unexplored",
     )
-    rows = load_rows(args.batch_dir, valid_bop_biome_ids, valid_regions_unexplored_biome_ids)
+    valid_natures_spirit_biome_ids = load_valid_biome_ids(
+        args.natures_spirit_biomes_csv,
+        "Nature's Spirit",
+    )
+    rows = load_rows(
+        args.batch_dir,
+        valid_bop_biome_ids,
+        valid_regions_unexplored_biome_ids,
+        valid_natures_spirit_biome_ids,
+    )
     write_rows(rows, args.out_csv)
     print(f"Wrote {len(rows)} rows to {args.out_csv}")
     return 0

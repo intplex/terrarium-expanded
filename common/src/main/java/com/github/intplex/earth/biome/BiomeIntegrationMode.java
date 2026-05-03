@@ -7,7 +7,8 @@ public enum BiomeIntegrationMode {
     AUTO("auto"),
     VANILLA("vanilla"),
     BIOMES_O_PLENTY("biomes_o_plenty"),
-    REGIONS_UNEXPLORED("regions_unexplored");
+    REGIONS_UNEXPLORED("regions_unexplored"),
+    NATURES_SPIRIT("natures_spirit");
 
     public static final Codec<BiomeIntegrationMode> CODEC = Codec.STRING.xmap(
         BiomeIntegrationMode::fromSerializedName,
@@ -38,7 +39,9 @@ public enum BiomeIntegrationMode {
             }
         }
         throw new IllegalArgumentException(
-            "Unsupported biome_integration '" + raw + "'; expected one of: auto, vanilla, biomes_o_plenty, regions_unexplored"
+            "Unsupported biome_integration '"
+                + raw
+                + "'; expected one of: auto, vanilla, biomes_o_plenty, regions_unexplored, natures_spirit"
         );
     }
 }

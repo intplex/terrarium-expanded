@@ -44,7 +44,14 @@ side = "BOTH"
 [[dependencies.terrarium_expanded]]
 modId = "regions_unexplored"
 type = "optional"
-versionRange = "[0,)"
+versionRange = "[0.6+beta4,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.terrarium_expanded]]
+modId = "natures_spirit"
+type = "optional"
+versionRange = "[2.2.5-1.21.1,)"
 ordering = "AFTER"
 side = "BOTH"
 

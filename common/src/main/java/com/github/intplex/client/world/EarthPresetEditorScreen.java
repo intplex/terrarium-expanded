@@ -54,6 +54,8 @@ public final class EarthPresetEditorScreen extends Screen {
         Component.translatable("terrarium_expanded.customize.earth.biome_integration.bop_missing");
     private static final Component REGIONS_UNEXPLORED_MISSING_WARNING =
         Component.translatable("terrarium_expanded.customize.earth.biome_integration.regions_unexplored_missing");
+    private static final Component NATURES_SPIRIT_MISSING_WARNING =
+        Component.translatable("terrarium_expanded.customize.earth.biome_integration.natures_spirit_missing");
     private static final Component TOGGLES_HEADER =
         Component.translatable("terrarium_expanded.customize.earth.generation_settings");
     private static final Component CAVES_LABEL = Component.translatable("terrarium_expanded.customize.earth.caves");
@@ -85,8 +87,10 @@ public final class EarthPresetEditorScreen extends Screen {
     private final CreateWorldScreen parent;
     private final boolean biomesOPlentyLoaded;
     private final boolean regionsUnexploredLoaded;
+    private final boolean naturesSpiritLoaded;
     private final String biomesOPlentyVersion;
     private final String regionsUnexploredVersion;
+    private final String naturesSpiritVersion;
     private final int maxTerrainYLimit;
 
     private int selectedZoom;
@@ -174,8 +178,10 @@ public final class EarthPresetEditorScreen extends Screen {
         this.parent = parent;
         this.biomesOPlentyLoaded = isModLoadedSafely("biomesoplenty");
         this.regionsUnexploredLoaded = isModLoadedSafely("regions_unexplored");
+        this.naturesSpiritLoaded = isModLoadedSafely("natures_spirit");
         this.biomesOPlentyVersion = modVersionSafely("biomesoplenty");
         this.regionsUnexploredVersion = modVersionSafely("regions_unexplored");
+        this.naturesSpiritVersion = modVersionSafely("natures_spirit");
         this.maxTerrainYLimit = initialSettings.maxTerrainYLimit();
         EarthGenConfig.setActiveMaxTerrainY(maxTerrainYLimit);
         this.selectedZoom = EarthGenConfig.validateZoom(initialSettings.zoom());
@@ -220,7 +226,8 @@ public final class EarthPresetEditorScreen extends Screen {
                 BiomeIntegrationMode.AUTO,
                 BiomeIntegrationMode.VANILLA,
                 BiomeIntegrationMode.BIOMES_O_PLENTY,
-                BiomeIntegrationMode.REGIONS_UNEXPLORED
+                BiomeIntegrationMode.REGIONS_UNEXPLORED,
+                BiomeIntegrationMode.NATURES_SPIRIT
             ))
             .create(leftX, biomeIntegrationRowY, halfWidth, ROW_HEIGHT, BIOME_INTEGRATION_LABEL, (button, value) -> {
                 selectedBiomeIntegration = value;
@@ -932,6 +939,7 @@ public final class EarthPresetEditorScreen extends Screen {
             case VANILLA -> Component.translatable("terrarium_expanded.customize.earth.biome_integration.vanilla");
             case BIOMES_O_PLENTY -> Component.translatable("terrarium_expanded.customize.earth.biome_integration.biomes_o_plenty");
             case REGIONS_UNEXPLORED -> Component.translatable("terrarium_expanded.customize.earth.biome_integration.regions_unexplored");
+            case NATURES_SPIRIT -> Component.translatable("terrarium_expanded.customize.earth.biome_integration.natures_spirit");
         };
     }
 
@@ -943,6 +951,9 @@ public final class EarthPresetEditorScreen extends Screen {
             case REGIONS_UNEXPLORED -> regionsUnexploredLoaded
                 ? Component.literal("Regions Unexplored detected: " + regionsUnexploredVersion)
                 : REGIONS_UNEXPLORED_MISSING_WARNING;
+            case NATURES_SPIRIT -> naturesSpiritLoaded
+                ? Component.literal("Nature's Spirit detected: " + naturesSpiritVersion)
+                : NATURES_SPIRIT_MISSING_WARNING;
             case AUTO -> autoBiomeProviderStatusLabel();
             case VANILLA -> null;
         };
@@ -956,6 +967,9 @@ public final class EarthPresetEditorScreen extends Screen {
         if (regionsUnexploredLoaded) {
             detected.add("Regions Unexplored " + regionsUnexploredVersion);
         }
+        if (naturesSpiritLoaded) {
+            detected.add("Nature's Spirit " + naturesSpiritVersion);
+        }
         if (detected.isEmpty()) {
             return Component.literal("Auto: vanilla biomes");
         }
@@ -964,7 +978,8 @@ public final class EarthPresetEditorScreen extends Screen {
 
     private boolean selectedProviderMissing() {
         return (selectedBiomeIntegration == BiomeIntegrationMode.BIOMES_O_PLENTY && !biomesOPlentyLoaded)
-            || (selectedBiomeIntegration == BiomeIntegrationMode.REGIONS_UNEXPLORED && !regionsUnexploredLoaded);
+            || (selectedBiomeIntegration == BiomeIntegrationMode.REGIONS_UNEXPLORED && !regionsUnexploredLoaded)
+            || (selectedBiomeIntegration == BiomeIntegrationMode.NATURES_SPIRIT && !naturesSpiritLoaded);
     }
 
     private static boolean isModLoadedSafely(String modId) {
