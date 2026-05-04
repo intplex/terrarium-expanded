@@ -1,10 +1,12 @@
 package com.github.intplex.earth.biome;
 
+import com.github.intplex.TerrariumExpanded;
 import com.github.intplex.earth.EarthGenConfig;
 import com.github.intplex.earth.biome.EcoregionBiomeMappings.ResolvedBiomeMapping;
+import com.github.intplex.earth.terrain.CaveBiomeDepthProfile;
+import com.github.intplex.earth.terrain.EarthGenerationProfile;
 import com.github.intplex.earth.terrain.EarthSamplingFacade;
 import com.github.intplex.earth.terrain.EarthSamplingResult;
-import com.github.intplex.earth.terrain.EarthGenerationProfile;
 import com.github.intplex.earth.terrain.EarthWorldgenToggles;
 import com.github.intplex.earth.terrain.OceanSurfaceTemperatureService;
 import com.github.intplex.earth.terrain.TerrainService;
@@ -12,29 +14,47 @@ import com.github.intplex.earth.terrain.TerrainServices;
 import com.github.intplex.earth.terrain.TerrariumRuntimeConfig;
 import com.github.intplex.earth.terrain.TileKey;
 import com.github.intplex.earth.terrain.WaterBodyKind;
-import java.util.LinkedHashMap;
-import java.util.OptionalDouble;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
+import java.util.Objects;
+import java.util.OptionalDouble;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.QuartPos;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.RegistryOps;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate;
+import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
+import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterList;
+import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterLists;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class EcoregionBiomeSource extends BiomeSource {
     private static final Logger LOGGER = LoggerFactory.getLogger("terrarium_expanded.worldgen");
+    public static final TagKey<Biome> UNDERGROUND_BIOMES =
+        TagKey.create(Registries.BIOME, TerrariumExpanded.id("is_underground"));
+    public static final TagKey<Biome> COMMON_CAVE_BIOMES =
+        TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath("c", "is_cave"));
     public static final MapCodec<EcoregionBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance -> instance
         .group(
             RegistryOps.retrieveGetter(Registries.BIOME),
+            RegistryOps.retrieveGetter(Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST),
             Codec.intRange(EarthGenConfig.MIN_ZOOM, EarthGenConfig.MAX_ZOOM)
                 .optionalFieldOf("zoom", EarthGenConfig.DEFAULT_ZOOM)
                 .forGetter(EcoregionBiomeSource::zoom),
@@ -76,6 +96,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
             instance,
             (
                 biomeLookup,
+                biomeSourceParameterListLookup,
                 zoom,
                 maxMountainY,
                 oceanFloorY,
@@ -91,6 +112,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
             ) ->
             new EcoregionBiomeSource(
                 biomeLookup,
+                biomeSourceParameterListLookup,
                 new EarthGenerationProfile(
                     zoom,
                     maxMountainY,
@@ -128,6 +150,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
     private final ThreadLocal<BiomeHotCache> biomeHotCache;
     private final EarthGenerationProfile profile;
     private final BiomeIntegrationMode biomeIntegration;
+    private final UndergroundBiomeDelegate undergroundBiomeDelegate;
 
     public EcoregionBiomeSource(HolderGetter<Biome> biomeLookup, EarthGenerationProfile profile) {
         this(biomeLookup, profile, BiomeIntegrationMode.AUTO);
@@ -138,7 +161,31 @@ public final class EcoregionBiomeSource extends BiomeSource {
             EcoregionBiomeMappings.resolveForBiomeLookup(biomeLookup, biomeIntegration),
             SamplingAdapters.defaults(),
             profile,
-            biomeIntegration
+            biomeIntegration,
+            UndergroundBiomeDelegate.NONE
+        );
+    }
+
+    public EcoregionBiomeSource(
+        HolderGetter<Biome> biomeLookup,
+        HolderGetter<MultiNoiseBiomeSourceParameterList> biomeSourceParameterListLookup,
+        EarthGenerationProfile profile
+    ) {
+        this(biomeLookup, biomeSourceParameterListLookup, profile, BiomeIntegrationMode.AUTO);
+    }
+
+    public EcoregionBiomeSource(
+        HolderGetter<Biome> biomeLookup,
+        HolderGetter<MultiNoiseBiomeSourceParameterList> biomeSourceParameterListLookup,
+        EarthGenerationProfile profile,
+        BiomeIntegrationMode biomeIntegration
+    ) {
+        this(
+            EcoregionBiomeMappings.resolveForBiomeLookup(biomeLookup, biomeIntegration),
+            SamplingAdapters.defaults(),
+            profile,
+            biomeIntegration,
+            createUndergroundBiomeDelegate(biomeSourceParameterListLookup)
         );
     }
 
@@ -155,6 +202,16 @@ public final class EcoregionBiomeSource extends BiomeSource {
         SamplingAdapters samplingAdapters,
         EarthGenerationProfile profile,
         BiomeIntegrationMode biomeIntegration
+    ) {
+        this(mappings, samplingAdapters, profile, biomeIntegration, UndergroundBiomeDelegate.NONE);
+    }
+
+    EcoregionBiomeSource(
+        ResolvedBiomeMapping mappings,
+        SamplingAdapters samplingAdapters,
+        EarthGenerationProfile profile,
+        BiomeIntegrationMode biomeIntegration,
+        UndergroundBiomeDelegate undergroundBiomeDelegate
     ) {
         this.profile = new EarthGenerationProfile(
             profile.zoom(),
@@ -176,6 +233,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
         this.inlandWaterSampler = samplingAdapters.inlandWaterSampler();
         this.biomeColdSampler = samplingAdapters.biomeColdSampler();
         this.biomeHotCache = ThreadLocal.withInitial(BiomeHotCache::new);
+        this.undergroundBiomeDelegate = Objects.requireNonNull(undergroundBiomeDelegate, "undergroundBiomeDelegate");
         TerrainServices.syncEarthProfile(this.profile);
     }
 
@@ -247,19 +305,73 @@ public final class EcoregionBiomeSource extends BiomeSource {
 
     @Override
     protected Stream<Holder<Biome>> collectPossibleBiomes() {
-        return mappings.possibleBiomes().stream();
+        Stream<Holder<Biome>> surfaceBiomes = mappings.possibleBiomes().stream();
+        return usesUndergroundBiomeSource()
+            ? Stream.concat(surfaceBiomes, undergroundBiomeDelegate.possibleBiomes()).distinct()
+            : surfaceBiomes;
     }
 
     @Override
     public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ, Climate.Sampler sampler) {
+        int blockX = QuartPos.toBlock(quartX);
+        int blockZ = QuartPos.toBlock(quartZ);
+        if (usesUndergroundBiomeSource()) {
+            syncCaveBiomeDepthProfile();
+        }
+        if (usesUndergroundBiomeSource() && isSurfaceRelativeUndergroundCell(quartX, quartY, quartZ)) {
+            Holder<Biome> undergroundBiome = sampleTaggedUndergroundBiome(quartX, quartY, quartZ, sampler);
+            if (undergroundBiome != null) {
+                return undergroundBiome;
+            }
+        }
+
+        return getSurfaceNoiseBiome(quartX, quartZ, blockX, blockZ);
+    }
+
+    @Override
+    public Pair<BlockPos, Holder<Biome>> findClosestBiome3d(
+        BlockPos blockPos,
+        int radius,
+        int horizontalStep,
+        int verticalStep,
+        Predicate<Holder<Biome>> predicate,
+        Climate.Sampler sampler,
+        LevelReader levelReader
+    ) {
+        if (!usesUndergroundBiomeSource() || sampler == null) {
+            return super.findClosestBiome3d(blockPos, radius, horizontalStep, verticalStep, predicate, sampler, levelReader);
+        }
+        syncCaveBiomeDepthProfile();
+
+        if (!isUndergroundOnlyLocateTarget(predicate)) {
+            return super.findClosestBiome3d(blockPos, radius, horizontalStep, verticalStep, predicate, sampler, levelReader);
+        }
+
+        return undergroundBiomeDelegate.findClosestBiome3d(
+            blockPos,
+            radius,
+            horizontalStep,
+            verticalStep,
+            predicate,
+            sampler,
+            levelReader
+        );
+    }
+
+    private boolean isUndergroundOnlyLocateTarget(Predicate<Holder<Biome>> predicate) {
+        boolean undergroundMayMatch = undergroundBiomeDelegate.possibleBiomes().anyMatch(predicate);
+        if (!undergroundMayMatch) {
+            return false;
+        }
+        return mappings.possibleBiomes().stream().noneMatch(predicate);
+    }
+
+    private Holder<Biome> getSurfaceNoiseBiome(int quartX, int quartZ, int blockX, int blockZ) {
         BiomeHotCache hotCache = biomeHotCache.get();
         Holder<Biome> cachedBiome = hotCache.get(quartX, quartZ);
         if (cachedBiome != null) {
             return cachedBiome;
         }
-
-        int blockX = QuartPos.toBlock(quartX);
-        int blockZ = QuartPos.toBlock(quartZ);
 
         ColorSample sample = colorSampler.sampleColor(blockX, blockZ);
         Holder<Biome> baseBiome = mappings.byColor().get(sample.colorRgb());
@@ -280,6 +392,46 @@ public final class EcoregionBiomeSource extends BiomeSource {
         );
         hotCache.put(quartX, quartZ, resolvedBiome);
         return resolvedBiome;
+    }
+
+    private boolean usesUndergroundBiomeSource() {
+        EarthWorldgenToggles toggles = profile.worldgenToggles();
+        return (toggles.caves() || toggles.extraUnderground()) && undergroundBiomeDelegate != UndergroundBiomeDelegate.NONE;
+    }
+
+    private void syncCaveBiomeDepthProfile() {
+        TerrainService.syncCaveBiomeDepthProfile(undergroundBiomeDelegate.depthProfile());
+    }
+
+    public Holder<Biome> sampleTaggedUndergroundBiome(int quartX, int quartY, int quartZ, Climate.Sampler sampler) {
+        if (sampler == null || undergroundBiomeDelegate == UndergroundBiomeDelegate.NONE) {
+            return null;
+        }
+        syncCaveBiomeDepthProfile();
+        return undergroundBiomeDelegate.getNoiseBiome(quartX, quartY, quartZ, sampler);
+    }
+
+    public boolean isSurfaceRelativeUndergroundCell(int quartX, int quartY, int quartZ) {
+        int blockX = QuartPos.toBlock(quartX);
+        int blockY = QuartPos.toBlock(quartY);
+        int blockZ = QuartPos.toBlock(quartZ);
+        int terrainY = terrainYSampler.terrainYAtXZ(blockX, blockZ, -1);
+        return isSurfaceRelativeUndergroundBlock(blockY, terrainY);
+    }
+
+    private static boolean isSurfaceRelativeUndergroundBlock(int blockY, int terrainY) {
+        return TerrainService.isUndergroundBiomeDepth(blockY, terrainY);
+    }
+
+    static UndergroundBiomeDelegate createUndergroundBiomeDelegate(
+        HolderGetter<MultiNoiseBiomeSourceParameterList> biomeSourceParameterListLookup
+    ) {
+        Holder<MultiNoiseBiomeSourceParameterList> overworldParameters =
+            biomeSourceParameterListLookup.getOrThrow(MultiNoiseBiomeSourceParameterLists.OVERWORLD);
+        return new TaggedUndergroundBiomeDelegate(
+            MultiNoiseBiomeSource.createFromPreset(overworldParameters),
+            overworldParameters
+        );
     }
 
     private static ColorSample sampleEcoregionColor(int blockX, int blockZ) {
@@ -468,6 +620,179 @@ public final class EcoregionBiomeSource extends BiomeSource {
     @FunctionalInterface
     interface BiomeColdSampler {
         boolean isFrozen(Holder<Biome> biome, int blockX, int blockY, int blockZ, BlockPos.MutableBlockPos reusablePos);
+    }
+
+    interface UndergroundBiomeDelegate {
+        UndergroundBiomeDelegate NONE = new UndergroundBiomeDelegate() {
+            @Override
+            public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ, Climate.Sampler sampler) {
+                return null;
+            }
+
+            @Override
+            public Stream<Holder<Biome>> possibleBiomes() {
+                return Stream.empty();
+            }
+
+            @Override
+            public CaveBiomeDepthProfile depthProfile() {
+                return CaveBiomeDepthProfile.VANILLA_FALLBACK;
+            }
+
+            @Override
+            public Pair<BlockPos, Holder<Biome>> findClosestBiome3d(
+                BlockPos blockPos,
+                int radius,
+                int horizontalStep,
+                int verticalStep,
+                Predicate<Holder<Biome>> predicate,
+                Climate.Sampler sampler,
+                LevelReader levelReader
+            ) {
+                return null;
+            }
+        };
+
+        Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ, Climate.Sampler sampler);
+
+        Stream<Holder<Biome>> possibleBiomes();
+
+        CaveBiomeDepthProfile depthProfile();
+
+        Pair<BlockPos, Holder<Biome>> findClosestBiome3d(
+            BlockPos blockPos,
+            int radius,
+            int horizontalStep,
+            int verticalStep,
+            Predicate<Holder<Biome>> predicate,
+            Climate.Sampler sampler,
+            LevelReader levelReader
+        );
+    }
+
+    private static final class TaggedUndergroundBiomeDelegate implements UndergroundBiomeDelegate {
+        private static final CaveBiomeDepthProfile UNBOUND_DEPTH_PROFILE = CaveBiomeDepthProfile.VANILLA_FALLBACK;
+        private final BiomeSource biomeSource;
+        private final Holder<MultiNoiseBiomeSourceParameterList> parameterList;
+        private volatile CaveBiomeDepthProfile resolvedDepthProfile;
+
+        private TaggedUndergroundBiomeDelegate(
+            BiomeSource biomeSource,
+            Holder<MultiNoiseBiomeSourceParameterList> parameterList
+        ) {
+            this.biomeSource = Objects.requireNonNull(biomeSource, "biomeSource");
+            this.parameterList = Objects.requireNonNull(parameterList, "parameterList");
+            markDelegateAsOverworldBiomeSource(this.biomeSource);
+        }
+
+        @Override
+        public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ, Climate.Sampler sampler) {
+            if (sampler == null || !parameterList.isBound()) {
+                return null;
+            }
+            Holder<Biome> biome = biomeSource.getNoiseBiome(quartX, quartY, quartZ, sampler);
+            return isTaggedUndergroundBiome(biome) ? biome : null;
+        }
+
+        @Override
+        public Stream<Holder<Biome>> possibleBiomes() {
+            if (!parameterList.isBound()) {
+                return Stream.empty();
+            }
+            return effectiveParameterList()
+                .values()
+                .stream()
+                .map(Pair::getSecond)
+                .filter(EcoregionBiomeSource::isTaggedUndergroundBiome)
+                .distinct();
+        }
+
+        @Override
+        public CaveBiomeDepthProfile depthProfile() {
+            CaveBiomeDepthProfile cached = resolvedDepthProfile;
+            if (cached != null) {
+                return cached;
+            }
+            if (!parameterList.isBound()) {
+                return UNBOUND_DEPTH_PROFILE;
+            }
+            CaveBiomeDepthProfile resolved = CaveBiomeDepthProfile.fromParameterList(
+                effectiveParameterList(),
+                EcoregionBiomeSource::isTaggedUndergroundBiome
+            );
+            resolvedDepthProfile = resolved;
+            return resolved;
+        }
+
+        @Override
+        public Pair<BlockPos, Holder<Biome>> findClosestBiome3d(
+            BlockPos blockPos,
+            int radius,
+            int horizontalStep,
+            int verticalStep,
+            Predicate<Holder<Biome>> predicate,
+            Climate.Sampler sampler,
+            LevelReader levelReader
+        ) {
+            if (!parameterList.isBound()) {
+                return null;
+            }
+            return biomeSource.findClosestBiome3d(
+                blockPos,
+                radius,
+                horizontalStep,
+                verticalStep,
+                biome -> isTaggedUndergroundBiome(biome) && predicate.test(biome),
+                sampler,
+                levelReader
+            );
+        }
+
+        @SuppressWarnings("unchecked")
+        private Climate.ParameterList<Holder<Biome>> effectiveParameterList() {
+            Climate.ParameterList<Holder<Biome>> rawParameters = parameterList.value().parameters();
+            if (!tryHydrateDelegatePossibleBiomes()) {
+                return rawParameters;
+            }
+
+            try {
+                Method method = biomeSource.getClass().getMethod("biolith$getBiomeEntries");
+                Object result = method.invoke(biomeSource);
+                if (result instanceof Climate.ParameterList<?> parameterList) {
+                    return (Climate.ParameterList<Holder<Biome>>) parameterList;
+                }
+            } catch (NoSuchMethodException ignored) {
+                // Biolith is not installed. Vanilla and other non-Biolith sources use the raw preset parameters.
+            } catch (IllegalAccessException | InvocationTargetException | RuntimeException exception) {
+                LOGGER.debug("[TX-BIOME] unable to read augmented underground biome parameters", exception);
+            }
+            return rawParameters;
+        }
+
+        private boolean tryHydrateDelegatePossibleBiomes() {
+            try {
+                biomeSource.possibleBiomes();
+                return true;
+            } catch (RuntimeException exception) {
+                LOGGER.debug("[TX-BIOME] unable to hydrate underground biome delegate possible-biome cache", exception);
+                return false;
+            }
+        }
+
+        private static void markDelegateAsOverworldBiomeSource(BiomeSource biomeSource) {
+            try {
+                Method method = biomeSource.getClass().getMethod("biolith$setDimensionType", ResourceKey.class);
+                method.invoke(biomeSource, BuiltinDimensionTypes.OVERWORLD);
+            } catch (NoSuchMethodException ignored) {
+                // Biolith is optional. Without it, vanilla parameter-list delegation already has the right context.
+            } catch (IllegalAccessException | InvocationTargetException | RuntimeException exception) {
+                LOGGER.debug("[TX-BIOME] unable to mark underground biome delegate as an overworld source", exception);
+            }
+        }
+    }
+
+    private static boolean isTaggedUndergroundBiome(Holder<Biome> biome) {
+        return biome != null && (biome.is(UNDERGROUND_BIOMES) || biome.is(COMMON_CAVE_BIOMES));
     }
 
     enum FallbackReason {

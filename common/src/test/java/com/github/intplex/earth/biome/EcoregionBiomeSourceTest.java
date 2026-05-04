@@ -1,30 +1,56 @@
 package com.github.intplex.earth.biome;
 
 import com.github.intplex.earth.EarthGenConfig;
+import com.github.intplex.earth.terrain.CaveBiomeDepthProfile;
 import com.github.intplex.earth.terrain.EarthGenerationProfile;
+import com.github.intplex.earth.terrain.EarthWorldgenToggles;
 import com.github.intplex.earth.terrain.OceanSurfaceTemperatureService;
 import com.github.intplex.earth.terrain.WaterBodyKind;
+import com.mojang.datafixers.util.Pair;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderGetter;
+import net.minecraft.core.HolderOwner;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.QuartPos;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Climate;
+import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterList;
+import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterLists;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EcoregionBiomeSourceTest {
     private static final short[] TEMPERATE_TEST_GRID = new short[180 * 360];
     private static final int MODE_TEST_COLOR = 0xABCDEF;
+    private static final Climate.Sampler TEST_SAMPLER = new Climate.Sampler(null, null, null, null, null, null, List.of());
+    private static final EarthWorldgenToggles CAVES_ENABLED = new EarthWorldgenToggles(
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+    );
 
     static {
         java.util.Arrays.fill(TEMPERATE_TEST_GRID, (short) 1400); // 14.00 C
@@ -110,22 +136,230 @@ class EcoregionBiomeSourceTest {
     void repeatedQuartRequestsHitBiomeHotCache() {
         Holder<Biome> plains = dummyBiomeHolder();
         AtomicInteger sampleCalls = new AtomicInteger();
+        AtomicInteger undergroundDelegateCalls = new AtomicInteger();
         EcoregionBiomeSource source = newSource(
             mapping(Map.of(0x55AA11, plains)),
             (blockX, blockZ) -> {
                 sampleCalls.incrementAndGet();
                 return sample(0x55AA11);
             },
-            (blockX, blockZ, ecoregionColorRgb) -> 70
+            (blockX, blockZ, ecoregionColorRgb) -> 70,
+            nullUndergroundDelegate(undergroundDelegateCalls)
         );
 
         int quartX = 12;
         int quartZ = -6;
-        source.getNoiseBiome(quartX, 0, quartZ, null);
-        source.getNoiseBiome(quartX, 1, quartZ, null);
-        source.getNoiseBiome(quartX, 2, quartZ, null);
+        int nearSurfaceQuartY = QuartPos.fromBlock(70);
+        source.getNoiseBiome(quartX, nearSurfaceQuartY, quartZ, TEST_SAMPLER);
+        source.getNoiseBiome(quartX, nearSurfaceQuartY + 1, quartZ, TEST_SAMPLER);
+        source.getNoiseBiome(quartX, nearSurfaceQuartY + 2, quartZ, TEST_SAMPLER);
 
+        assertEquals(0, undergroundDelegateCalls.get());
         assertEquals(1, sampleCalls.get());
+    }
+
+    @Test
+    void nearSurfaceBiomeSamplingIgnoresUndergroundDelegate() {
+        Holder<Biome> surface = dummyBiomeHolder();
+        Holder<Biome> underground = dummyBiomeHolder();
+        AtomicInteger sampleCalls = new AtomicInteger();
+        EcoregionBiomeSource source = newSource(
+            mapping(Map.of(0x55AA11, surface)),
+            (blockX, blockZ) -> {
+                sampleCalls.incrementAndGet();
+                return sample(0x55AA11);
+            },
+            (blockX, blockZ, ecoregionColorRgb) -> 70,
+            fixedUndergroundDelegate(underground)
+        );
+
+        Holder<Biome> result = source.getNoiseBiome(12, QuartPos.fromBlock(70), -6, TEST_SAMPLER);
+
+        assertEquals(surface, result);
+        assertEquals(1, sampleCalls.get());
+    }
+
+    @Test
+    void deepBiomeSamplingUsesUndergroundDelegateBeforeSurfaceSampling() {
+        Holder<Biome> surface = dummyBiomeHolder();
+        Holder<Biome> underground = dummyBiomeHolder();
+        AtomicInteger sampleCalls = new AtomicInteger();
+        EcoregionBiomeSource source = newSource(
+            mapping(Map.of(0x55AA11, surface)),
+            (blockX, blockZ) -> {
+                sampleCalls.incrementAndGet();
+                return sample(0x55AA11);
+            },
+            (blockX, blockZ, ecoregionColorRgb) -> 70,
+            fixedUndergroundDelegate(underground)
+        );
+
+        Holder<Biome> result = source.getNoiseBiome(12, -10, -6, TEST_SAMPLER);
+
+        assertEquals(underground, result);
+        assertEquals(0, sampleCalls.get());
+    }
+
+    @Test
+    void deepBiomeSamplingFallsBackToSurfaceWhenUndergroundDelegateDeclines() {
+        Holder<Biome> surface = dummyBiomeHolder();
+        AtomicInteger sampleCalls = new AtomicInteger();
+        EcoregionBiomeSource source = newSource(
+            mapping(Map.of(0x55AA11, surface)),
+            (blockX, blockZ) -> {
+                sampleCalls.incrementAndGet();
+                return sample(0x55AA11);
+            },
+            (blockX, blockZ, ecoregionColorRgb) -> 70,
+            nullUndergroundDelegate(new AtomicInteger())
+        );
+
+        Holder<Biome> result = source.getNoiseBiome(12, -10, -6, TEST_SAMPLER);
+
+        assertEquals(surface, result);
+        assertEquals(1, sampleCalls.get());
+    }
+
+    @Test
+    void undergroundCandidateHelperReturnsDelegateBiome() {
+        Holder<Biome> surface = dummyBiomeHolder();
+        Holder<Biome> underground = dummyBiomeHolder();
+        AtomicInteger sampleCalls = new AtomicInteger();
+        EcoregionBiomeSource source = newSource(
+            mapping(Map.of(0x55AA11, surface)),
+            (blockX, blockZ) -> {
+                sampleCalls.incrementAndGet();
+                return sample(0x55AA11);
+            },
+            (blockX, blockZ, ecoregionColorRgb) -> 70,
+            (blockX, blockZ) -> new EcoregionBiomeSource.InlandWaterSample(WaterBodyKind.NONE, EarthGenConfig.MIN_Y),
+            (biome, blockX, blockY, blockZ, reusablePos) -> false,
+            fixedUndergroundDelegate(underground),
+            EarthWorldgenToggles.defaults()
+        );
+
+        Holder<Biome> result = source.sampleTaggedUndergroundBiome(12, -10, -6, TEST_SAMPLER);
+
+        assertEquals(underground, result);
+        assertEquals(0, sampleCalls.get());
+    }
+
+    @Test
+    void surfaceRelativeUndergroundGuardRejectsNearTerrainSurface() {
+        Holder<Biome> surface = dummyBiomeHolder();
+        Holder<Biome> underground = dummyBiomeHolder();
+        EcoregionBiomeSource source = newSource(
+            mapping(Map.of(0x55AA11, surface)),
+            (blockX, blockZ) -> sample(0x55AA11),
+            (blockX, blockZ, ecoregionColorRgb) -> 70,
+            fixedUndergroundDelegate(underground)
+        );
+
+        assertFalse(source.isSurfaceRelativeUndergroundCell(12, QuartPos.fromBlock(70), -6));
+    }
+
+    @Test
+    void undergroundCandidateHelperReturnsNullWhenDelegateDeclines() {
+        Holder<Biome> surface = dummyBiomeHolder();
+        EcoregionBiomeSource source = newSource(
+            mapping(Map.of(0x55AA11, surface)),
+            (blockX, blockZ) -> sample(0x55AA11),
+            (blockX, blockZ, ecoregionColorRgb) -> 70,
+            nullUndergroundDelegate(new AtomicInteger())
+        );
+
+        Holder<Biome> result = source.sampleTaggedUndergroundBiome(12, -10, -6, TEST_SAMPLER);
+
+        assertEquals(null, result);
+    }
+
+    @Test
+    void possibleBiomesAdvertisesUndergroundBiomesWhenCavesCanGenerate() {
+        Holder<Biome> surface = dummyBiomeHolder();
+        Holder<Biome> underground = dummyBiomeHolder();
+        EcoregionBiomeSource source = newSource(
+            mapping(Map.of(0x55AA11, surface)),
+            (blockX, blockZ) -> sample(0x55AA11),
+            (blockX, blockZ, ecoregionColorRgb) -> 70,
+            fixedUndergroundDelegate(underground)
+        );
+
+        assertTrue(source.possibleBiomes().contains(surface));
+        assertTrue(source.possibleBiomes().contains(underground));
+    }
+
+    @Test
+    void possibleBiomesOmitsUndergroundBiomesWhenCavesCannotGenerate() {
+        Holder<Biome> surface = dummyBiomeHolder();
+        Holder<Biome> underground = dummyBiomeHolder();
+        EcoregionBiomeSource source = newSource(
+            mapping(Map.of(0x55AA11, surface)),
+            (blockX, blockZ) -> sample(0x55AA11),
+            (blockX, blockZ, ecoregionColorRgb) -> 70,
+            (blockX, blockZ) -> new EcoregionBiomeSource.InlandWaterSample(WaterBodyKind.NONE, EarthGenConfig.MIN_Y),
+            (biome, blockX, blockY, blockZ, reusablePos) -> false,
+            fixedUndergroundDelegate(underground),
+            EarthWorldgenToggles.defaults()
+        );
+
+        assertTrue(source.possibleBiomes().contains(surface));
+        assertFalse(source.possibleBiomes().contains(underground));
+    }
+
+    @Test
+    void undergroundOnlyLocateDelegatesToUndergroundSource() {
+        Holder<Biome> surface = dummyBiomeHolder();
+        Holder<Biome> underground = dummyBiomeHolder();
+        EcoregionBiomeSource source = newSource(
+            mapping(Map.of(0x55AA11, surface)),
+            (blockX, blockZ) -> sample(0x55AA11),
+            (blockX, blockZ, ecoregionColorRgb) -> 70,
+            fixedUndergroundDelegate(underground)
+        );
+
+        Pair<BlockPos, Holder<Biome>> result = source.findClosestBiome3d(
+            new BlockPos(0, 32, 0),
+            64,
+            32,
+            8,
+            biome -> biome == underground,
+            TEST_SAMPLER,
+            null
+        );
+
+        assertEquals(underground, result.getSecond());
+    }
+
+    @Test
+    void undergroundDelegateToleratesUnboundPresetHolderDuringRegistryDecode() {
+        Holder.Reference<MultiNoiseBiomeSourceParameterList> unboundOverworldParameters =
+            Holder.Reference.createStandAlone(
+                new HolderOwner<>() {},
+                MultiNoiseBiomeSourceParameterLists.OVERWORLD
+            );
+
+        EcoregionBiomeSource.UndergroundBiomeDelegate delegate =
+            EcoregionBiomeSource.createUndergroundBiomeDelegate(new HolderGetter<>() {
+                @Override
+                public Optional<Holder.Reference<MultiNoiseBiomeSourceParameterList>> get(
+                    ResourceKey<MultiNoiseBiomeSourceParameterList> key
+                ) {
+                    return key.equals(MultiNoiseBiomeSourceParameterLists.OVERWORLD)
+                        ? Optional.of(unboundOverworldParameters)
+                        : Optional.empty();
+                }
+
+                @Override
+                public Optional<HolderSet.Named<MultiNoiseBiomeSourceParameterList>> get(
+                    TagKey<MultiNoiseBiomeSourceParameterList> tagKey
+                ) {
+                    return Optional.empty();
+                }
+            });
+
+        assertEquals(CaveBiomeDepthProfile.VANILLA_FALLBACK, delegate.depthProfile());
+        assertEquals(0, delegate.possibleBiomes().count());
+        assertEquals(null, delegate.getNoiseBiome(0, 0, 0, TEST_SAMPLER));
     }
 
     @Test
@@ -415,17 +649,141 @@ class EcoregionBiomeSourceTest {
         EcoregionBiomeMappings.ResolvedBiomeMapping mapping,
         EcoregionBiomeSource.ColorSampler colorSampler,
         EcoregionBiomeSource.TerrainYSampler terrainYSampler,
+        EcoregionBiomeSource.UndergroundBiomeDelegate undergroundBiomeDelegate
+    ) {
+        return newSource(
+            mapping,
+            colorSampler,
+            terrainYSampler,
+            (blockX, blockZ) -> new EcoregionBiomeSource.InlandWaterSample(WaterBodyKind.NONE, EarthGenConfig.MIN_Y),
+            (biome, blockX, blockY, blockZ, reusablePos) -> false,
+            undergroundBiomeDelegate
+        );
+    }
+
+    private static EcoregionBiomeSource newSource(
+        EcoregionBiomeMappings.ResolvedBiomeMapping mapping,
+        EcoregionBiomeSource.ColorSampler colorSampler,
+        EcoregionBiomeSource.TerrainYSampler terrainYSampler,
         EcoregionBiomeSource.InlandWaterSampler inlandWaterSampler,
         EcoregionBiomeSource.BiomeColdSampler biomeColdSampler
+    ) {
+        return newSource(mapping, colorSampler, terrainYSampler, inlandWaterSampler, biomeColdSampler, EcoregionBiomeSource.UndergroundBiomeDelegate.NONE);
+    }
+
+    private static EcoregionBiomeSource newSource(
+        EcoregionBiomeMappings.ResolvedBiomeMapping mapping,
+        EcoregionBiomeSource.ColorSampler colorSampler,
+        EcoregionBiomeSource.TerrainYSampler terrainYSampler,
+        EcoregionBiomeSource.InlandWaterSampler inlandWaterSampler,
+        EcoregionBiomeSource.BiomeColdSampler biomeColdSampler,
+        EcoregionBiomeSource.UndergroundBiomeDelegate undergroundBiomeDelegate
+    ) {
+        return newSource(
+            mapping,
+            colorSampler,
+            terrainYSampler,
+            inlandWaterSampler,
+            biomeColdSampler,
+            undergroundBiomeDelegate,
+            CAVES_ENABLED
+        );
+    }
+
+    private static EcoregionBiomeSource newSource(
+        EcoregionBiomeMappings.ResolvedBiomeMapping mapping,
+        EcoregionBiomeSource.ColorSampler colorSampler,
+        EcoregionBiomeSource.TerrainYSampler terrainYSampler,
+        EcoregionBiomeSource.InlandWaterSampler inlandWaterSampler,
+        EcoregionBiomeSource.BiomeColdSampler biomeColdSampler,
+        EcoregionBiomeSource.UndergroundBiomeDelegate undergroundBiomeDelegate,
+        EarthWorldgenToggles worldgenToggles
     ) {
         return new EcoregionBiomeSource(
             mapping,
             new EcoregionBiomeSource.SamplingAdapters(colorSampler, terrainYSampler, inlandWaterSampler, biomeColdSampler),
-            new EarthGenerationProfile(
-                EarthGenConfig.DEFAULT_ZOOM,
-                EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y,
-                EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y
-            )
+            profile(worldgenToggles),
+            BiomeIntegrationMode.AUTO,
+            undergroundBiomeDelegate
         );
+    }
+
+    private static EarthGenerationProfile profile(EarthWorldgenToggles worldgenToggles) {
+        return new EarthGenerationProfile(
+            EarthGenConfig.DEFAULT_ZOOM,
+            EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y,
+            EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y,
+            EarthGenerationProfile.DEFAULT_TERRAIN_BASE_URL,
+            EarthGenerationProfile.DEFAULT_BIOMES_BASE_URL,
+            EarthGenerationProfile.DEFAULT_SURFACE_WATER_BASE_URL,
+            EarthGenerationProfile.TERRAIN_FIXES_NONE,
+            worldgenToggles,
+            false
+        );
+    }
+
+    private static EcoregionBiomeSource.UndergroundBiomeDelegate fixedUndergroundDelegate(Holder<Biome> biome) {
+        return new EcoregionBiomeSource.UndergroundBiomeDelegate() {
+            @Override
+            public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ, Climate.Sampler sampler) {
+                return biome;
+            }
+
+            @Override
+            public java.util.stream.Stream<Holder<Biome>> possibleBiomes() {
+                return java.util.stream.Stream.of(biome);
+            }
+
+            @Override
+            public CaveBiomeDepthProfile depthProfile() {
+                return CaveBiomeDepthProfile.VANILLA_FALLBACK;
+            }
+
+            @Override
+            public Pair<BlockPos, Holder<Biome>> findClosestBiome3d(
+                BlockPos blockPos,
+                int radius,
+                int horizontalStep,
+                int verticalStep,
+                Predicate<Holder<Biome>> predicate,
+                Climate.Sampler sampler,
+                LevelReader levelReader
+            ) {
+                return predicate.test(biome) ? Pair.of(blockPos, biome) : null;
+            }
+        };
+    }
+
+    private static EcoregionBiomeSource.UndergroundBiomeDelegate nullUndergroundDelegate(AtomicInteger calls) {
+        return new EcoregionBiomeSource.UndergroundBiomeDelegate() {
+            @Override
+            public Holder<Biome> getNoiseBiome(int quartX, int quartY, int quartZ, Climate.Sampler sampler) {
+                calls.incrementAndGet();
+                return null;
+            }
+
+            @Override
+            public java.util.stream.Stream<Holder<Biome>> possibleBiomes() {
+                return java.util.stream.Stream.empty();
+            }
+
+            @Override
+            public CaveBiomeDepthProfile depthProfile() {
+                return CaveBiomeDepthProfile.VANILLA_FALLBACK;
+            }
+
+            @Override
+            public Pair<BlockPos, Holder<Biome>> findClosestBiome3d(
+                BlockPos blockPos,
+                int radius,
+                int horizontalStep,
+                int verticalStep,
+                Predicate<Holder<Biome>> predicate,
+                Climate.Sampler sampler,
+                LevelReader levelReader
+            ) {
+                return null;
+            }
+        };
     }
 }

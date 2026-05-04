@@ -10,8 +10,9 @@ public record DepthDensityFunction() implements DensityFunction.SimpleFunction {
             KeyDispatchDataCodec.of(MapCodec.unit(new DepthDensityFunction()));
 
     /**
-     * Returns a precomputed depth channel in {@code [-1, 1]} from Terrarium terrain
-     * height at this column.
+     * Returns a biome-depth channel from this Y position relative to the
+     * Terrarium terrain top in the column. Surface points are {@code 0.0};
+     * deeper underground points approach vanilla's deep-dark anchor.
      */
     @Override
     public double compute(DensityFunction.FunctionContext functionContext) {
@@ -20,12 +21,12 @@ public record DepthDensityFunction() implements DensityFunction.SimpleFunction {
 
     @Override
     public double minValue() {
-        return -1.0;
+        return 0.0;
     }
 
     @Override
     public double maxValue() {
-        return 1.0;
+        return 1.1;
     }
 
     @Override

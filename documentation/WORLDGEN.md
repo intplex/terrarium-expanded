@@ -95,14 +95,18 @@ Note: if any in-bounds sample in a snapshot lacks usable surface-water data, inl
 
 `EcoregionBiomeSource#getNoiseBiome` does:
 
-1. Sample ecoregion color from reduced tiles (source zoom 8).
-2. Resolve color to biome from `color_biome_map.csv` through `EcoregionBiomeMappings` (mode depends on `biome_integration`, provider priority, and mod availability).
-3. If color is unmapped/unavailable, fall back to ocean biome selection using:
+1. If cave carving is enabled (`generation.caves` or `generation.extra_underground`) and the queried Y is below the Earth terrain surface by the vanilla cave-biome depth threshold, ask the registry-provided `minecraft:overworld` multi-noise biome source for the current `(quartX, quartY, quartZ)`.
+2. If that delegate returns a biome in `#terrarium_expanded:is_underground` or `#c:is_cave`, use it directly.
+3. Otherwise sample ecoregion color from reduced tiles (source zoom 8).
+4. Resolve color to biome from `color_biome_map.csv` through `EcoregionBiomeMappings` (mode depends on `biome_integration`, provider priority, and mod availability).
+5. If color is unmapped/unavailable, fall back to ocean biome selection using:
    - terrain-derived depth tier
    - WOA23 SST temperature tiering
-4. Apply inland-water override:
+6. Apply inland-water override:
    - inland water -> `river` or `frozen_river` (based on `coldEnoughToSnow`)
    - otherwise keep the resolved biome
+
+The ecoregion CSV is surface/ocean mapping only. Underground biome placement comes from the loaded Minecraft/modded overworld biome generator and is accepted only through cave biome tags. Mods can participate by adding cave biomes to the overworld multi-noise parameter list and tagging them under `#c:is_cave` or `#terrarium_expanded:is_underground`. It is also gated by cave-carver toggles and by a surface-relative depth check so cave biomes do not replace exposed terrain. Terrarium derives that depth check and any bottom-biome plateau from the registered cave-biome depth parameter ranges, so bottom biomes such as `minecraft:deep_dark` are not compressed into a near-zero-height band. Underground biome IDs still do not carve terrain by themselves; cave shape comes from vanilla cave density/carvers clipped by the Terrarium Earth surface.
 
 ## Density Wiring
 
@@ -112,11 +116,10 @@ Patch routing:
 
 - `continents` -> `terrarium_expanded:terrain_continentalness`
 - `erosion` -> `terrarium_expanded:terrain_erosion`
-- `depth` -> `terrarium_expanded:terrain_depth`
+- `depth` -> `terrarium_expanded:terrain_depth` (surface-relative biome depth, including vanilla bottom-biome depth anchoring)
 - `ridges` -> `terrarium_expanded:terrain_weirdness`
 - `preliminary_surface_level` -> `terrarium_expanded:terrain_envelope`
-- `initial_density_without_jaggedness` -> `terrarium_expanded:terrain_envelope`
-- `final_density` -> `terrarium_expanded:terrain_envelope`
+- `final_density` -> `terrarium_expanded:earth_surface_caves`, wrapping vanilla `preliminary_surface_level.density` and vanilla `final_density`
 
 Settings:
 
@@ -130,6 +133,8 @@ Settings:
 
 - `caves`, `canyons`, `extra_underground`:
   - filter AIR carvers (`cave`, `canyon`, `cave_extra_underground`) in `NoiseBasedChunkGenerator.applyCarvers`
+- `caves`, `extra_underground`:
+  - allow tagged underground biome selection below the local Earth terrain surface
 - `caves`:
   - when enabled and `aquifers=false`, use boundary-aware dry cave carving:
     - cave interiors default to air

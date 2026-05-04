@@ -2,6 +2,7 @@ package com.github.intplex.earth.terrain;
 
 import com.github.intplex.earth.EarthGenConfig;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import net.minecraft.world.level.levelgen.DensityFunction;
@@ -12,6 +13,7 @@ public final class TerrainService {
     private static final Logger LOGGER = LoggerFactory.getLogger("terrarium_expanded.worldgen");
     static final int CHUNK_WIDTH = 16;
     static final int OUT_OF_BOUNDS_SOLID_TOP_Y = EarthGenConfig.MIN_Y - 1;
+    private static volatile CaveBiomeDepthProfile caveBiomeDepthProfile = CaveBiomeDepthProfile.VANILLA_FALLBACK;
 
     private TerrainService() {
     }
@@ -21,7 +23,13 @@ public final class TerrainService {
     }
 
     public static double depthDensityAtY(DensityFunction.FunctionContext functionContext) {
-        return snapshotFor(functionContext.blockX(), functionContext.blockZ()).resolveDepth(functionContext.blockX(), functionContext.blockZ());
+        int solidTopY = snapshotFor(functionContext.blockX(), functionContext.blockZ())
+            .resolveEffectiveSolidTopY(functionContext.blockX(), functionContext.blockZ());
+        return biomeDepthAtY(functionContext.blockY(), solidTopY);
+    }
+
+    public static void syncCaveBiomeDepthProfile(CaveBiomeDepthProfile profile) {
+        caveBiomeDepthProfile = Objects.requireNonNullElse(profile, CaveBiomeDepthProfile.VANILLA_FALLBACK);
     }
 
     public static double envelopeDensityAtXYZ(DensityFunction.FunctionContext functionContext) {
@@ -75,6 +83,14 @@ public final class TerrainService {
             return clamp((terrainY - EarthGenConfig.SEA_LEVEL) / (double) Math.max(1, EarthGenConfig.activeMaxTerrainY() - EarthGenConfig.SEA_LEVEL));
         }
         return clamp((terrainY - EarthGenConfig.SEA_LEVEL) / (double) Math.max(1, EarthGenConfig.SEA_LEVEL - EarthGenConfig.MIN_TERRAIN_Y));
+    }
+
+    public static double biomeDepthAtY(int blockY, int solidTopY) {
+        return caveBiomeDepthProfile.sampleDepth(blockY, solidTopY);
+    }
+
+    public static boolean isUndergroundBiomeDepth(int blockY, int solidTopY) {
+        return caveBiomeDepthProfile.isUndergroundBiomeDepth(blockY, solidTopY);
     }
 
     static RuntimeState newRuntimeState(TerrariumRuntimeConfig runtimeConfig) {
