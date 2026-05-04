@@ -15,13 +15,74 @@ def vanillaOverworldPath = "data/minecraft/worldgen/noise_settings/overworld.jso
 Map<String, Object> deepMergeMaps(Map<String, Object> base, Map<String, Object> patch) {
     patch.each { key, patchValue ->
         def baseValue = base.get(key)
-        if (baseValue instanceof Map && patchValue instanceof Map) {
+        if (patchValue instanceof Map && (patchValue as Map<String, Object>).containsKey('$terrarium_expanded:replace')) {
+            base.put(key, (patchValue as Map<String, Object>).get('$terrarium_expanded:replace'))
+        } else if (baseValue instanceof Map && patchValue instanceof Map) {
             base.put(key, deepMergeMaps(new LinkedHashMap<>(baseValue as Map<String, Object>), patchValue as Map<String, Object>))
         } else {
             base.put(key, patchValue)
         }
     }
     return base
+}
+
+Object deepCopyJson(Object value) {
+    if (value instanceof Map) {
+        Map<String, Object> copy = new LinkedHashMap<>()
+        (value as Map<String, Object>).each { key, child ->
+            copy.put(key, deepCopyJson(child))
+        }
+        return copy
+    }
+    if (value instanceof List) {
+        return (value as List<Object>).collect { child -> deepCopyJson(child) }
+    }
+    return value
+}
+
+Object lookupJsonPointer(Object root, String path) {
+    if (path == null || path.isBlank() || path == "/") {
+        return root
+    }
+    Object current = root
+    path.split("/").findAll { !it.isEmpty() }.each { rawPart ->
+        String part = rawPart.replace("~1", "/").replace("~0", "~")
+        if (current instanceof Map) {
+            current = (current as Map<String, Object>).get(part)
+        } else if (current instanceof List) {
+            current = (current as List<Object>).get(Integer.parseInt(part))
+        } else {
+            throw new GradleException("Cannot resolve JSON pointer '${path}' at '${part}'.")
+        }
+        if (current == null) {
+            throw new GradleException("JSON pointer '${path}' resolved to null at '${part}'.")
+        }
+    }
+    return current
+}
+
+Object resolvePatchDirectives(Object vanillaRoot, Object patchValue) {
+    if (patchValue instanceof Map) {
+        Map<String, Object> patchMap = patchValue as Map<String, Object>
+        if (patchMap.containsKey('$terrarium_expanded:copy')) {
+            return deepCopyJson(lookupJsonPointer(vanillaRoot, patchMap.get('$terrarium_expanded:copy') as String))
+        }
+        if (patchMap.containsKey('$terrarium_expanded:replace')) {
+            return Map.of(
+                '$terrarium_expanded:replace',
+                resolvePatchDirectives(vanillaRoot, patchMap.get('$terrarium_expanded:replace'))
+            )
+        }
+        Map<String, Object> resolved = new LinkedHashMap<>()
+        patchMap.each { key, child ->
+            resolved.put(key, resolvePatchDirectives(vanillaRoot, child))
+        }
+        return resolved
+    }
+    if (patchValue instanceof List) {
+        return (patchValue as List<Object>).collect { child -> resolvePatchDirectives(vanillaRoot, child) }
+    }
+    return patchValue
 }
 
 tasks.register("generateEarthOverworldNoiseSettings") {
@@ -63,6 +124,7 @@ tasks.register("generateEarthOverworldNoiseSettings") {
         def slurper = new JsonSlurper()
         Map<String, Object> vanillaJson = slurper.parseText(vanillaJsonText) as Map<String, Object>
         Map<String, Object> patchJson = slurper.parseText(patchJsonText) as Map<String, Object>
+        patchJson = resolvePatchDirectives(vanillaJson, patchJson) as Map<String, Object>
         Map<String, Object> mergedJson = deepMergeMaps(new LinkedHashMap<>(vanillaJson), patchJson)
 
         File outputFile = generatedEarthOverworldFile.get().asFile

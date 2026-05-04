@@ -540,8 +540,10 @@ public final class EarthPresetEditorScreen extends Screen {
             }
 
             var biomeLookup = registryAccess.lookupOrThrow(Registries.BIOME);
+            var biomeSourceParameterListLookup = registryAccess.lookupOrThrow(Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST);
             EcoregionBiomeSource updatedBiomeSource = new EcoregionBiomeSource(
                 biomeLookup,
+                biomeSourceParameterListLookup,
                 new EarthGenerationProfile(
                     selectedZoom,
                     selectedMaxMountainY,

@@ -6,6 +6,7 @@ import com.github.intplex.earth.EarthSpawnManager;
 import com.github.intplex.earth.biome.EcoregionBiomeSource;
 import com.github.intplex.earth.terrain.ContinentalDensityFunction;
 import com.github.intplex.earth.terrain.DepthDensityFunction;
+import com.github.intplex.earth.terrain.EarthSurfaceCavesDensityFunction;
 import com.github.intplex.earth.terrain.EnvelopeDensityFunction;
 import com.github.intplex.earth.terrain.ErosionDensityFunction;
 import com.github.intplex.earth.terrain.TerrainServices;
@@ -31,6 +32,11 @@ public final class TerrariumExpandedFabric implements ModInitializer {
             BuiltInRegistries.DENSITY_FUNCTION_TYPE,
             TerrariumExpanded.id("terrain_envelope"),
             EnvelopeDensityFunction.CODEC.codec()
+        );
+        Registry.register(
+            BuiltInRegistries.DENSITY_FUNCTION_TYPE,
+            TerrariumExpanded.id("earth_surface_caves"),
+            EarthSurfaceCavesDensityFunction.CODEC.codec()
         );
         Registry.register(
             BuiltInRegistries.DENSITY_FUNCTION_TYPE,

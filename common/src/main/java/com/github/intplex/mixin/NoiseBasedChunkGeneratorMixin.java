@@ -4,8 +4,10 @@ import com.github.intplex.earth.EarthGenConfig;
 import com.github.intplex.earth.biome.EcoregionBiomeSource;
 import com.github.intplex.earth.terrain.EarthWorldgenToggles;
 import com.github.intplex.earth.terrain.InlandWaterChunkPostProcessor;
+import com.github.intplex.earth.terrain.TerrainService;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.core.BlockPos;
@@ -149,7 +151,9 @@ abstract class NoiseBasedChunkGeneratorMixin {
         }
 
         Aquifer.FluidPicker adjustedFluidPicker = fluidPicker;
-        if (aquifersEnabled && !toggles.lavaAquifers()) {
+        if (!aquifersEnabled) {
+            adjustedFluidPicker = terrariumExpanded$dryUndergroundFluidPicker(fluidPicker);
+        } else if (!toggles.lavaAquifers()) {
             Aquifer.FluidStatus waterOnly = new Aquifer.FluidStatus(
                 adjustedSettings.seaLevel(),
                 adjustedSettings.defaultFluid()
@@ -165,6 +169,14 @@ abstract class NoiseBasedChunkGeneratorMixin {
             adjustedFluidPicker,
             blender
         );
+    }
+
+    private static Aquifer.FluidPicker terrariumExpanded$dryUndergroundFluidPicker(Aquifer.FluidPicker delegate) {
+        Objects.requireNonNull(delegate, "delegate");
+        Aquifer.FluidStatus airOnly = new Aquifer.FluidStatus(Integer.MIN_VALUE, Blocks.AIR.defaultBlockState());
+        return (x, y, z) -> y <= TerrainService.effectiveSolidTopYAtXZ(x, z)
+            ? airOnly
+            : delegate.computeFluid(x, y, z);
     }
 
     @Redirect(
@@ -188,7 +200,7 @@ abstract class NoiseBasedChunkGeneratorMixin {
     }
 
     @Inject(method = "fillFromNoise", at = @At("RETURN"), cancellable = true)
-    private void terrariumExpanded$fillInlandWater(
+    private void terrariumExpanded$postProcessAfterFillFromNoise(
         Blender blender,
         RandomState randomState,
         StructureManager structureManager,

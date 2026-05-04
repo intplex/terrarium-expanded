@@ -6,6 +6,7 @@ import com.github.intplex.earth.EarthSpawnManager;
 import com.github.intplex.earth.biome.EcoregionBiomeSource;
 import com.github.intplex.earth.terrain.ContinentalDensityFunction;
 import com.github.intplex.earth.terrain.DepthDensityFunction;
+import com.github.intplex.earth.terrain.EarthSurfaceCavesDensityFunction;
 import com.github.intplex.earth.terrain.EnvelopeDensityFunction;
 import com.github.intplex.earth.terrain.ErosionDensityFunction;
 import com.github.intplex.earth.terrain.TerrainServices;
@@ -43,6 +44,10 @@ public final class TerrariumExpandedNeoForge {
     @SuppressWarnings("unused")
     private static final DeferredHolder<MapCodec<? extends DensityFunction>, MapCodec<EnvelopeDensityFunction>> TERRAIN_ENVELOPE =
         DENSITY_FUNCTION_TYPES.register("terrain_envelope", () -> EnvelopeDensityFunction.CODEC.codec());
+
+    @SuppressWarnings("unused")
+    private static final DeferredHolder<MapCodec<? extends DensityFunction>, MapCodec<EarthSurfaceCavesDensityFunction>> EARTH_SURFACE_CAVES =
+        DENSITY_FUNCTION_TYPES.register("earth_surface_caves", () -> EarthSurfaceCavesDensityFunction.CODEC.codec());
 
     @SuppressWarnings("unused")
     private static final DeferredHolder<MapCodec<? extends DensityFunction>, MapCodec<ContinentalDensityFunction>> TERRAIN_CONTINENTALNESS =

@@ -42,14 +42,16 @@ class TerrainServiceGoldenCoordinatesTest {
 
     private void assertColumn(int blockX, int blockZ, int expectedTerrainY) {
         MutableFunctionContext context = new MutableFunctionContext();
-        context.set(blockX, EarthGenConfig.SEA_LEVEL, blockZ);
-
         assertEquals(expectedTerrainY, TerrainService.terrainYAtXZ(blockX, blockZ));
         assertEquals(expectedTerrainY, TerrainService.effectiveSolidTopYAtXZ(blockX, blockZ));
+        context.set(blockX, EarthGenConfig.SEA_LEVEL, blockZ);
         assertEquals(-1.0, TerrainService.erosionAtXZ(context), 1.0e-6);
         assertEquals(0.0, TerrainService.continentalnessAtXZ(context), 1.0e-6);
         assertEquals(0.0, TerrainService.weirdnessAtXZ(context), 1.0e-6);
-        assertEquals(TerrainService.depthFromTerrainY(expectedTerrainY), TerrainService.depthDensityAtY(context), 1.0e-6);
+        context.set(blockX, expectedTerrainY, blockZ);
+        assertEquals(0.0, TerrainService.depthDensityAtY(context), 1.0e-6);
+        context.set(blockX, EarthGenConfig.MIN_Y, blockZ);
+        assertEquals(1.1, TerrainService.depthDensityAtY(context), 1.0e-6);
     }
 
     private void installFlatServices(double meters) {

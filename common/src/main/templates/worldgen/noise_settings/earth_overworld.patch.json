@@ -16,10 +16,20 @@
       "type": "terrarium_expanded:terrain_envelope"
     },
     "final_density": {
-      "type": "terrarium_expanded:terrain_envelope"
+      "$terrarium_expanded:replace": {
+        "type": "terrarium_expanded:earth_surface_caves",
+        "initial_density_without_jaggedness": {
+          "$terrarium_expanded:copy": "/noise_router/initial_density_without_jaggedness"
+        },
+        "final_density": {
+          "$terrarium_expanded:copy": "/noise_router/final_density"
+        }
+      }
     },
     "initial_density_without_jaggedness": {
-      "type": "terrarium_expanded:terrain_envelope"
+      "$terrarium_expanded:replace": {
+        "type": "terrarium_expanded:terrain_envelope"
+      }
     },
     "ridges": {
       "type": "terrarium_expanded:terrain_weirdness"
