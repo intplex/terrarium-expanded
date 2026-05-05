@@ -3,6 +3,7 @@ package com.github.intplex.mixin;
 import com.github.intplex.earth.EarthGenConfig;
 import com.github.intplex.earth.biome.EcoregionBiomeSource;
 import com.github.intplex.earth.terrain.EarthWorldgenToggles;
+import com.github.intplex.earth.terrain.EarthSurfaceRuleGuard;
 import com.github.intplex.earth.terrain.InlandWaterChunkPostProcessor;
 import com.github.intplex.earth.terrain.TerrainService;
 import java.util.ArrayList;
@@ -13,9 +14,11 @@ import java.util.concurrent.CompletableFuture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.world.level.StructureManager;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.BiomeSource;
@@ -30,6 +33,9 @@ import net.minecraft.world.level.levelgen.NoiseChunk;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.NoiseSettings;
 import net.minecraft.world.level.levelgen.RandomState;
+import net.minecraft.world.level.levelgen.SurfaceRules;
+import net.minecraft.world.level.levelgen.SurfaceSystem;
+import net.minecraft.world.level.levelgen.WorldGenerationContext;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.blending.Blender;
 import org.spongepowered.asm.mixin.Mixin;
@@ -207,6 +213,58 @@ abstract class NoiseBasedChunkGeneratorMixin {
             InlandWaterChunkPostProcessor.fillChunk(chunk);
             return chunk;
         }));
+    }
+
+    @Redirect(
+        method = "buildSurface(Lnet/minecraft/world/level/chunk/ChunkAccess;Lnet/minecraft/world/level/levelgen/WorldGenerationContext;Lnet/minecraft/world/level/levelgen/RandomState;Lnet/minecraft/world/level/StructureManager;Lnet/minecraft/world/level/biome/BiomeManager;Lnet/minecraft/core/Registry;Lnet/minecraft/world/level/levelgen/blending/Blender;)V",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/level/levelgen/SurfaceSystem;buildSurface(Lnet/minecraft/world/level/levelgen/RandomState;Lnet/minecraft/world/level/biome/BiomeManager;Lnet/minecraft/core/Registry;ZLnet/minecraft/world/level/levelgen/WorldGenerationContext;Lnet/minecraft/world/level/chunk/ChunkAccess;Lnet/minecraft/world/level/levelgen/NoiseChunk;Lnet/minecraft/world/level/levelgen/SurfaceRules$RuleSource;)V"
+        )
+    )
+    private void terrariumExpanded$guardEarthSurfaceRules(
+        SurfaceSystem surfaceSystem,
+        RandomState randomState,
+        BiomeManager biomeManager,
+        Registry<Biome> biomeRegistry,
+        boolean useLegacyRandomSource,
+        WorldGenerationContext worldGenerationContext,
+        ChunkAccess surfaceChunkAccess,
+        NoiseChunk noiseChunk,
+        SurfaceRules.RuleSource ruleSource,
+        ChunkAccess chunkAccess,
+        WorldGenerationContext ignoredWorldGenerationContext,
+        RandomState ignoredRandomState,
+        StructureManager structureManager,
+        BiomeManager ignoredBiomeManager,
+        Registry<Biome> ignoredBiomeRegistry,
+        Blender blender
+    ) {
+        EarthWorldgenToggles toggles = earthWorldgenToggles();
+        if (toggles != null && toggles.caves()) {
+            EarthSurfaceRuleGuard.runForChunk(surfaceChunkAccess, () -> surfaceSystem.buildSurface(
+                randomState,
+                biomeManager,
+                biomeRegistry,
+                useLegacyRandomSource,
+                worldGenerationContext,
+                surfaceChunkAccess,
+                noiseChunk,
+                ruleSource
+            ));
+            return;
+        }
+
+        surfaceSystem.buildSurface(
+            randomState,
+            biomeManager,
+            biomeRegistry,
+            useLegacyRandomSource,
+            worldGenerationContext,
+            surfaceChunkAccess,
+            noiseChunk,
+            ruleSource
+        );
     }
 
     private EarthWorldgenToggles earthWorldgenToggles() {

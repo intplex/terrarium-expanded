@@ -9,7 +9,8 @@
   ],
   "mixins": [
     "ChunkGeneratorMixin",
-    "NoiseBasedChunkGeneratorMixin"
+    "NoiseBasedChunkGeneratorMixin",
+    "SurfaceSystemMixin"
   ],
   "injectors": {
     "defaultRequire": 1
