@@ -2,6 +2,13 @@
 
 Bring the Earth into Minecraft with real-world terrain, biome-driven landcover, and configurable world scale.
 
+Terrarium Expanded includes integrations for:
+
+- Biomes O' Plenty
+- Regions Unexplored
+- Nature's Spirit
+- Datapacks that increase the world's minimum or maximum Y level
+
 > [!IMPORTANT]
 > **Requirements**
 > - Minecraft `1.21.1`
