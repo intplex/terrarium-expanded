@@ -14,7 +14,8 @@ public final class TerrainBathymetryRecovery {
         double meters,
         EcoregionProbe ecoregionProbe,
         SurfaceWaterProbe surfaceWaterProbe,
-        OceanBathymetryRecovery.Zoom10MetersSampler sampler
+        OceanBathymetryRecovery.RecoverySampleCache recoverySampleCache,
+        OceanBathymetryRecovery.SourceZoomMetersSampler sampler
     ) {
         if (!OceanBathymetryRecovery.shouldAttemptRecovery(worldZoom, terrainSampleAvailable, meters)) {
             return meters;
@@ -35,11 +36,12 @@ public final class TerrainBathymetryRecovery {
             return meters;
         }
 
-        OptionalDouble recoveredMeters = OceanBathymetryRecovery.sampleZoom10BilinearMeters(
+        OptionalDouble recoveredMeters = OceanBathymetryRecovery.sampleRecoveryChainMeters(
             blockX,
             blockZ,
             worldZoom,
-            sampler
+            sampler,
+            recoverySampleCache
         );
         if (recoveredMeters.isEmpty()) {
             OceanBathymetryRecovery.recordGateFailedTile();

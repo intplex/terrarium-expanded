@@ -261,12 +261,13 @@ public final class EarthSamplingFacade {
                 meters,
                 () -> resolveEcoregionGate(context, runtimeState, blockX, blockZ, hasEcoregionColorHint, ecoregionColorHint, localCaches),
                 () -> finalSurfaceWaterIsWater,
-                (recoveryTileKey, localX, localY) -> {
+                localCaches.recoverySampleCache(),
+                (sourceZoom, recoveryTileKey, localX, localY) -> {
                     TerrariumTile recoveryTile = sourceTerrainTileFromCacheOrLoad(
                         localCaches,
                         context,
                         runtimeState,
-                        OceanBathymetryRecovery.SOURCE_ZOOM,
+                        sourceZoom,
                         recoveryTileKey,
                         blockX,
                         blockZ
@@ -626,6 +627,7 @@ public final class EarthSamplingFacade {
         private final Map<SourceTileKey, TerrariumTile> sourceTerrainTiles;
         private final Map<TileKey, EcoregionTile> ecoregionTiles;
         private final Map<TileKey, SurfaceWaterTileLookup> surfaceWaterTiles;
+        private final OceanBathymetryRecovery.RecoverySampleCache recoverySampleCache;
 
         private final TileProjection.MutablePoint terrainPoint = new TileProjection.MutablePoint();
         private final TileProjection.MutablePoint ecoregionPoint = new TileProjection.MutablePoint();
@@ -636,6 +638,7 @@ public final class EarthSamplingFacade {
             this.sourceTerrainTiles = newLruTileMap(maxEntriesPerLayer);
             this.ecoregionTiles = newLruTileMap(maxEntriesPerLayer);
             this.surfaceWaterTiles = newLruTileMap(maxEntriesPerLayer);
+            this.recoverySampleCache = new OceanBathymetryRecovery.RecoverySampleCache(maxEntriesPerLayer * 16);
         }
 
         public static LocalTileCaches hotPathCaches() {
@@ -651,6 +654,7 @@ public final class EarthSamplingFacade {
             sourceTerrainTiles.clear();
             ecoregionTiles.clear();
             surfaceWaterTiles.clear();
+            recoverySampleCache.clear();
         }
 
         TileProjection.MutablePoint terrainPoint() {
@@ -665,8 +669,20 @@ public final class EarthSamplingFacade {
             return surfaceWaterPoint;
         }
 
+        void resetTransientRecoveryCache() {
+            recoverySampleCache.clear();
+        }
+
+        OceanBathymetryRecovery.RecoverySampleCache recoverySampleCache() {
+            return recoverySampleCache;
+        }
+
         int totalEntries() {
-            return primaryTerrainTiles.size() + sourceTerrainTiles.size() + ecoregionTiles.size() + surfaceWaterTiles.size();
+            return primaryTerrainTiles.size()
+                + sourceTerrainTiles.size()
+                + ecoregionTiles.size()
+                + surfaceWaterTiles.size()
+                + recoverySampleCache.size();
         }
 
         private static <K, V> Map<K, V> newLruTileMap(int maxEntries) {

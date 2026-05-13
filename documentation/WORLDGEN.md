@@ -59,7 +59,7 @@ Thread-local sampling caches are also idle-cleared using `memory.local_idle_seco
 - shape-only changes (`max_mountain_y`, `ocean_floor_y`) still replace runtime context but reuse service instances
 - supplemental terrain source services are instantiated only when required by:
   - GeoJSON bathymetry source-zoom overrides for the active world zoom
-  - zoom-10 ocean recovery (world zoom `>= 11`)
+  - ocean-zero bathymetry recovery source zooms `10` and `8` (world zoom `>= 11`)
 
 ### Cache lifecycle
 
@@ -77,10 +77,12 @@ Terrain/runtime caches are cleared on:
 3. Apply seam correction (`TerrariumSeamPatch.patchedPixelX`) for zoom 11+ around the dateline seam.
 4. If the current target tile matches a GeoJSON bathymetry override, resample from a lower source zoom using Mercator-aware region rasterization (bathymetry-only: applies only when sampled meters are `<= 0.0`).
 5. Optionally sample surface-water data (needed for inland-water analysis and/or bathymetry recovery).
-6. At zoom 11+, optionally recover ocean bathymetry from zoom-10 Terrarium tiles when gates pass:
+6. At zoom 11+, optionally recover ocean bathymetry from lower-zoom Terrarium tiles when gates pass:
    - sampled meters are exactly `0.0`
    - ecoregion pixel is no-data (`#000000`)
    - sampled surface-water pixel is water
+   - source zoom `10` is tried first, then source zoom `8` if zoom `10` is unavailable or still resolves to `0.0`
+   - repeated source-pixel neighborhoods are memoized within each chunk snapshot; known all-zero source neighborhoods are skipped on later samples in the same snapshot
 7. Convert meters to terrain Y with `EarthGenConfig.mapMetersToTerrainY` (uses active `max_mountain_y` / `ocean_floor_y`).
 8. Build per-chunk snapshots in `TerrainChunkSnapshotBuilder`:
    - sample grid: `40 x 40` (16x16 chunk plus relief margin)

@@ -135,10 +135,9 @@ final class EarthRuntimeServices {
             return this;
         }
         Map<Integer, TerrariumTileService> nextSupplemental = supplementalTerrainTileServices;
-        TerrariumTileService overrideSupplemental = overrides.recoveryTileService();
-        if (overrideSupplemental != null) {
+        if (!overrides.supplementalTerrainTileServices().isEmpty()) {
             nextSupplemental = new HashMap<>(supplementalTerrainTileServices);
-            nextSupplemental.put(overrideSupplemental.zoom(), overrideSupplemental);
+            nextSupplemental.putAll(overrides.supplementalTerrainTileServices());
             nextSupplemental = Map.copyOf(nextSupplemental);
         }
         return new EarthRuntimeServices(
@@ -288,7 +287,9 @@ final class EarthRuntimeServices {
         int validatedWorldZoom = EarthGenConfig.validateZoom(worldZoom);
         Set<Integer> sourceZooms = new TreeSet<>(BadTerrainTileRegistry.sourceZoomsForTargetZoom(validatedWorldZoom));
         if (OceanBathymetryRecovery.isRecoveryActiveForZoom(validatedWorldZoom)) {
-            sourceZooms.add(OceanBathymetryRecovery.SOURCE_ZOOM);
+            for (int sourceZoom : OceanBathymetryRecovery.sourceZoomChain()) {
+                sourceZooms.add(sourceZoom);
+            }
         }
         sourceZooms.remove(validatedWorldZoom);
         return Set.copyOf(sourceZooms);
@@ -354,11 +355,17 @@ final class EarthRuntimeServices {
 
     record Overrides(
         TerrariumTileService tileService,
-        TerrariumTileService recoveryTileService,
+        Map<Integer, TerrariumTileService> supplementalTerrainTileServices,
         EcoregionTileService ecoregionTileService,
         SurfaceWaterTileService surfaceWaterTileService
     ) {
-        private static final Overrides NONE = new Overrides(null, null, null, null);
+        private static final Overrides NONE = new Overrides(null, Map.of(), null, null);
+
+        Overrides {
+            supplementalTerrainTileServices = supplementalTerrainTileServices == null
+                ? Map.of()
+                : Map.copyOf(supplementalTerrainTileServices);
+        }
 
         static Overrides none() {
             return NONE;
@@ -366,7 +373,7 @@ final class EarthRuntimeServices {
 
         boolean hasAny() {
             return tileService != null
-                || recoveryTileService != null
+                || !supplementalTerrainTileServices.isEmpty()
                 || ecoregionTileService != null
                 || surfaceWaterTileService != null;
         }

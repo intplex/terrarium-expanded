@@ -5,6 +5,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.AfterEach;
@@ -31,6 +33,60 @@ class TerrainServiceBathymetryRecoveryTest {
 
         assertEquals(EarthGenConfig.mapMetersToTerrainY(-2000.0), terrainY);
         assertTrue(terrainY < EarthGenConfig.SEA_LEVEL);
+    }
+
+    @Test
+    void recoveryUsesZoomTenBeforeZoomEightAtZoomTwelve() throws Exception {
+        installServices(
+            12,
+            key -> createTerrariumPngForMeters(0.0),
+            Map.of(
+                OceanBathymetryRecovery.SOURCE_ZOOM, key -> createTerrariumPngForMeters(-1200.0),
+                OceanBathymetryRecovery.FALLBACK_SOURCE_ZOOM, key -> createTerrariumPngForMeters(-3600.0)
+            ),
+            0x000000,
+            key -> createSurfaceWaterPng(0xFF0000AA)
+        );
+
+        int terrainY = TerrainService.terrainYAtXZ(0, 0);
+
+        assertEquals(EarthGenConfig.mapMetersToTerrainY(-1200.0), terrainY);
+    }
+
+    @Test
+    void recoveryFallsBackToZoomEightWhenZoomTenReturnsZero() throws Exception {
+        installServices(
+            12,
+            key -> createTerrariumPngForMeters(0.0),
+            Map.of(
+                OceanBathymetryRecovery.SOURCE_ZOOM, key -> createTerrariumPngForMeters(0.0),
+                OceanBathymetryRecovery.FALLBACK_SOURCE_ZOOM, key -> createTerrariumPngForMeters(-2800.0)
+            ),
+            0x000000,
+            key -> createSurfaceWaterPng(0xFF0000AA)
+        );
+
+        int terrainY = TerrainService.terrainYAtXZ(0, 0);
+
+        assertEquals(EarthGenConfig.mapMetersToTerrainY(-2800.0), terrainY);
+    }
+
+    @Test
+    void recoveryIgnoresPositiveFallbackSources() throws Exception {
+        installServices(
+            12,
+            key -> createTerrariumPngForMeters(0.0),
+            Map.of(
+                OceanBathymetryRecovery.SOURCE_ZOOM, key -> createTerrariumPngForMeters(300.0),
+                OceanBathymetryRecovery.FALLBACK_SOURCE_ZOOM, key -> createTerrariumPngForMeters(600.0)
+            ),
+            0x000000,
+            key -> createSurfaceWaterPng(0xFF0000AA)
+        );
+
+        int terrainY = TerrainService.terrainYAtXZ(0, 0);
+
+        assertEquals(EarthGenConfig.mapMetersToTerrainY(0.0), terrainY);
     }
 
     @Test
@@ -196,6 +252,22 @@ class TerrainServiceBathymetryRecoveryTest {
         int ecoregionColorRgb,
         SurfaceWaterTileService.TileDownloader surfaceWaterDownloader
     ) throws IOException {
+        installServices(
+            zoom,
+            activeTerrainDownloader,
+            Map.of(sourceZoom, sourceTerrainDownloader),
+            ecoregionColorRgb,
+            surfaceWaterDownloader
+        );
+    }
+
+    private void installServices(
+        int zoom,
+        TerrariumTileService.TileDownloader activeTerrainDownloader,
+        Map<Integer, TerrariumTileService.TileDownloader> sourceTerrainDownloaders,
+        int ecoregionColorRgb,
+        SurfaceWaterTileService.TileDownloader surfaceWaterDownloader
+    ) throws IOException {
         EarthGenConfig.setActiveZoom(zoom);
         TerrariumTileService activeTerrainService = TerrariumTileService.forTesting(
             new TerrariumTileService.Config(
@@ -207,16 +279,23 @@ class TerrainServiceBathymetryRecoveryTest {
                 zoom
             )
         );
-        TerrariumTileService sourceTerrainService = TerrariumTileService.forTesting(
-            new TerrariumTileService.Config(
-                tempDir.resolve("terrarium-source-" + sourceZoom),
-                Executors.newSingleThreadExecutor(),
-                sourceTerrainDownloader,
-                64,
-                0,
-                sourceZoom
-            )
-        );
+        Map<Integer, TerrariumTileService> sourceTerrainServices = new LinkedHashMap<>();
+        for (Map.Entry<Integer, TerrariumTileService.TileDownloader> entry : sourceTerrainDownloaders.entrySet()) {
+            int sourceZoom = entry.getKey();
+            sourceTerrainServices.put(
+                sourceZoom,
+                TerrariumTileService.forTesting(
+                    new TerrariumTileService.Config(
+                        tempDir.resolve("terrarium-source-" + sourceZoom),
+                        Executors.newSingleThreadExecutor(),
+                        entry.getValue(),
+                        64,
+                        0,
+                        sourceZoom
+                    )
+                )
+            );
+        }
         EcoregionTileService ecoregionTileService = EcoregionTileService.forTesting(
             new EcoregionTileService.Config(
                 tempDir.resolve("ecoregion"),
@@ -237,9 +316,9 @@ class TerrainServiceBathymetryRecoveryTest {
             )
         );
 
-        TerrainServices.overrideServicesForTesting(
+        TerrainServices.overrideSupplementalTerrainServicesForTesting(
             activeTerrainService,
-            sourceTerrainService,
+            sourceTerrainServices,
             ecoregionTileService,
             surfaceWaterTileService
         );

@@ -36,6 +36,7 @@ final class TerrainChunkSnapshotBuilder {
         EarthSamplingFacade.MutableTerrainProbe sampleProbe = scratch.sampleProbe;
 
         EarthSamplingFacade.LocalTileCaches tileCaches = EarthSamplingFacade.chunkLocalCaches();
+        tileCaches.resetTransientRecoveryCache();
 
         boolean waterDataComplete = true;
         for (int sampleX = 0; sampleX < SAMPLE_GRID_SIZE; sampleX++) {
