@@ -3,6 +3,7 @@ package com.github.intplex.earth.terrain;
 import com.github.intplex.earth.EarthGenConfig;
 import com.github.intplex.earth.biome.EcoregionBiomeMappings;
 import java.nio.file.Path;
+import java.util.Map;
 
 public final class TerrainServices {
     private static volatile Path gameDir;
@@ -113,10 +114,27 @@ public final class TerrainServices {
         EcoregionTileService ecoregionTileService,
         SurfaceWaterTileService surfaceWaterTileService
     ) {
+        Map<Integer, TerrariumTileService> supplementalTerrainTileServices = recoveryTileService == null
+            ? Map.of()
+            : Map.of(recoveryTileService.zoom(), recoveryTileService);
+        overrideSupplementalTerrainServicesForTesting(
+            tileService,
+            supplementalTerrainTileServices,
+            ecoregionTileService,
+            surfaceWaterTileService
+        );
+    }
+
+    static synchronized void overrideSupplementalTerrainServicesForTesting(
+        TerrariumTileService tileService,
+        Map<Integer, TerrariumTileService> supplementalTerrainTileServices,
+        EcoregionTileService ecoregionTileService,
+        SurfaceWaterTileService surfaceWaterTileService
+    ) {
         EarthGenerationProfile profile = profileFromActiveConfig();
         reconcileRuntime(
             profile,
-            new EarthRuntimeServices.Overrides(tileService, recoveryTileService, ecoregionTileService, surfaceWaterTileService),
+            new EarthRuntimeServices.Overrides(tileService, supplementalTerrainTileServices, ecoregionTileService, surfaceWaterTileService),
             false
         );
     }

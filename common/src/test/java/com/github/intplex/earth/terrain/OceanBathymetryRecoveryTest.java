@@ -10,6 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -157,6 +158,116 @@ class OceanBathymetryRecoveryTest {
 
         assertTrue(recovered.isPresent());
         assertEquals(0.0, recovered.getAsDouble(), 1e-9);
+    }
+
+    @Test
+    void recoveryChainFallsBackWhenPrimarySourceReturnsZero() {
+        int zoom = 12;
+        int blockX = blockFromGlobalPixel(84, zoom);
+        int blockZ = blockFromGlobalPixel(164, zoom);
+
+        OptionalDouble recovered = OceanBathymetryRecovery.sampleRecoveryChainMeters(
+            blockX,
+            blockZ,
+            zoom,
+            (sourceZoom, tileKey, localX, localY) -> sourceZoom == OceanBathymetryRecovery.SOURCE_ZOOM ? 0.0 : -800.0
+        );
+
+        assertTrue(recovered.isPresent());
+        assertEquals(-800.0, recovered.getAsDouble(), 1e-9);
+    }
+
+    @Test
+    void recoveryChainIgnoresClampedZeroFromPositiveSources() {
+        int zoom = 12;
+        int blockX = blockFromGlobalPixel(84, zoom);
+        int blockZ = blockFromGlobalPixel(164, zoom);
+
+        OptionalDouble recovered = OceanBathymetryRecovery.sampleRecoveryChainMeters(
+            blockX,
+            blockZ,
+            zoom,
+            (sourceZoom, tileKey, localX, localY) -> 120.0
+        );
+
+        assertTrue(recovered.isEmpty());
+    }
+
+    @Test
+    void recoveryChainMemoizesSourceNeighborhoodSamples() {
+        int zoom = 12;
+        OceanBathymetryRecovery.RecoverySampleCache cache = new OceanBathymetryRecovery.RecoverySampleCache(16);
+        AtomicInteger sourceCalls = new AtomicInteger();
+
+        OptionalDouble first = OceanBathymetryRecovery.sampleRecoveryChainMeters(
+            blockFromGlobalPixel(84, zoom),
+            blockFromGlobalPixel(164, zoom),
+            zoom,
+            (sourceZoom, tileKey, localX, localY) -> {
+                sourceCalls.incrementAndGet();
+                return -100.0;
+            },
+            cache
+        );
+        OptionalDouble second = OceanBathymetryRecovery.sampleRecoveryChainMeters(
+            blockFromGlobalPixel(85, zoom),
+            blockFromGlobalPixel(165, zoom),
+            zoom,
+            (sourceZoom, tileKey, localX, localY) -> {
+                sourceCalls.incrementAndGet();
+                return -100.0;
+            },
+            cache
+        );
+
+        assertTrue(first.isPresent());
+        assertTrue(second.isPresent());
+        assertEquals(4, sourceCalls.get());
+        assertTrue(OceanBathymetryRecovery.diagnosticsSnapshotForTesting().recoveryMemoHits() > 0);
+    }
+
+    @Test
+    void recoveryChainSkipsMemoizedZeroPrimaryNeighborhood() {
+        int zoom = 12;
+        OceanBathymetryRecovery.RecoverySampleCache cache = new OceanBathymetryRecovery.RecoverySampleCache(16);
+        AtomicInteger zoomTenCalls = new AtomicInteger();
+        AtomicInteger zoomEightCalls = new AtomicInteger();
+
+        OceanBathymetryRecovery.SourceZoomMetersSampler sampler = (sourceZoom, tileKey, localX, localY) -> {
+            if (sourceZoom == OceanBathymetryRecovery.SOURCE_ZOOM) {
+                zoomTenCalls.incrementAndGet();
+                return 0.0;
+            }
+            zoomEightCalls.incrementAndGet();
+            return -700.0;
+        };
+
+        OptionalDouble first = OceanBathymetryRecovery.sampleRecoveryChainMeters(
+            blockFromGlobalPixel(84, zoom),
+            blockFromGlobalPixel(164, zoom),
+            zoom,
+            sampler,
+            cache
+        );
+        OptionalDouble second = OceanBathymetryRecovery.sampleRecoveryChainMeters(
+            blockFromGlobalPixel(85, zoom),
+            blockFromGlobalPixel(165, zoom),
+            zoom,
+            sampler,
+            cache
+        );
+
+        assertTrue(first.isPresent());
+        assertTrue(second.isPresent());
+        assertEquals(-700.0, first.getAsDouble(), 1e-9);
+        assertEquals(-700.0, second.getAsDouble(), 1e-9);
+        assertEquals(4, zoomTenCalls.get());
+        assertEquals(4, zoomEightCalls.get());
+
+        OceanBathymetryRecovery.DiagnosticsSnapshot snapshot = OceanBathymetryRecovery.diagnosticsSnapshotForTesting();
+        assertEquals(1L, snapshot.sourceZoom10Zero());
+        assertEquals(1L, snapshot.sourceZoom10ZeroNeighborhoodSkipped());
+        assertEquals(2L, snapshot.sourceZoom8Useful());
     }
 
     @Test

@@ -50,6 +50,17 @@ class TerrainServicesRuntimeContextTest {
     }
 
     @Test
+    void oceanRecoveryProvisionsZoomTenAndZoomEightSourcesAtHighZoom() {
+        TerrainServices.bootstrap(tempDir);
+        TerrainServices.syncEarthSettings(12, EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y, EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y);
+
+        EarthRuntimeContext context = TerrainServices.requireContext();
+
+        assertNotNull(context.services().terrainSourceTileService(OceanBathymetryRecovery.SOURCE_ZOOM));
+        assertNotNull(context.services().terrainSourceTileService(OceanBathymetryRecovery.FALLBACK_SOURCE_ZOOM));
+    }
+
+    @Test
     void badTileSupplementalSourceServiceIsProvisionedWhenNeeded() {
         TerrainServices.bootstrap(tempDir);
         TerrainServices.syncEarthSettings(9, EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y, EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y);
