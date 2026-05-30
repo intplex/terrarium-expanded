@@ -141,6 +141,30 @@ class TerrainServicesRuntimeContextTest {
     }
 
     @Test
+    void heightModeOnlySwitchReusesServiceInstances() {
+        TerrainServices.bootstrap(tempDir);
+        EarthRuntimeContext initial = TerrainServices.requireContext();
+
+        TerrainServices.syncEarthSettings(
+            EarthGenConfig.DEFAULT_ZOOM,
+            EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y,
+            EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y,
+            EarthGenConfig.DEFAULT_SEA_LEVEL,
+            TerrainHeightMode.SEA_LEVEL_DETAIL,
+            TerrainHeightMode.HIGH_ELEVATION_DETAIL
+        );
+
+        EarthRuntimeContext switched = TerrainServices.requireContext();
+        assertNotSame(initial, switched);
+        assertEquals(TerrainHeightMode.SEA_LEVEL_DETAIL, switched.profile().belowSeaHeightMode());
+        assertEquals(TerrainHeightMode.HIGH_ELEVATION_DETAIL, switched.profile().aboveSeaHeightMode());
+        assertNotSame(initial.terrainRuntimeState(), switched.terrainRuntimeState());
+        assertSame(initial.services().tileService(), switched.services().tileService());
+        assertSame(initial.services().ecoregionTileService(), switched.services().ecoregionTileService());
+        assertSame(initial.services().surfaceWaterTileService(), switched.services().surfaceWaterTileService());
+    }
+
+    @Test
     void staticAdaptersDelegateToContextServices() {
         TerrainServices.bootstrap(tempDir);
         EarthRuntimeContext context = TerrainServices.requireContext();

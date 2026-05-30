@@ -3,6 +3,7 @@ package com.github.intplex.earth;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterEach;
 
+import com.github.intplex.earth.terrain.TerrainHeightMode;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -192,6 +193,131 @@ class EarthGenConfigTest {
 
         assertTrue(lowerMountainLand < defaultLand);
         assertTrue(higherOceanFloorOcean > defaultOcean);
+    }
+
+    @Test
+    void evenScaleHeightModePreservesExistingTerrainMapping() {
+        EarthGenConfig.setActiveTerrainProfile(200, 0, 101, TerrainHeightMode.EVEN_SCALE, TerrainHeightMode.EVEN_SCALE);
+
+        assertEquals(100, EarthGenConfig.mapMetersToTerrainY(0.0));
+        assertEquals(150, EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.5));
+        assertEquals(200, EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS));
+        assertEquals(50, EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.5));
+        assertEquals(0, EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS));
+    }
+
+    @Test
+    void seaLevelDetailGivesMoreBlocksNearSeaLevel() {
+        EarthGenConfig.setActiveTerrainProfile(200, 0, 101, TerrainHeightMode.EVEN_SCALE, TerrainHeightMode.EVEN_SCALE);
+        int linearAboveDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.1)
+            - EarthGenConfig.mapMetersToTerrainY(0.0);
+        int linearBelowDelta = EarthGenConfig.mapMetersToTerrainY(0.0)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.1);
+
+        EarthGenConfig.setActiveTerrainProfile(200, 0, 101, TerrainHeightMode.SEA_LEVEL_DETAIL, TerrainHeightMode.SEA_LEVEL_DETAIL);
+
+        int exaggeratedAboveDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.1)
+            - EarthGenConfig.mapMetersToTerrainY(0.0);
+        int exaggeratedBelowDelta = EarthGenConfig.mapMetersToTerrainY(0.0)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.1);
+
+        assertTrue(exaggeratedAboveDelta > linearAboveDelta);
+        assertTrue(exaggeratedBelowDelta > linearBelowDelta);
+    }
+
+    @Test
+    void highElevationDetailGivesMoreBlocksNearExtremes() {
+        EarthGenConfig.setActiveTerrainProfile(200, 0, 101, TerrainHeightMode.EVEN_SCALE, TerrainHeightMode.EVEN_SCALE);
+        int linearAboveExtremeDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS)
+            - EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.9);
+        int linearBelowExtremeDelta = EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.9)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS);
+
+        EarthGenConfig.setActiveTerrainProfile(
+            200,
+            0,
+            101,
+            TerrainHeightMode.HIGH_ELEVATION_DETAIL,
+            TerrainHeightMode.HIGH_ELEVATION_DETAIL
+        );
+
+        int exaggeratedAboveExtremeDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS)
+            - EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.9);
+        int exaggeratedBelowExtremeDelta = EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.9)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS);
+
+        assertTrue(exaggeratedAboveExtremeDelta > linearAboveExtremeDelta);
+        assertTrue(exaggeratedBelowExtremeDelta > linearBelowExtremeDelta);
+    }
+
+    @Test
+    void compressedMiddleHeightsGiveMoreBlocksNearSeaLevelAndExtremesAndFewerInMiddle() {
+        EarthGenConfig.setActiveTerrainProfile(200, 0, 101, TerrainHeightMode.EVEN_SCALE, TerrainHeightMode.EVEN_SCALE);
+        int linearAboveLowDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.1)
+            - EarthGenConfig.mapMetersToTerrainY(0.0);
+        int linearAboveMiddleDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.55)
+            - EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.45);
+        int linearAboveHighDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS)
+            - EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.9);
+        int linearBelowLowDelta = EarthGenConfig.mapMetersToTerrainY(0.0)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.1);
+        int linearBelowMiddleDelta = EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.45)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.55);
+        int linearBelowHighDelta = EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.9)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS);
+
+        EarthGenConfig.setActiveTerrainProfile(
+            200,
+            0,
+            101,
+            TerrainHeightMode.COMPRESSED_MIDDLE_HEIGHTS,
+            TerrainHeightMode.COMPRESSED_MIDDLE_HEIGHTS
+        );
+
+        int compressedAboveLowDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.1)
+            - EarthGenConfig.mapMetersToTerrainY(0.0);
+        int compressedAboveMiddleDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.55)
+            - EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.45);
+        int compressedAboveHighDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS)
+            - EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.9);
+        int compressedBelowLowDelta = EarthGenConfig.mapMetersToTerrainY(0.0)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.1);
+        int compressedBelowMiddleDelta = EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.45)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.55);
+        int compressedBelowHighDelta = EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.9)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS);
+
+        assertTrue(compressedAboveLowDelta > linearAboveLowDelta);
+        assertTrue(compressedAboveMiddleDelta < linearAboveMiddleDelta);
+        assertTrue(compressedAboveHighDelta > linearAboveHighDelta);
+        assertTrue(compressedBelowLowDelta > linearBelowLowDelta);
+        assertTrue(compressedBelowMiddleDelta < linearBelowMiddleDelta);
+        assertTrue(compressedBelowHighDelta > linearBelowHighDelta);
+    }
+
+    @Test
+    void aboveAndBelowHeightModesCanDiffer() {
+        EarthGenConfig.setActiveTerrainProfile(200, 0, 101, TerrainHeightMode.EVEN_SCALE, TerrainHeightMode.EVEN_SCALE);
+        int linearAboveLowDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.1)
+            - EarthGenConfig.mapMetersToTerrainY(0.0);
+        int linearBelowLowDelta = EarthGenConfig.mapMetersToTerrainY(0.0)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.1);
+
+        EarthGenConfig.setActiveTerrainProfile(
+            200,
+            0,
+            101,
+            TerrainHeightMode.HIGH_ELEVATION_DETAIL,
+            TerrainHeightMode.SEA_LEVEL_DETAIL
+        );
+
+        int aboveLowDelta = EarthGenConfig.mapMetersToTerrainY(EarthGenConfig.MAX_ABOVE_SEA_METERS * 0.1)
+            - EarthGenConfig.mapMetersToTerrainY(0.0);
+        int belowLowDelta = EarthGenConfig.mapMetersToTerrainY(0.0)
+            - EarthGenConfig.mapMetersToTerrainY(-EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS * 0.1);
+
+        assertTrue(aboveLowDelta > linearAboveLowDelta);
+        assertTrue(belowLowDelta < linearBelowLowDelta);
     }
 
     @Test

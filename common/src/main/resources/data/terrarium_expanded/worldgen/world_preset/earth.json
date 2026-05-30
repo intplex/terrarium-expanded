@@ -10,6 +10,8 @@
           "max_mountain_y": 256,
           "ocean_floor_y": 0,
           "sea_level": 63,
+          "below_sea_height_mode": "even_scale",
+          "above_sea_height_mode": "even_scale",
           "terrain_base_url": "https://elevation-tiles-prod.s3.amazonaws.com/terrarium",
           "biomes_base_url": "https://d127t6piqu53ls.cloudfront.net/tiles-reduced",
           "surface_water_base_url": "https://storage.googleapis.com/global-surface-water/tiles2021/seasonality",
