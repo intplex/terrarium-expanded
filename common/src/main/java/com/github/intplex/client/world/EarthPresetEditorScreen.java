@@ -5,6 +5,7 @@ import com.github.intplex.earth.biome.BiomeIntegrationMode;
 import com.github.intplex.earth.biome.EcoregionBiomeSource;
 import com.github.intplex.earth.terrain.EarthGenerationProfile;
 import com.github.intplex.earth.terrain.EarthWorldgenToggles;
+import com.github.intplex.earth.terrain.TerrainHeightMode;
 import dev.architectury.platform.Platform;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,10 @@ public final class EarthPresetEditorScreen extends Screen {
     private static final Component MAX_MOUNTAIN_LABEL = Component.translatable("terrarium_expanded.customize.earth.max_mountain_y");
     private static final Component OCEAN_DEPTH_LABEL = Component.translatable("terrarium_expanded.customize.earth.ocean_floor_y");
     private static final Component SEA_LEVEL_LABEL = Component.translatable("terrarium_expanded.customize.earth.sea_level");
+    private static final Component BELOW_SEA_HEIGHT_MODE_LABEL =
+        Component.translatable("terrarium_expanded.customize.earth.below_sea_height_mode");
+    private static final Component ABOVE_SEA_HEIGHT_MODE_LABEL =
+        Component.translatable("terrarium_expanded.customize.earth.above_sea_height_mode");
     private static final Component SPAWN_LATITUDE_LABEL =
         Component.translatable("terrarium_expanded.customize.earth.spawn_latitude");
     private static final Component SPAWN_LONGITUDE_LABEL =
@@ -99,6 +104,8 @@ public final class EarthPresetEditorScreen extends Screen {
     private int selectedMaxMountainY;
     private int selectedOceanFloorY;
     private int selectedSeaLevel;
+    private TerrainHeightMode selectedBelowSeaHeightMode;
+    private TerrainHeightMode selectedAboveSeaHeightMode;
     private double selectedSpawnLatitude;
     private double selectedSpawnLongitude;
     private String selectedTerrainBaseUrl;
@@ -119,6 +126,8 @@ public final class EarthPresetEditorScreen extends Screen {
     private EditBox maxMountainYBox;
     private EditBox oceanFloorYBox;
     private SeaLevelSlider seaLevelSlider;
+    private CycleButton<TerrainHeightMode> belowSeaHeightModeButton;
+    private CycleButton<TerrainHeightMode> aboveSeaHeightModeButton;
     private EditBox spawnLatitudeBox;
     private EditBox spawnLongitudeBox;
     private EditBox terrainBaseUrlBox;
@@ -159,6 +168,8 @@ public final class EarthPresetEditorScreen extends Screen {
     private int seaLevelLabelY;
     private int seaLevelRowY;
     private int seaLevelInfoY;
+    private int heightModeLabelY;
+    private int heightModeRowY;
     private int spawnLabelY;
     private int spawnRowY;
     private int terrainUrlLabelY;
@@ -195,6 +206,8 @@ public final class EarthPresetEditorScreen extends Screen {
         this.selectedMaxMountainY = clamp(initialSettings.maxMountainY(), EarthGenConfig.MIN_SEA_LEVEL + 1, maxTerrainYLimit);
         this.selectedOceanFloorY = clamp(initialSettings.oceanFloorY(), EarthGenConfig.MIN_TERRAIN_Y, selectedMaxMountainY - 2);
         this.selectedSeaLevel = clamp(initialSettings.seaLevel(), selectedOceanFloorY + 1, selectedMaxMountainY - 1);
+        this.selectedBelowSeaHeightMode = TerrainHeightMode.normalize(initialSettings.belowSeaHeightMode());
+        this.selectedAboveSeaHeightMode = TerrainHeightMode.normalize(initialSettings.aboveSeaHeightMode());
         this.selectedSpawnLatitude = initialSettings.spawnLatitude();
         this.selectedSpawnLongitude = initialSettings.spawnLongitude();
         this.selectedTerrainBaseUrl = initialSettings.terrainBaseUrl();
@@ -268,6 +281,26 @@ public final class EarthPresetEditorScreen extends Screen {
             updateValidationState();
         });
         addRenderableWidget(seaLevelSlider);
+
+        belowSeaHeightModeButton = CycleButton.<TerrainHeightMode>builder(this::heightModeLabel)
+            .withValues(List.of(TerrainHeightMode.values()))
+            .displayOnlyValue()
+            .create(leftX, heightModeRowY, halfWidth, ROW_HEIGHT, BELOW_SEA_HEIGHT_MODE_LABEL, (button, value) -> {
+                selectedBelowSeaHeightMode = value;
+                updateValidationState();
+            });
+        belowSeaHeightModeButton.setValue(selectedBelowSeaHeightMode);
+        addRenderableWidget(belowSeaHeightModeButton);
+
+        aboveSeaHeightModeButton = CycleButton.<TerrainHeightMode>builder(this::heightModeLabel)
+            .withValues(List.of(TerrainHeightMode.values()))
+            .displayOnlyValue()
+            .create(rightX, heightModeRowY, halfWidth, ROW_HEIGHT, ABOVE_SEA_HEIGHT_MODE_LABEL, (button, value) -> {
+                selectedAboveSeaHeightMode = value;
+                updateValidationState();
+            });
+        aboveSeaHeightModeButton.setValue(selectedAboveSeaHeightMode);
+        addRenderableWidget(aboveSeaHeightModeButton);
 
         spawnLatitudeBox = new EditBox(font, leftX, spawnRowY, halfWidth, ROW_HEIGHT, SPAWN_LATITUDE_LABEL);
         spawnLatitudeBox.setValue(Double.toString(selectedSpawnLatitude));
@@ -397,6 +430,10 @@ public final class EarthPresetEditorScreen extends Screen {
         y += ROW_HEIGHT + ROW_GAP;
         seaLevelInfoY = y;
         y += 10 + SECTION_GAP;
+        heightModeLabelY = y;
+        y += LABEL_GAP;
+        heightModeRowY = y;
+        y += ROW_HEIGHT + SECTION_GAP;
         spawnLabelY = y;
         y += LABEL_GAP;
         spawnRowY = y;
@@ -441,6 +478,8 @@ public final class EarthPresetEditorScreen extends Screen {
         refreshWidget(maxMountainYBox, shapeRowY);
         refreshWidget(oceanFloorYBox, shapeRowY);
         refreshWidget(seaLevelSlider, seaLevelRowY);
+        refreshWidget(belowSeaHeightModeButton, heightModeRowY);
+        refreshWidget(aboveSeaHeightModeButton, heightModeRowY);
         refreshWidget(spawnLatitudeBox, spawnRowY);
         refreshWidget(spawnLongitudeBox, spawnRowY);
         refreshWidget(terrainBaseUrlBox, terrainUrlRowY);
@@ -498,6 +537,10 @@ public final class EarthPresetEditorScreen extends Screen {
             : Component.translatable("options.off");
     }
 
+    private Component heightModeLabel(TerrainHeightMode mode) {
+        return Component.translatable("terrarium_expanded.customize.earth.height_mode." + mode.getSerializedName());
+    }
+
     private void updateValidationState() {
         ValidationKind previousKind = validationKind;
         int previousHeightValidationPixels = heightValidationBlockHeight(validationMessage);
@@ -539,6 +582,8 @@ public final class EarthPresetEditorScreen extends Screen {
                 selectedMaxMountainY,
                 selectedOceanFloorY,
                 selectedSeaLevel,
+                selectedBelowSeaHeightMode,
+                selectedAboveSeaHeightMode,
                 selectedTerrainBaseUrl,
                 selectedBiomesBaseUrl,
                 selectedSurfaceWaterBaseUrl,
@@ -586,6 +631,8 @@ public final class EarthPresetEditorScreen extends Screen {
                     selectedMaxMountainY,
                     selectedOceanFloorY,
                     selectedSeaLevel,
+                    selectedBelowSeaHeightMode,
+                    selectedAboveSeaHeightMode,
                     selectedTerrainBaseUrl,
                     selectedBiomesBaseUrl,
                     selectedSurfaceWaterBaseUrl,
@@ -701,6 +748,8 @@ public final class EarthPresetEditorScreen extends Screen {
         drawLabelIfVisible(guiGraphics, SEA_LEVEL_LABEL, leftX, seaLevelLabelY, 0xCFCFCF);
         drawLabelIfVisible(guiGraphics, belowSeaVerticalScaleLabel(), leftX, seaLevelInfoY, 0xAFAFAF);
         drawLabelIfVisible(guiGraphics, aboveSeaVerticalScaleLabel(), rightX, seaLevelInfoY, 0xAFAFAF);
+        drawLabelIfVisible(guiGraphics, BELOW_SEA_HEIGHT_MODE_LABEL, leftX, heightModeLabelY, 0xCFCFCF);
+        drawLabelIfVisible(guiGraphics, ABOVE_SEA_HEIGHT_MODE_LABEL, rightX, heightModeLabelY, 0xCFCFCF);
         drawLabelIfVisible(guiGraphics, SPAWN_LATITUDE_LABEL, leftX, spawnLabelY, 0xCFCFCF);
         drawLabelIfVisible(guiGraphics, SPAWN_LONGITUDE_LABEL, rightX, spawnLabelY, 0xCFCFCF);
         drawLabelIfVisible(guiGraphics, TERRAIN_BASE_URL_LABEL, leftX, terrainUrlLabelY, 0xCFCFCF);
@@ -945,6 +994,8 @@ public final class EarthPresetEditorScreen extends Screen {
                 clampedMaxMountainY,
                 ecoregionBiomeSource.oceanFloorY(),
                 ecoregionBiomeSource.seaLevel(),
+                ecoregionBiomeSource.belowSeaHeightMode(),
+                ecoregionBiomeSource.aboveSeaHeightMode(),
                 ecoregionBiomeSource.terrainBaseUrl(),
                 ecoregionBiomeSource.biomesBaseUrl(),
                 ecoregionBiomeSource.surfaceWaterBaseUrl(),
@@ -1174,6 +1225,8 @@ public final class EarthPresetEditorScreen extends Screen {
         int maxMountainY,
         int oceanFloorY,
         int seaLevel,
+        TerrainHeightMode belowSeaHeightMode,
+        TerrainHeightMode aboveSeaHeightMode,
         String terrainBaseUrl,
         String biomesBaseUrl,
         String surfaceWaterBaseUrl,
@@ -1190,6 +1243,8 @@ public final class EarthPresetEditorScreen extends Screen {
             EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y,
             EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y,
             EarthGenConfig.DEFAULT_SEA_LEVEL,
+            TerrainHeightMode.EVEN_SCALE,
+            TerrainHeightMode.EVEN_SCALE,
             EarthGenerationProfile.DEFAULT_TERRAIN_BASE_URL,
             EarthGenerationProfile.DEFAULT_BIOMES_BASE_URL,
             EarthGenerationProfile.DEFAULT_SURFACE_WATER_BASE_URL,

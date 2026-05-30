@@ -1,6 +1,7 @@
 package com.github.intplex.earth;
 
 import com.github.intplex.earth.terrain.TileKey;
+import com.github.intplex.earth.terrain.TerrainHeightMode;
 import java.util.Optional;
 
 public final class EarthGenConfig {
@@ -55,6 +56,8 @@ public final class EarthGenConfig {
     private static volatile int activeMaxMountainY = DEFAULT_MAX_MOUNTAIN_Y;
     private static volatile int activeOceanFloorY = DEFAULT_OCEAN_FLOOR_Y;
     private static volatile int activeSeaLevel = DEFAULT_SEA_LEVEL;
+    private static volatile TerrainHeightMode activeBelowSeaHeightMode = TerrainHeightMode.EVEN_SCALE;
+    private static volatile TerrainHeightMode activeAboveSeaHeightMode = TerrainHeightMode.EVEN_SCALE;
 
     private EarthGenConfig() {
     }
@@ -100,6 +103,14 @@ public final class EarthGenConfig {
 
     public static int activeSeaLevel() {
         return activeSeaLevel;
+    }
+
+    public static TerrainHeightMode activeBelowSeaHeightMode() {
+        return activeBelowSeaHeightMode;
+    }
+
+    public static TerrainHeightMode activeAboveSeaHeightMode() {
+        return activeAboveSeaHeightMode;
     }
 
     public static int validateMaxMountainY(int y) {
@@ -162,6 +173,16 @@ public final class EarthGenConfig {
     }
 
     public static boolean setActiveTerrainProfile(int maxMountainY, int oceanFloorY, int seaLevel) {
+        return setActiveTerrainProfile(maxMountainY, oceanFloorY, seaLevel, TerrainHeightMode.EVEN_SCALE, TerrainHeightMode.EVEN_SCALE);
+    }
+
+    public static boolean setActiveTerrainProfile(
+        int maxMountainY,
+        int oceanFloorY,
+        int seaLevel,
+        TerrainHeightMode belowSeaHeightMode,
+        TerrainHeightMode aboveSeaHeightMode
+    ) {
         int validatedSeaLevel = validateSeaLevel(seaLevel, maxMountainY, oceanFloorY);
         int validatedMaxMountainY = validateMaxMountainY(maxMountainY, ABSOLUTE_MAX_TERRAIN_Y, validatedSeaLevel);
         int resolvedMaxMountainY = Math.min(validatedMaxMountainY, activeMaxTerrainY);
@@ -171,14 +192,20 @@ public final class EarthGenConfig {
             );
         }
         int validatedOceanFloorY = validateOceanFloorY(oceanFloorY, validatedSeaLevel);
+        TerrainHeightMode normalizedBelowSeaHeightMode = TerrainHeightMode.normalize(belowSeaHeightMode);
+        TerrainHeightMode normalizedAboveSeaHeightMode = TerrainHeightMode.normalize(aboveSeaHeightMode);
         boolean changed = configuredMaxMountainY != validatedMaxMountainY
             || activeMaxMountainY != resolvedMaxMountainY
             || activeOceanFloorY != validatedOceanFloorY
-            || activeSeaLevel != validatedSeaLevel;
+            || activeSeaLevel != validatedSeaLevel
+            || activeBelowSeaHeightMode != normalizedBelowSeaHeightMode
+            || activeAboveSeaHeightMode != normalizedAboveSeaHeightMode;
         configuredMaxMountainY = validatedMaxMountainY;
         activeMaxMountainY = resolvedMaxMountainY;
         activeOceanFloorY = validatedOceanFloorY;
         activeSeaLevel = validatedSeaLevel;
+        activeBelowSeaHeightMode = normalizedBelowSeaHeightMode;
+        activeAboveSeaHeightMode = normalizedAboveSeaHeightMode;
         return changed;
     }
 
@@ -211,6 +238,8 @@ public final class EarthGenConfig {
         activeMaxMountainY = Math.min(configuredMaxMountainY, activeMaxTerrainY);
         activeOceanFloorY = DEFAULT_OCEAN_FLOOR_Y;
         activeSeaLevel = DEFAULT_SEA_LEVEL;
+        activeBelowSeaHeightMode = TerrainHeightMode.EVEN_SCALE;
+        activeAboveSeaHeightMode = TerrainHeightMode.EVEN_SCALE;
     }
 
     public static int blockSpan() {
@@ -328,19 +357,23 @@ public final class EarthGenConfig {
         int maxMountainY = activeMaxMountainY;
         int oceanFloorY = activeOceanFloorY;
         int seaLevel = activeSeaLevel;
+        TerrainHeightMode belowSeaHeightMode = activeBelowSeaHeightMode;
+        TerrainHeightMode aboveSeaHeightMode = activeAboveSeaHeightMode;
         int baseY = seaLevel - seaLevelOffset;
 
         if (meters >= 0.0) {
             // clamped in [0, 1.0]
             double clamped = Math.min(meters, MAX_ABOVE_SEA_METERS) / MAX_ABOVE_SEA_METERS;
+            double shaped = aboveSeaHeightMode.apply(clamped);
             // 0 => sea level - landLevelOffset, 1.0 => active max mountain Y
-            return (int) ((seaLevel - landLevelOffset) + clamped * (maxMountainY - (seaLevel - landLevelOffset)));
+            return (int) ((seaLevel - landLevelOffset) + shaped * (maxMountainY - (seaLevel - landLevelOffset)));
         }
 
         // clamped in [0, 1.0]
         double clamped = Math.min(-meters, OCEAN_FLOOR_DEPTH_METERS) / OCEAN_FLOOR_DEPTH_METERS;
+        double shaped = belowSeaHeightMode.apply(clamped);
         // 0 => sea level - seaLevelOffset, 1.0 => active ocean floor Y
-        return (int) (baseY + clamped * (oceanFloorY - baseY));
+        return (int) (baseY + shaped * (oceanFloorY - baseY));
     }
 
     private static int validateMaxTerrainY(int y) {

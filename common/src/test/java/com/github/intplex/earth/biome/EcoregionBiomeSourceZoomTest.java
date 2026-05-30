@@ -2,6 +2,7 @@ package com.github.intplex.earth.biome;
 
 import com.github.intplex.earth.EarthGenConfig;
 import com.github.intplex.earth.terrain.EarthGenerationProfile;
+import com.github.intplex.earth.terrain.TerrainHeightMode;
 import com.github.intplex.earth.terrain.WaterBodyKind;
 import java.util.Map;
 import java.util.Set;
@@ -33,6 +34,8 @@ class EcoregionBiomeSourceZoomTest {
         assertEquals(EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y, source.maxMountainY());
         assertEquals(EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y, source.oceanFloorY());
         assertEquals(EarthGenConfig.DEFAULT_SEA_LEVEL, source.seaLevel());
+        assertEquals(TerrainHeightMode.EVEN_SCALE, source.belowSeaHeightMode());
+        assertEquals(TerrainHeightMode.EVEN_SCALE, source.aboveSeaHeightMode());
         assertEquals(BiomeIntegrationMode.AUTO, source.biomeIntegration());
     }
 
@@ -64,6 +67,33 @@ class EcoregionBiomeSourceZoomTest {
         assertEquals(180, source.maxMountainY());
         assertEquals(20, source.oceanFloorY());
         assertEquals(EarthGenConfig.DEFAULT_SEA_LEVEL, source.seaLevel());
+    }
+
+    @Test
+    void acceptsExplicitHeightModes() {
+        EcoregionBiomeSource source = new EcoregionBiomeSource(
+            mapping(Map.of()),
+            EcoregionBiomeSource.SamplingAdapters.defaults(),
+            new EarthGenerationProfile(
+                11,
+                180,
+                20,
+                EarthGenConfig.DEFAULT_SEA_LEVEL,
+                TerrainHeightMode.HIGH_ELEVATION_DETAIL,
+                TerrainHeightMode.SEA_LEVEL_DETAIL,
+                EarthGenerationProfile.DEFAULT_TERRAIN_BASE_URL,
+                EarthGenerationProfile.DEFAULT_BIOMES_BASE_URL,
+                EarthGenerationProfile.DEFAULT_SURFACE_WATER_BASE_URL,
+                EarthGenerationProfile.TERRAIN_FIXES_NONE,
+                com.github.intplex.earth.terrain.EarthWorldgenToggles.defaults(),
+                false,
+                EarthGenerationProfile.DEFAULT_SPAWN_LATITUDE,
+                EarthGenerationProfile.DEFAULT_SPAWN_LONGITUDE
+            )
+        );
+
+        assertEquals(TerrainHeightMode.HIGH_ELEVATION_DETAIL, source.belowSeaHeightMode());
+        assertEquals(TerrainHeightMode.SEA_LEVEL_DETAIL, source.aboveSeaHeightMode());
     }
 
     @Test
