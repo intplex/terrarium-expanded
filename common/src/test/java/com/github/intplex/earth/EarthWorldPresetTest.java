@@ -30,6 +30,7 @@ class EarthWorldPresetTest {
             assertEquals(8, biomeSource.get("zoom").getAsInt());
             assertEquals(256, biomeSource.get("max_mountain_y").getAsInt());
             assertEquals(0, biomeSource.get("ocean_floor_y").getAsInt());
+            assertEquals(63, biomeSource.get("sea_level").getAsInt());
             assertEquals("https://elevation-tiles-prod.s3.amazonaws.com/terrarium", biomeSource.get("terrain_base_url").getAsString());
             assertEquals("https://d127t6piqu53ls.cloudfront.net/tiles-reduced", biomeSource.get("biomes_base_url").getAsString());
             assertEquals("https://storage.googleapis.com/global-surface-water/tiles2021/seasonality", biomeSource.get("surface_water_base_url").getAsString());

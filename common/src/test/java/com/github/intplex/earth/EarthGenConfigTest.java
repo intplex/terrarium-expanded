@@ -57,16 +57,17 @@ class EarthGenConfigTest {
 
     @Test
     void zeroAndLowPositiveMetersStayFlushWithSeaLevelCoastline() {
-        assertEquals(EarthGenConfig.SEA_LEVEL - 1, EarthGenConfig.mapMetersToTerrainY(0.0));
-        assertEquals(EarthGenConfig.SEA_LEVEL - 1, EarthGenConfig.mapMetersToTerrainY(1.0));
-        assertEquals(EarthGenConfig.SEA_LEVEL - 1, EarthGenConfig.mapMetersToTerrainY(30.0));
-        assertTrue(EarthGenConfig.mapMetersToTerrainY(60.0) >= EarthGenConfig.SEA_LEVEL - 1);
+        assertEquals(EarthGenConfig.DEFAULT_SEA_LEVEL, EarthGenConfig.activeSeaLevel());
+        assertEquals(EarthGenConfig.DEFAULT_SEA_LEVEL - 1, EarthGenConfig.mapMetersToTerrainY(0.0));
+        assertEquals(EarthGenConfig.DEFAULT_SEA_LEVEL - 1, EarthGenConfig.mapMetersToTerrainY(1.0));
+        assertEquals(EarthGenConfig.DEFAULT_SEA_LEVEL - 1, EarthGenConfig.mapMetersToTerrainY(30.0));
+        assertTrue(EarthGenConfig.mapMetersToTerrainY(60.0) >= EarthGenConfig.DEFAULT_SEA_LEVEL - 1);
     }
 
     @Test
     void negativeMetersRemainBelowSeaLevel() {
-        assertTrue(EarthGenConfig.mapMetersToTerrainY(-1.0) < EarthGenConfig.SEA_LEVEL);
-        assertTrue(EarthGenConfig.mapMetersToTerrainY(-1000.0) < EarthGenConfig.SEA_LEVEL);
+        assertTrue(EarthGenConfig.mapMetersToTerrainY(-1.0) < EarthGenConfig.activeSeaLevel());
+        assertTrue(EarthGenConfig.mapMetersToTerrainY(-1000.0) < EarthGenConfig.activeSeaLevel());
     }
 
     @Test
@@ -194,13 +195,26 @@ class EarthGenConfigTest {
     }
 
     @Test
+    void terrainProfileSeaLevelShiftsHeightMapping() {
+        EarthGenConfig.setActiveTerrainProfile(180, 20, 80);
+
+        assertEquals(80, EarthGenConfig.activeSeaLevel());
+        assertEquals(79, EarthGenConfig.mapMetersToTerrainY(0.0));
+        assertTrue(EarthGenConfig.mapMetersToTerrainY(-1.0) < 80);
+        assertTrue(EarthGenConfig.mapMetersToTerrainY(500.0) > 79);
+    }
+
+    @Test
     void terrainProfileValidationRejectsInvalidValues() {
-        assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateMaxMountainY(EarthGenConfig.SEA_LEVEL - 1));
+        assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateMaxMountainY(EarthGenConfig.DEFAULT_SEA_LEVEL));
         assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateMaxMountainY(EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y + 1));
         assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateOceanFloorY(EarthGenConfig.MIN_TERRAIN_Y - 1));
-        assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateOceanFloorY(EarthGenConfig.SEA_LEVEL));
+        assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateOceanFloorY(EarthGenConfig.DEFAULT_SEA_LEVEL));
+        assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateSeaLevel(20, 100, 20));
+        assertThrows(IllegalArgumentException.class, () -> EarthGenConfig.validateSeaLevel(100, 100, 20));
         assertDoesNotThrow(() -> EarthGenConfig.validateMaxMountainY(128));
         assertDoesNotThrow(() -> EarthGenConfig.validateOceanFloorY(20));
+        assertDoesNotThrow(() -> EarthGenConfig.validateSeaLevel(63, 128, 20));
     }
 
     @Test

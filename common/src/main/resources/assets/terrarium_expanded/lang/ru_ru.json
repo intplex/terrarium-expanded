@@ -4,6 +4,10 @@
   "terrarium_expanded.customize.earth.zoom": "Масштаб Земли",
   "terrarium_expanded.customize.earth.max_mountain_y": "Макс. Y гор",
   "terrarium_expanded.customize.earth.ocean_floor_y": "Мин. Y дна океана",
+  "terrarium_expanded.customize.earth.sea_level": "Уровень моря",
+  "terrarium_expanded.customize.earth.sea_level_value": "Уровень моря: %1$s",
+  "terrarium_expanded.customize.earth.vertical_scale_below": "Ниже моря: ~%1$s",
+  "terrarium_expanded.customize.earth.vertical_scale_above": "Выше моря: ~%1$s",
   "terrarium_expanded.customize.earth.spawn_latitude": "Широта спавна",
   "terrarium_expanded.customize.earth.spawn_longitude": "Долгота спавна",
   "terrarium_expanded.customize.earth.terrain_base_url": "Базовый URL рельефа",
@@ -29,7 +33,7 @@
   "terrarium_expanded.customize.earth.world_border": "Граница мира (отступ 32 чанка)",
   "terrarium_expanded.customize.earth.world_size": "Размер мира: %1$s x %2$s блоков",
   "terrarium_expanded.customize.earth.block_ratio": "Примерный масштаб: 1 блок ~= %1$s",
-  "terrarium_expanded.customize.earth.invalid_height_input": "Макс. Y гор должен быть %1$s-%2$s, а мин. Y дна океана должен быть %3$s-%4$s.",
+  "terrarium_expanded.customize.earth.invalid_height_input": "Макс. Y гор должен быть %1$s-%2$s, мин. Y дна океана должен быть %3$s-%4$s, а уровень моря должен быть между ними.",
   "terrarium_expanded.customize.earth.invalid_geo_input": "Широта спавна должна быть %1$s-%2$s, а долгота спавна должна быть %3$s-%4$s.",
   "terrarium_expanded.customize.earth.invalid_url_input": "Введите корректные URL для рельефа, биомов и поверхностных вод."
 }

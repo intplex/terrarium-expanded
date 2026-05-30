@@ -32,6 +32,7 @@ class EcoregionBiomeSourceZoomTest {
         assertEquals(EarthGenConfig.DEFAULT_ZOOM, source.zoom());
         assertEquals(EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y, source.maxMountainY());
         assertEquals(EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y, source.oceanFloorY());
+        assertEquals(EarthGenConfig.DEFAULT_SEA_LEVEL, source.seaLevel());
         assertEquals(BiomeIntegrationMode.AUTO, source.biomeIntegration());
     }
 
@@ -62,6 +63,7 @@ class EcoregionBiomeSourceZoomTest {
         assertEquals(11, source.zoom());
         assertEquals(180, source.maxMountainY());
         assertEquals(20, source.oceanFloorY());
+        assertEquals(EarthGenConfig.DEFAULT_SEA_LEVEL, source.seaLevel());
     }
 
     @Test

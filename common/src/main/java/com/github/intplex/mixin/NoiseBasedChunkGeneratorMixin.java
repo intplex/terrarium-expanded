@@ -123,7 +123,8 @@ abstract class NoiseBasedChunkGeneratorMixin {
             EarthGenConfig.maxTerrainYFromVerticalRange(chunkAccess.getMinBuildHeight(), chunkAccess.getHeight())
         );
 
-        EarthWorldgenToggles toggles = earthWorldgenToggles();
+        EcoregionBiomeSource earthBiomeSource = earthBiomeSource();
+        EarthWorldgenToggles toggles = earthBiomeSource == null ? null : earthBiomeSource.worldgenToggles();
         if (toggles == null) {
             return NoiseChunk.forChunk(chunkAccess, randomState, beardifierOrMarker, settings, fluidPicker, blender);
         }
@@ -133,8 +134,9 @@ abstract class NoiseBasedChunkGeneratorMixin {
 
         NoiseGeneratorSettings adjustedSettings = settings;
         boolean aquifersEnabled = toggles.aquifers();
+        int seaLevel = earthBiomeSource.seaLevel();
         boolean noiseSettingsChanged = !adjustedNoiseSettings.equals(sourceNoiseSettings);
-        if (noiseSettingsChanged || settings.aquifersEnabled() != aquifersEnabled || !settings.oreVeinsEnabled()) {
+        if (noiseSettingsChanged || settings.seaLevel() != seaLevel || settings.aquifersEnabled() != aquifersEnabled || !settings.oreVeinsEnabled()) {
             adjustedSettings = new NoiseGeneratorSettings(
                 adjustedNoiseSettings,
                 settings.defaultBlock(),
@@ -142,7 +144,7 @@ abstract class NoiseBasedChunkGeneratorMixin {
                 settings.noiseRouter(),
                 settings.surfaceRule(),
                 settings.spawnTarget(),
-                settings.seaLevel(),
+                seaLevel,
                 settings.disableMobGeneration(),
                 aquifersEnabled,
                 true,
@@ -152,13 +154,25 @@ abstract class NoiseBasedChunkGeneratorMixin {
 
         Aquifer.FluidPicker adjustedFluidPicker = fluidPicker;
         if (!aquifersEnabled) {
-            adjustedFluidPicker = terrariumExpanded$dryUndergroundFluidPicker(fluidPicker);
+            adjustedFluidPicker = terrariumExpanded$earthFluidPicker(
+                fluidPicker,
+                adjustedSettings.seaLevel(),
+                adjustedSettings.defaultFluid(),
+                true
+            );
         } else if (!toggles.lavaAquifers()) {
             Aquifer.FluidStatus waterOnly = new Aquifer.FluidStatus(
                 adjustedSettings.seaLevel(),
                 adjustedSettings.defaultFluid()
             );
             adjustedFluidPicker = (x, y, z) -> waterOnly;
+        } else if (settings.seaLevel() != adjustedSettings.seaLevel()) {
+            adjustedFluidPicker = terrariumExpanded$earthFluidPicker(
+                fluidPicker,
+                adjustedSettings.seaLevel(),
+                adjustedSettings.defaultFluid(),
+                false
+            );
         }
 
         return NoiseChunk.forChunk(
@@ -171,12 +185,25 @@ abstract class NoiseBasedChunkGeneratorMixin {
         );
     }
 
-    private static Aquifer.FluidPicker terrariumExpanded$dryUndergroundFluidPicker(Aquifer.FluidPicker delegate) {
+    private static Aquifer.FluidPicker terrariumExpanded$earthFluidPicker(
+        Aquifer.FluidPicker delegate,
+        int seaLevel,
+        BlockState defaultFluid,
+        boolean dryUnderground
+    ) {
         Objects.requireNonNull(delegate, "delegate");
         Aquifer.FluidStatus airOnly = new Aquifer.FluidStatus(Integer.MIN_VALUE, Blocks.AIR.defaultBlockState());
-        return (x, y, z) -> y <= TerrainService.effectiveSolidTopYAtXZ(x, z)
-            ? airOnly
-            : delegate.computeFluid(x, y, z);
+        Aquifer.FluidStatus surfaceFluid = new Aquifer.FluidStatus(seaLevel, defaultFluid);
+        return (x, y, z) -> {
+            int solidTopY = TerrainService.effectiveSolidTopYAtXZ(x, z);
+            if (y > solidTopY) {
+                return y <= seaLevel ? surfaceFluid : airOnly;
+            }
+            if (dryUnderground && y <= solidTopY) {
+                return airOnly;
+            }
+            return delegate.computeFluid(x, y, z);
+        };
     }
 
     @Redirect(
@@ -218,11 +245,24 @@ abstract class NoiseBasedChunkGeneratorMixin {
         }));
     }
 
+    @Inject(method = "getSeaLevel", at = @At("HEAD"), cancellable = true)
+    private void terrariumExpanded$useEarthSeaLevel(CallbackInfoReturnable<Integer> cir) {
+        EcoregionBiomeSource earthBiomeSource = earthBiomeSource();
+        if (earthBiomeSource != null) {
+            cir.setReturnValue(earthBiomeSource.seaLevel());
+        }
+    }
+
     private EarthWorldgenToggles earthWorldgenToggles() {
+        EcoregionBiomeSource earthBiomeSource = earthBiomeSource();
+        return earthBiomeSource == null ? null : earthBiomeSource.worldgenToggles();
+    }
+
+    private EcoregionBiomeSource earthBiomeSource() {
         NoiseBasedChunkGenerator generator = (NoiseBasedChunkGenerator) (Object) this;
         BiomeSource biomeSource = generator.getBiomeSource();
         if (biomeSource instanceof EcoregionBiomeSource earthBiomeSource) {
-            return earthBiomeSource.worldgenToggles();
+            return earthBiomeSource;
         }
         return null;
     }

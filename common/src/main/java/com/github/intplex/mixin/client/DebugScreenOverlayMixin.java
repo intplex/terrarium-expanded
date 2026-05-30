@@ -48,9 +48,9 @@ public abstract class DebugScreenOverlayMixin {
                 int patchedPixelX = TerrariumSeamPatch.patchedPixelX(zoom, samplePoint.tileKey(), samplePoint.pixelX());
                 double meters = TerrainServices.tileService().requireTile(samplePoint.tileKey()).sampleMeters(patchedPixelX, samplePoint.pixelY());
                 int terrainY = EarthGenConfig.mapMetersToTerrainY(meters);
-                return String.format(Locale.ROOT, "Terrarium: %.2f m -> y %d (sea %d)", meters, terrainY, EarthGenConfig.SEA_LEVEL);
+                return String.format(Locale.ROOT, "Terrarium: %.2f m -> y %d (sea %d)", meters, terrainY, EarthGenConfig.activeSeaLevel());
             })
-            .orElse(String.format(Locale.ROOT, "Terrarium: terrain unavailable (sea %d)", EarthGenConfig.SEA_LEVEL));
+            .orElse(String.format(Locale.ROOT, "Terrarium: terrain unavailable (sea %d)", EarthGenConfig.activeSeaLevel()));
 
         List<String> information = new ArrayList<>(cir.getReturnValue());
         information.add(line);

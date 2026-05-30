@@ -120,6 +120,27 @@ class TerrainServicesRuntimeContextTest {
     }
 
     @Test
+    void seaLevelOnlySwitchReusesServiceInstances() {
+        TerrainServices.bootstrap(tempDir);
+        EarthRuntimeContext initial = TerrainServices.requireContext();
+
+        TerrainServices.syncEarthSettings(
+            EarthGenConfig.DEFAULT_ZOOM,
+            EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y,
+            EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y,
+            EarthGenConfig.DEFAULT_SEA_LEVEL + 5
+        );
+
+        EarthRuntimeContext switched = TerrainServices.requireContext();
+        assertNotSame(initial, switched);
+        assertEquals(EarthGenConfig.DEFAULT_SEA_LEVEL + 5, switched.profile().seaLevel());
+        assertNotSame(initial.terrainRuntimeState(), switched.terrainRuntimeState());
+        assertSame(initial.services().tileService(), switched.services().tileService());
+        assertSame(initial.services().ecoregionTileService(), switched.services().ecoregionTileService());
+        assertSame(initial.services().surfaceWaterTileService(), switched.services().surfaceWaterTileService());
+    }
+
+    @Test
     void staticAdaptersDelegateToContextServices() {
         TerrainServices.bootstrap(tempDir);
         EarthRuntimeContext context = TerrainServices.requireContext();
@@ -169,6 +190,7 @@ class TerrainServicesRuntimeContextTest {
             EarthGenConfig.DEFAULT_ZOOM,
             EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y,
             EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y,
+            EarthGenConfig.DEFAULT_SEA_LEVEL + 7,
             "https://example.com/terrarium",
             "https://example.com/biomes",
             "https://example.com/water",
@@ -202,6 +224,7 @@ class TerrainServicesRuntimeContextTest {
         assertEquals(false, afterZoomChange.worldBorder());
         assertEquals(10.5, afterZoomChange.spawnLatitude());
         assertEquals(20.5, afterZoomChange.spawnLongitude());
+        assertEquals(EarthGenConfig.DEFAULT_SEA_LEVEL + 7, afterZoomChange.seaLevel());
     }
 
     @Test

@@ -4,6 +4,10 @@
   "terrarium_expanded.customize.earth.zoom": "地球缩放",
   "terrarium_expanded.customize.earth.max_mountain_y": "山地最高 Y",
   "terrarium_expanded.customize.earth.ocean_floor_y": "海底最低 Y",
+  "terrarium_expanded.customize.earth.sea_level": "海平面",
+  "terrarium_expanded.customize.earth.sea_level_value": "海平面：%1$s",
+  "terrarium_expanded.customize.earth.vertical_scale_below": "海平面下：~%1$s",
+  "terrarium_expanded.customize.earth.vertical_scale_above": "海平面上：~%1$s",
   "terrarium_expanded.customize.earth.spawn_latitude": "出生纬度",
   "terrarium_expanded.customize.earth.spawn_longitude": "出生经度",
   "terrarium_expanded.customize.earth.terrain_base_url": "地形基础 URL",
@@ -29,7 +33,7 @@
   "terrarium_expanded.customize.earth.world_border": "世界边界（距边缘 32 区块）",
   "terrarium_expanded.customize.earth.world_size": "世界大小：%1$s x %2$s 方块",
   "terrarium_expanded.customize.earth.block_ratio": "大致比例：1 方块 ~= %1$s",
-  "terrarium_expanded.customize.earth.invalid_height_input": "山地最高 Y 必须为 %1$s-%2$s，海底最低 Y 必须为 %3$s-%4$s。",
+  "terrarium_expanded.customize.earth.invalid_height_input": "山地最高 Y 必须为 %1$s-%2$s，海底最低 Y 必须为 %3$s-%4$s，海平面必须位于两者之间。",
   "terrarium_expanded.customize.earth.invalid_geo_input": "出生纬度必须为 %1$s-%2$s，出生经度必须为 %3$s-%4$s。",
   "terrarium_expanded.customize.earth.invalid_url_input": "请输入有效的地形、生物群系和地表水 URL。"
 }

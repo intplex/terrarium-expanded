@@ -30,7 +30,9 @@ public final class EarthGenConfig {
     public static final double MAX_LONGITUDE = 180.0;
     public static final double MAX_MERCATOR_LATITUDE = 85.0511287798066;
 
-    public static final int SEA_LEVEL = 63;
+    public static final int DEFAULT_SEA_LEVEL = 63;
+    @Deprecated(forRemoval = false)
+    public static final int SEA_LEVEL = DEFAULT_SEA_LEVEL;
     /**
      * Vanilla noise settings enforce an absolute upper build limit of y=2031
      * (i.e. min_y + height - 1 <= 2031). This is an engine cap, not a per-world cap.
@@ -40,8 +42,9 @@ public final class EarthGenConfig {
     public static final int MIN_TERRAIN_Y = 0;
     public static final int DEFAULT_MAX_MOUNTAIN_Y = 256;
     public static final int DEFAULT_OCEAN_FLOOR_Y = MIN_TERRAIN_Y;
-    public static final int MIN_MAX_MOUNTAIN_Y = SEA_LEVEL;
-    public static final int MAX_OCEAN_FLOOR_Y = SEA_LEVEL - 1;
+    public static final int MIN_SEA_LEVEL = MIN_TERRAIN_Y + 1;
+    public static final int MIN_MAX_MOUNTAIN_Y = MIN_SEA_LEVEL + 1;
+    public static final int MAX_OCEAN_FLOOR_Y = DEFAULT_SEA_LEVEL - 1;
 
     public static final double MAX_ABOVE_SEA_METERS = 8900.0;
     public static final double OCEAN_FLOOR_DEPTH_METERS = 4000.0;
@@ -51,6 +54,7 @@ public final class EarthGenConfig {
     private static volatile int configuredMaxMountainY = DEFAULT_MAX_MOUNTAIN_Y;
     private static volatile int activeMaxMountainY = DEFAULT_MAX_MOUNTAIN_Y;
     private static volatile int activeOceanFloorY = DEFAULT_OCEAN_FLOOR_Y;
+    private static volatile int activeSeaLevel = DEFAULT_SEA_LEVEL;
 
     private EarthGenConfig() {
     }
@@ -94,43 +98,87 @@ public final class EarthGenConfig {
         return activeOceanFloorY;
     }
 
+    public static int activeSeaLevel() {
+        return activeSeaLevel;
+    }
+
     public static int validateMaxMountainY(int y) {
         return validateMaxMountainY(y, activeMaxTerrainY);
     }
 
     public static int validateMaxMountainY(int y, int maxTerrainY) {
-        if (maxTerrainY < MIN_MAX_MOUNTAIN_Y || maxTerrainY > ABSOLUTE_MAX_TERRAIN_Y) {
+        return validateMaxMountainY(y, maxTerrainY, activeSeaLevel);
+    }
+
+    public static int validateMaxMountainY(int y, int maxTerrainY, int seaLevel) {
+        int validatedSeaLevel = validateSeaLevelBounds(seaLevel, maxTerrainY);
+        int minMaxMountainY = validatedSeaLevel + 1;
+        if (maxTerrainY < minMaxMountainY || maxTerrainY > ABSOLUTE_MAX_TERRAIN_Y) {
             throw new IllegalArgumentException(
-                "Unsupported max terrain Y " + maxTerrainY + "; supported range is " + MIN_MAX_MOUNTAIN_Y + "-" + ABSOLUTE_MAX_TERRAIN_Y
+                "Unsupported max terrain Y " + maxTerrainY + "; supported range is " + minMaxMountainY + "-" + ABSOLUTE_MAX_TERRAIN_Y
             );
         }
-        if (y < MIN_MAX_MOUNTAIN_Y || y > maxTerrainY) {
+        if (y < minMaxMountainY || y > maxTerrainY) {
             throw new IllegalArgumentException(
-                "Unsupported max_mountain_y " + y + "; supported range is " + MIN_MAX_MOUNTAIN_Y + "-" + maxTerrainY
+                "Unsupported max_mountain_y " + y + "; supported range is " + minMaxMountainY + "-" + maxTerrainY
             );
         }
         return y;
     }
 
     public static int validateOceanFloorY(int y) {
-        if (y < MIN_TERRAIN_Y || y > MAX_OCEAN_FLOOR_Y) {
+        return validateOceanFloorY(y, activeSeaLevel);
+    }
+
+    public static int validateOceanFloorY(int y, int seaLevel) {
+        int maxOceanFloorY = validateSeaLevelLowerBound(seaLevel) - 1;
+        if (y < MIN_TERRAIN_Y || y > maxOceanFloorY) {
             throw new IllegalArgumentException(
-                "Unsupported ocean_floor_y " + y + "; supported range is " + MIN_TERRAIN_Y + "-" + MAX_OCEAN_FLOOR_Y
+                "Unsupported ocean_floor_y " + y + "; supported range is " + MIN_TERRAIN_Y + "-" + maxOceanFloorY
             );
         }
         return y;
     }
 
+    public static int validateSeaLevel(int seaLevel, int maxMountainY, int oceanFloorY) {
+        int validatedSeaLevel = validateSeaLevelBounds(seaLevel, ABSOLUTE_MAX_TERRAIN_Y);
+        int validatedOceanFloorY = validateOceanFloorY(oceanFloorY, validatedSeaLevel);
+        validateMaxMountainY(maxMountainY, ABSOLUTE_MAX_TERRAIN_Y, validatedSeaLevel);
+        if (validatedSeaLevel <= validatedOceanFloorY || validatedSeaLevel >= maxMountainY) {
+            throw new IllegalArgumentException(
+                "Unsupported sea_level "
+                    + seaLevel
+                    + "; must be greater than ocean_floor_y "
+                    + validatedOceanFloorY
+                    + " and less than max_mountain_y "
+                    + maxMountainY
+            );
+        }
+        return validatedSeaLevel;
+    }
+
     public static boolean setActiveTerrainProfile(int maxMountainY, int oceanFloorY) {
-        int validatedMaxMountainY = validateMaxMountainY(maxMountainY, ABSOLUTE_MAX_TERRAIN_Y);
+        return setActiveTerrainProfile(maxMountainY, oceanFloorY, DEFAULT_SEA_LEVEL);
+    }
+
+    public static boolean setActiveTerrainProfile(int maxMountainY, int oceanFloorY, int seaLevel) {
+        int validatedSeaLevel = validateSeaLevel(seaLevel, maxMountainY, oceanFloorY);
+        int validatedMaxMountainY = validateMaxMountainY(maxMountainY, ABSOLUTE_MAX_TERRAIN_Y, validatedSeaLevel);
         int resolvedMaxMountainY = Math.min(validatedMaxMountainY, activeMaxTerrainY);
-        int validatedOceanFloorY = validateOceanFloorY(oceanFloorY);
+        if (resolvedMaxMountainY <= validatedSeaLevel) {
+            throw new IllegalArgumentException(
+                "Resolved max_mountain_y " + resolvedMaxMountainY + " must be greater than sea_level " + validatedSeaLevel
+            );
+        }
+        int validatedOceanFloorY = validateOceanFloorY(oceanFloorY, validatedSeaLevel);
         boolean changed = configuredMaxMountainY != validatedMaxMountainY
             || activeMaxMountainY != resolvedMaxMountainY
-            || activeOceanFloorY != validatedOceanFloorY;
+            || activeOceanFloorY != validatedOceanFloorY
+            || activeSeaLevel != validatedSeaLevel;
         configuredMaxMountainY = validatedMaxMountainY;
         activeMaxMountainY = resolvedMaxMountainY;
         activeOceanFloorY = validatedOceanFloorY;
+        activeSeaLevel = validatedSeaLevel;
         return changed;
     }
 
@@ -162,6 +210,7 @@ public final class EarthGenConfig {
         configuredMaxMountainY = DEFAULT_MAX_MOUNTAIN_Y;
         activeMaxMountainY = Math.min(configuredMaxMountainY, activeMaxTerrainY);
         activeOceanFloorY = DEFAULT_OCEAN_FLOOR_Y;
+        activeSeaLevel = DEFAULT_SEA_LEVEL;
     }
 
     public static int blockSpan() {
@@ -278,28 +327,49 @@ public final class EarthGenConfig {
         int seaLevelOffset = 1;
         int maxMountainY = activeMaxMountainY;
         int oceanFloorY = activeOceanFloorY;
-        int baseY = SEA_LEVEL - seaLevelOffset;
+        int seaLevel = activeSeaLevel;
+        int baseY = seaLevel - seaLevelOffset;
 
         if (meters >= 0.0) {
             // clamped in [0, 1.0]
             double clamped = Math.min(meters, MAX_ABOVE_SEA_METERS) / MAX_ABOVE_SEA_METERS;
-            // 0 => SEA_LEVEL - landLevelOffset, 1.0 => active max mountain Y
-            return (int) ((SEA_LEVEL - landLevelOffset) + clamped * (maxMountainY - (SEA_LEVEL - landLevelOffset)));
+            // 0 => sea level - landLevelOffset, 1.0 => active max mountain Y
+            return (int) ((seaLevel - landLevelOffset) + clamped * (maxMountainY - (seaLevel - landLevelOffset)));
         }
 
         // clamped in [0, 1.0]
         double clamped = Math.min(-meters, OCEAN_FLOOR_DEPTH_METERS) / OCEAN_FLOOR_DEPTH_METERS;
-        // 0 => SEA_LEVEL - seaLevelOffset, 1.0 => active ocean floor Y
+        // 0 => sea level - seaLevelOffset, 1.0 => active ocean floor Y
         return (int) (baseY + clamped * (oceanFloorY - baseY));
     }
 
     private static int validateMaxTerrainY(int y) {
-        if (y < MIN_MAX_MOUNTAIN_Y || y > ABSOLUTE_MAX_TERRAIN_Y) {
+        int minimum = DEFAULT_SEA_LEVEL + 1;
+        if (y < minimum || y > ABSOLUTE_MAX_TERRAIN_Y) {
             throw new IllegalArgumentException(
-                "Unsupported max terrain Y " + y + "; supported range is " + MIN_MAX_MOUNTAIN_Y + "-" + ABSOLUTE_MAX_TERRAIN_Y
+                "Unsupported max terrain Y " + y + "; supported range is " + minimum + "-" + ABSOLUTE_MAX_TERRAIN_Y
             );
         }
         return y;
+    }
+
+    private static int validateSeaLevelBounds(int seaLevel, int maxTerrainY) {
+        validateSeaLevelLowerBound(seaLevel);
+        if (seaLevel >= maxTerrainY) {
+            throw new IllegalArgumentException(
+                "Unsupported sea_level " + seaLevel + "; supported range is " + MIN_SEA_LEVEL + "-" + (maxTerrainY - 1)
+            );
+        }
+        return seaLevel;
+    }
+
+    private static int validateSeaLevelLowerBound(int seaLevel) {
+        if (seaLevel < MIN_SEA_LEVEL) {
+            throw new IllegalArgumentException(
+                "Unsupported sea_level " + seaLevel + "; supported range starts at " + MIN_SEA_LEVEL
+            );
+        }
+        return seaLevel;
     }
 
     private static GlobalPixel toGlobalPixelOrNull(int blockX, int blockZ, int zoom) {

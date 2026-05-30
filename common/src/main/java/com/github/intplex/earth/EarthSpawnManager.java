@@ -94,11 +94,11 @@ public final class EarthSpawnManager {
 
     private static SpawnPoint resolveSpawnPoint(ServerLevel overworld) {
         if (!(overworld.getChunkSource().getGenerator() instanceof NoiseBasedChunkGenerator noiseGenerator)) {
-            return new SpawnPoint(new BlockPos(0, EarthGenConfig.SEA_LEVEL, 0), 0.0, 0.0, "legacy_origin");
+            return new SpawnPoint(new BlockPos(0, EarthGenConfig.DEFAULT_SEA_LEVEL, 0), 0.0, 0.0, "legacy_origin");
         }
         BiomeSource biomeSource = noiseGenerator.getBiomeSource();
         if (!(biomeSource instanceof EcoregionBiomeSource earthBiomeSource)) {
-            return new SpawnPoint(new BlockPos(0, EarthGenConfig.SEA_LEVEL, 0), 0.0, 0.0, "legacy_origin");
+            return new SpawnPoint(new BlockPos(0, EarthGenConfig.DEFAULT_SEA_LEVEL, 0), 0.0, 0.0, "legacy_origin");
         }
 
         EarthGenConfig.BlockCoordinates configuredBlock = EarthGenConfig
@@ -108,7 +108,7 @@ public final class EarthSpawnManager {
                 EarthGenerationProfile.DEFAULT_SPAWN_LONGITUDE,
                 earthBiomeSource.zoom()
             ).orElse(new EarthGenConfig.BlockCoordinates(0, 0)));
-        BlockPos spawnPos = new BlockPos(configuredBlock.x(), EarthGenConfig.SEA_LEVEL, configuredBlock.z());
+        BlockPos spawnPos = new BlockPos(configuredBlock.x(), earthBiomeSource.seaLevel(), configuredBlock.z());
         return new SpawnPoint(
             spawnPos,
             earthBiomeSource.spawnLatitude(),

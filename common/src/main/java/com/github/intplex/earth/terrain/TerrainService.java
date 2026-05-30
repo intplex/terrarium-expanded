@@ -79,10 +79,11 @@ public final class TerrainService {
     }
 
     static double depthFromTerrainY(int terrainY) {
-        if (terrainY >= EarthGenConfig.SEA_LEVEL) {
-            return clamp((terrainY - EarthGenConfig.SEA_LEVEL) / (double) Math.max(1, EarthGenConfig.activeMaxTerrainY() - EarthGenConfig.SEA_LEVEL));
+        int seaLevel = EarthGenConfig.activeSeaLevel();
+        if (terrainY >= seaLevel) {
+            return clamp((terrainY - seaLevel) / (double) Math.max(1, EarthGenConfig.activeMaxTerrainY() - seaLevel));
         }
-        return clamp((terrainY - EarthGenConfig.SEA_LEVEL) / (double) Math.max(1, EarthGenConfig.SEA_LEVEL - EarthGenConfig.MIN_TERRAIN_Y));
+        return clamp((terrainY - seaLevel) / (double) Math.max(1, seaLevel - EarthGenConfig.MIN_TERRAIN_Y));
     }
 
     public static double biomeDepthAtY(int blockY, int solidTopY) {
