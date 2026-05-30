@@ -282,7 +282,7 @@ public final class EarthPresetEditorScreen extends Screen {
         });
         addRenderableWidget(seaLevelSlider);
 
-        belowSeaHeightModeButton = CycleButton.<TerrainHeightMode>builder(this::heightModeLabel)
+        belowSeaHeightModeButton = CycleButton.<TerrainHeightMode>builder(this::heightModeLabel, selectedBelowSeaHeightMode)
             .withValues(List.of(TerrainHeightMode.values()))
             .displayOnlyValue()
             .create(leftX, heightModeRowY, halfWidth, ROW_HEIGHT, BELOW_SEA_HEIGHT_MODE_LABEL, (button, value) -> {
@@ -292,7 +292,7 @@ public final class EarthPresetEditorScreen extends Screen {
         belowSeaHeightModeButton.setValue(selectedBelowSeaHeightMode);
         addRenderableWidget(belowSeaHeightModeButton);
 
-        aboveSeaHeightModeButton = CycleButton.<TerrainHeightMode>builder(this::heightModeLabel)
+        aboveSeaHeightModeButton = CycleButton.<TerrainHeightMode>builder(this::heightModeLabel, selectedAboveSeaHeightMode)
             .withValues(List.of(TerrainHeightMode.values()))
             .displayOnlyValue()
             .create(rightX, heightModeRowY, halfWidth, ROW_HEIGHT, ABOVE_SEA_HEIGHT_MODE_LABEL, (button, value) -> {
