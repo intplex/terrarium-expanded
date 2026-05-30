@@ -61,9 +61,12 @@ public final class EcoregionBiomeSource extends BiomeSource {
             Codec.intRange(EarthGenConfig.MIN_MAX_MOUNTAIN_Y, EarthGenConfig.ABSOLUTE_MAX_TERRAIN_Y)
                 .optionalFieldOf("max_mountain_y", EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y)
                 .forGetter(EcoregionBiomeSource::maxMountainY),
-            Codec.intRange(EarthGenConfig.MIN_TERRAIN_Y, EarthGenConfig.MAX_OCEAN_FLOOR_Y)
+            Codec.intRange(EarthGenConfig.MIN_TERRAIN_Y, EarthGenConfig.ABSOLUTE_MAX_TERRAIN_Y - 2)
                 .optionalFieldOf("ocean_floor_y", EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y)
                 .forGetter(EcoregionBiomeSource::oceanFloorY),
+            Codec.intRange(EarthGenConfig.MIN_SEA_LEVEL, EarthGenConfig.ABSOLUTE_MAX_TERRAIN_Y - 1)
+                .optionalFieldOf("sea_level", EarthGenConfig.DEFAULT_SEA_LEVEL)
+                .forGetter(EcoregionBiomeSource::seaLevel),
             Codec.STRING
                 .optionalFieldOf("terrain_base_url", EarthGenerationProfile.DEFAULT_TERRAIN_BASE_URL)
                 .forGetter(EcoregionBiomeSource::terrainBaseUrl),
@@ -100,6 +103,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
                 zoom,
                 maxMountainY,
                 oceanFloorY,
+                seaLevel,
                 terrainBaseUrl,
                 biomesBaseUrl,
                 surfaceWaterBaseUrl,
@@ -117,6 +121,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
                     zoom,
                     maxMountainY,
                     oceanFloorY,
+                    seaLevel,
                     terrainBaseUrl,
                     biomesBaseUrl,
                     surfaceWaterBaseUrl,
@@ -217,6 +222,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
             profile.zoom(),
             profile.maxMountainY(),
             profile.oceanFloorY(),
+            profile.seaLevel(),
             profile.terrainBaseUrl(),
             profile.biomesBaseUrl(),
             profile.surfaceWaterBaseUrl(),
@@ -247,6 +253,10 @@ public final class EcoregionBiomeSource extends BiomeSource {
 
     public int oceanFloorY() {
         return profile.oceanFloorY();
+    }
+
+    public int seaLevel() {
+        return profile.seaLevel();
     }
 
     public String terrainBaseUrl() {

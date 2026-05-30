@@ -24,6 +24,7 @@ The Earth preset (`data/terrarium_expanded/worldgen/world_preset/earth.json`) us
 - `zoom`
 - `max_mountain_y`
 - `ocean_floor_y`
+- `sea_level`
 - `terrain_base_url`
 - `biomes_base_url`
 - `surface_water_base_url`
@@ -56,7 +57,7 @@ Thread-local sampling caches are also idle-cleared using `memory.local_idle_seco
 ### Service rebuild rules
 
 - terrain URL, ecoregion URL, zoom, or surface-water URL change: rebuild tile services under a shared tile-IO executor
-- shape-only changes (`max_mountain_y`, `ocean_floor_y`) still replace runtime context but reuse service instances
+- shape-only changes (`max_mountain_y`, `ocean_floor_y`, `sea_level`) still replace runtime context but reuse service instances
 - supplemental terrain source services are instantiated only when required by:
   - GeoJSON bathymetry source-zoom overrides for the active world zoom
   - ocean-zero bathymetry recovery source zooms `10` and `8` (world zoom `>= 11`)
@@ -83,7 +84,7 @@ Terrain/runtime caches are cleared on:
    - sampled surface-water pixel is water
    - source zoom `10` is tried first, then source zoom `8` if zoom `10` is unavailable or still resolves to `0.0`
    - repeated source-pixel neighborhoods are memoized within each chunk snapshot; known all-zero source neighborhoods are skipped on later samples in the same snapshot
-7. Convert meters to terrain Y with `EarthGenConfig.mapMetersToTerrainY` (uses active `max_mountain_y` / `ocean_floor_y`).
+7. Convert meters to terrain Y with `EarthGenConfig.mapMetersToTerrainY` (uses active `max_mountain_y` / `ocean_floor_y` / `sea_level`).
 8. Build per-chunk snapshots in `TerrainChunkSnapshotBuilder`:
    - sample grid: `40 x 40` (16x16 chunk plus relief margin)
    - spike suppression via `TerrainMetricsKernel.suppressIsolatedSpikes`
@@ -125,7 +126,7 @@ Patch routing:
 
 Settings:
 
-- sea level: `63`
+- sea level: profile `sea_level` (default `63`)
 - `ore_veins_enabled`: always `true`
 - `aquifers_enabled`: patch default `false`, then runtime-adjusted from Earth `generation.aquifers`
 

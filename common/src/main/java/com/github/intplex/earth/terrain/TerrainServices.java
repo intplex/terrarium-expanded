@@ -52,7 +52,8 @@ public final class TerrainServices {
                 syncEarthProfile(
                     EarthGenConfig.activeZoom(),
                     EarthGenConfig.activeMaxMountainY(),
-                    EarthGenConfig.activeOceanFloorY()
+                    EarthGenConfig.activeOceanFloorY(),
+                    EarthGenConfig.activeSeaLevel()
                 );
                 current = runtimeContext;
             }
@@ -64,15 +65,19 @@ public final class TerrainServices {
     }
 
     public static synchronized void syncEarthZoom(int zoom) {
-        syncEarthProfile(zoom, EarthGenConfig.activeMaxMountainY(), EarthGenConfig.activeOceanFloorY());
+        syncEarthProfile(zoom, EarthGenConfig.activeMaxMountainY(), EarthGenConfig.activeOceanFloorY(), EarthGenConfig.activeSeaLevel());
     }
 
     public static synchronized void syncEarthSettings(int zoom, int maxMountainY, int oceanFloorY) {
-        syncEarthProfile(zoom, maxMountainY, oceanFloorY);
+        syncEarthProfile(zoom, maxMountainY, oceanFloorY, EarthGenConfig.activeSeaLevel());
+    }
+
+    public static synchronized void syncEarthSettings(int zoom, int maxMountainY, int oceanFloorY, int seaLevel) {
+        syncEarthProfile(zoom, maxMountainY, oceanFloorY, seaLevel);
     }
 
     public static synchronized void syncEarthProfile(EarthGenerationProfile requestedProfile) {
-        EarthGenConfig.setActiveTerrainProfile(requestedProfile.maxMountainY(), requestedProfile.oceanFloorY());
+        EarthGenConfig.setActiveTerrainProfile(requestedProfile.maxMountainY(), requestedProfile.oceanFloorY(), requestedProfile.seaLevel());
         EarthGenConfig.setActiveZoom(requestedProfile.zoom());
         reconcileRuntime(requestedProfile, EarthRuntimeServices.Overrides.none(), false);
     }
@@ -103,7 +108,7 @@ public final class TerrainServices {
 
     static synchronized EarthRuntimeContext refreshRuntimeContextForTesting(EarthGenerationProfile profile) {
         EarthGenConfig.setActiveZoom(profile.zoom());
-        EarthGenConfig.setActiveTerrainProfile(profile.maxMountainY(), profile.oceanFloorY());
+        EarthGenConfig.setActiveTerrainProfile(profile.maxMountainY(), profile.oceanFloorY(), profile.seaLevel());
         reconcileRuntime(profile, EarthRuntimeServices.Overrides.none(), true);
         return runtimeContext;
     }
@@ -264,15 +269,16 @@ public final class TerrainServices {
         return currentProfile.withTerrainShape(
             EarthGenConfig.activeZoom(),
             EarthGenConfig.activeMaxMountainY(),
-            EarthGenConfig.activeOceanFloorY()
+            EarthGenConfig.activeOceanFloorY(),
+            EarthGenConfig.activeSeaLevel()
         );
     }
 
-    private static EarthGenerationProfile syncEarthProfile(int zoom, int maxMountainY, int oceanFloorY) {
+    private static EarthGenerationProfile syncEarthProfile(int zoom, int maxMountainY, int oceanFloorY, int seaLevel) {
         EarthGenerationProfile baseProfile = runtimeContext != null
             ? runtimeContext.profile()
             : EarthGenerationProfile.defaults();
-        EarthGenerationProfile requestedProfile = baseProfile.withTerrainShape(zoom, maxMountainY, oceanFloorY);
+        EarthGenerationProfile requestedProfile = baseProfile.withTerrainShape(zoom, maxMountainY, oceanFloorY, seaLevel);
         syncEarthProfile(requestedProfile);
         return requestedProfile;
     }

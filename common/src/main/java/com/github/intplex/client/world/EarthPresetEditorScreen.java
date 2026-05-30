@@ -14,6 +14,7 @@ import java.util.OptionalInt;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
@@ -36,6 +37,7 @@ public final class EarthPresetEditorScreen extends Screen {
     private static final Component ZOOM_LABEL = Component.translatable("terrarium_expanded.customize.earth.zoom");
     private static final Component MAX_MOUNTAIN_LABEL = Component.translatable("terrarium_expanded.customize.earth.max_mountain_y");
     private static final Component OCEAN_DEPTH_LABEL = Component.translatable("terrarium_expanded.customize.earth.ocean_floor_y");
+    private static final Component SEA_LEVEL_LABEL = Component.translatable("terrarium_expanded.customize.earth.sea_level");
     private static final Component SPAWN_LATITUDE_LABEL =
         Component.translatable("terrarium_expanded.customize.earth.spawn_latitude");
     private static final Component SPAWN_LONGITUDE_LABEL =
@@ -96,6 +98,7 @@ public final class EarthPresetEditorScreen extends Screen {
     private int selectedZoom;
     private int selectedMaxMountainY;
     private int selectedOceanFloorY;
+    private int selectedSeaLevel;
     private double selectedSpawnLatitude;
     private double selectedSpawnLongitude;
     private String selectedTerrainBaseUrl;
@@ -115,6 +118,7 @@ public final class EarthPresetEditorScreen extends Screen {
     private CycleButton<BiomeIntegrationMode> biomeIntegrationButton;
     private EditBox maxMountainYBox;
     private EditBox oceanFloorYBox;
+    private SeaLevelSlider seaLevelSlider;
     private EditBox spawnLatitudeBox;
     private EditBox spawnLongitudeBox;
     private EditBox terrainBaseUrlBox;
@@ -152,6 +156,9 @@ public final class EarthPresetEditorScreen extends Screen {
     private int heightValidationY;
     private int shapeLabelY;
     private int shapeRowY;
+    private int seaLevelLabelY;
+    private int seaLevelRowY;
+    private int seaLevelInfoY;
     private int spawnLabelY;
     private int spawnRowY;
     private int terrainUrlLabelY;
@@ -185,8 +192,9 @@ public final class EarthPresetEditorScreen extends Screen {
         this.maxTerrainYLimit = initialSettings.maxTerrainYLimit();
         EarthGenConfig.setActiveMaxTerrainY(maxTerrainYLimit);
         this.selectedZoom = EarthGenConfig.validateZoom(initialSettings.zoom());
-        this.selectedMaxMountainY = EarthGenConfig.validateMaxMountainY(initialSettings.maxMountainY(), maxTerrainYLimit);
-        this.selectedOceanFloorY = EarthGenConfig.validateOceanFloorY(initialSettings.oceanFloorY());
+        this.selectedMaxMountainY = clamp(initialSettings.maxMountainY(), EarthGenConfig.MIN_SEA_LEVEL + 1, maxTerrainYLimit);
+        this.selectedOceanFloorY = clamp(initialSettings.oceanFloorY(), EarthGenConfig.MIN_TERRAIN_Y, selectedMaxMountainY - 2);
+        this.selectedSeaLevel = clamp(initialSettings.seaLevel(), selectedOceanFloorY + 1, selectedMaxMountainY - 1);
         this.selectedSpawnLatitude = initialSettings.spawnLatitude();
         this.selectedSpawnLongitude = initialSettings.spawnLongitude();
         this.selectedTerrainBaseUrl = initialSettings.terrainBaseUrl();
@@ -245,6 +253,21 @@ public final class EarthPresetEditorScreen extends Screen {
         oceanFloorYBox.setValue(Integer.toString(selectedOceanFloorY));
         oceanFloorYBox.setResponder(ignored -> updateValidationState());
         addRenderableWidget(oceanFloorYBox);
+
+        seaLevelSlider = new SeaLevelSlider(
+            leftX,
+            seaLevelRowY,
+            fullWidth,
+            ROW_HEIGHT,
+            selectedOceanFloorY + 1,
+            selectedMaxMountainY - 1,
+            selectedSeaLevel
+        );
+        seaLevelSlider.setUpdateListener(value -> {
+            selectedSeaLevel = value.intValue();
+            updateValidationState();
+        });
+        addRenderableWidget(seaLevelSlider);
 
         spawnLatitudeBox = new EditBox(font, leftX, spawnRowY, halfWidth, ROW_HEIGHT, SPAWN_LATITUDE_LABEL);
         spawnLatitudeBox.setValue(Double.toString(selectedSpawnLatitude));
@@ -368,6 +391,12 @@ public final class EarthPresetEditorScreen extends Screen {
         y += LABEL_GAP;
         shapeRowY = y;
         y += ROW_HEIGHT + SECTION_GAP;
+        seaLevelLabelY = y;
+        y += LABEL_GAP;
+        seaLevelRowY = y;
+        y += ROW_HEIGHT + ROW_GAP;
+        seaLevelInfoY = y;
+        y += 10 + SECTION_GAP;
         spawnLabelY = y;
         y += LABEL_GAP;
         spawnRowY = y;
@@ -411,6 +440,7 @@ public final class EarthPresetEditorScreen extends Screen {
         refreshWidget(biomeIntegrationButton, biomeIntegrationRowY);
         refreshWidget(maxMountainYBox, shapeRowY);
         refreshWidget(oceanFloorYBox, shapeRowY);
+        refreshWidget(seaLevelSlider, seaLevelRowY);
         refreshWidget(spawnLatitudeBox, spawnRowY);
         refreshWidget(spawnLongitudeBox, spawnRowY);
         refreshWidget(terrainBaseUrlBox, terrainUrlRowY);
@@ -473,10 +503,10 @@ public final class EarthPresetEditorScreen extends Screen {
         int previousHeightValidationPixels = heightValidationBlockHeight(validationMessage);
 
         OptionalInt parsedMaxMountainY = parseMaxMountainY(maxMountainYBox.getValue());
-        OptionalInt parsedOceanFloorY = parseOceanFloorY(oceanFloorYBox.getValue());
+        OptionalInt parsedOceanFloorY = parseOceanFloorY(oceanFloorYBox.getValue(), parsedMaxMountainY);
         OptionalDouble parsedSpawnLatitude = parseSpawnLatitude(spawnLatitudeBox.getValue());
         OptionalDouble parsedSpawnLongitude = parseSpawnLongitude(spawnLongitudeBox.getValue());
-        if (parsedMaxMountainY.isEmpty() || parsedOceanFloorY.isEmpty()) {
+        if (parsedMaxMountainY.isEmpty() || parsedOceanFloorY.isEmpty() || parsedOceanFloorY.getAsInt() + 1 >= parsedMaxMountainY.getAsInt()) {
             doneButton.active = false;
             validationMessage = invalidHeightInput();
             validationKind = ValidationKind.HEIGHT;
@@ -493,6 +523,11 @@ public final class EarthPresetEditorScreen extends Screen {
 
         selectedMaxMountainY = parsedMaxMountainY.getAsInt();
         selectedOceanFloorY = parsedOceanFloorY.getAsInt();
+        selectedSeaLevel = clamp(selectedSeaLevel, selectedOceanFloorY + 1, selectedMaxMountainY - 1);
+        if (seaLevelSlider != null) {
+            seaLevelSlider.setRange(selectedOceanFloorY + 1, selectedMaxMountainY - 1);
+            seaLevelSlider.setSeaLevel(selectedSeaLevel);
+        }
         selectedSpawnLatitude = parsedSpawnLatitude.getAsDouble();
         selectedSpawnLongitude = parsedSpawnLongitude.getAsDouble();
         selectedTerrainBaseUrl = terrainBaseUrlBox.getValue();
@@ -503,6 +538,7 @@ public final class EarthPresetEditorScreen extends Screen {
                 selectedZoom,
                 selectedMaxMountainY,
                 selectedOceanFloorY,
+                selectedSeaLevel,
                 selectedTerrainBaseUrl,
                 selectedBiomesBaseUrl,
                 selectedSurfaceWaterBaseUrl,
@@ -549,6 +585,7 @@ public final class EarthPresetEditorScreen extends Screen {
                     selectedZoom,
                     selectedMaxMountainY,
                     selectedOceanFloorY,
+                    selectedSeaLevel,
                     selectedTerrainBaseUrl,
                     selectedBiomesBaseUrl,
                     selectedSurfaceWaterBaseUrl,
@@ -661,6 +698,9 @@ public final class EarthPresetEditorScreen extends Screen {
         drawLabelIfVisible(guiGraphics, BIOME_INTEGRATION_LABEL, leftX, biomeIntegrationLabelY, 0xCFCFCF);
         drawLabelIfVisible(guiGraphics, MAX_MOUNTAIN_LABEL, leftX, shapeLabelY, 0xCFCFCF);
         drawLabelIfVisible(guiGraphics, OCEAN_DEPTH_LABEL, rightX, shapeLabelY, 0xCFCFCF);
+        drawLabelIfVisible(guiGraphics, SEA_LEVEL_LABEL, leftX, seaLevelLabelY, 0xCFCFCF);
+        drawLabelIfVisible(guiGraphics, belowSeaVerticalScaleLabel(), leftX, seaLevelInfoY, 0xAFAFAF);
+        drawLabelIfVisible(guiGraphics, aboveSeaVerticalScaleLabel(), rightX, seaLevelInfoY, 0xAFAFAF);
         drawLabelIfVisible(guiGraphics, SPAWN_LATITUDE_LABEL, leftX, spawnLabelY, 0xCFCFCF);
         drawLabelIfVisible(guiGraphics, SPAWN_LONGITUDE_LABEL, rightX, spawnLabelY, 0xCFCFCF);
         drawLabelIfVisible(guiGraphics, TERRAIN_BASE_URL_LABEL, leftX, terrainUrlLabelY, 0xCFCFCF);
@@ -784,7 +824,11 @@ public final class EarthPresetEditorScreen extends Screen {
             return OptionalInt.empty();
         }
         try {
-            return OptionalInt.of(EarthGenConfig.validateMaxMountainY(Integer.parseInt(raw.trim()), maxTerrainYLimit));
+            int y = Integer.parseInt(raw.trim());
+            if (y < EarthGenConfig.MIN_SEA_LEVEL + 1 || y > maxTerrainYLimit) {
+                return OptionalInt.empty();
+            }
+            return OptionalInt.of(y);
         } catch (IllegalArgumentException ignored) {
             return OptionalInt.empty();
         }
@@ -793,19 +837,28 @@ public final class EarthPresetEditorScreen extends Screen {
     private Component invalidHeightInput() {
         return Component.translatable(
             "terrarium_expanded.customize.earth.invalid_height_input",
-            EarthGenConfig.MIN_MAX_MOUNTAIN_Y,
+            EarthGenConfig.MIN_SEA_LEVEL + 1,
             maxTerrainYLimit,
             EarthGenConfig.MIN_TERRAIN_Y,
-            EarthGenConfig.MAX_OCEAN_FLOOR_Y
+            maxTerrainYLimit - 2,
+            EarthGenConfig.MIN_SEA_LEVEL,
+            maxTerrainYLimit - 1
         );
     }
 
-    private static OptionalInt parseOceanFloorY(String raw) {
+    private static OptionalInt parseOceanFloorY(String raw, OptionalInt parsedMaxMountainY) {
         if (raw == null || raw.isBlank()) {
             return OptionalInt.empty();
         }
         try {
-            return OptionalInt.of(EarthGenConfig.validateOceanFloorY(Integer.parseInt(raw.trim())));
+            int y = Integer.parseInt(raw.trim());
+            int maxOceanFloorY = parsedMaxMountainY.isPresent()
+                ? parsedMaxMountainY.getAsInt() - 2
+                : EarthGenConfig.MAX_OCEAN_FLOOR_Y;
+            if (y < EarthGenConfig.MIN_TERRAIN_Y || y > maxOceanFloorY) {
+                return OptionalInt.empty();
+            }
+            return OptionalInt.of(y);
         } catch (IllegalArgumentException ignored) {
             return OptionalInt.empty();
         }
@@ -854,6 +907,29 @@ public final class EarthPresetEditorScreen extends Screen {
         return String.format(Locale.ROOT, "%.2f m", metersPerBlock);
     }
 
+    private Component belowSeaVerticalScaleLabel() {
+        int belowBlocks = Math.max(1, (selectedSeaLevel - 1) - selectedOceanFloorY);
+        return Component.translatable(
+            "terrarium_expanded.customize.earth.vertical_scale_below",
+            formatVerticalMetersPerY(EarthGenConfig.OCEAN_FLOOR_DEPTH_METERS / belowBlocks)
+        );
+    }
+
+    private Component aboveSeaVerticalScaleLabel() {
+        int aboveBlocks = Math.max(1, selectedMaxMountainY - (selectedSeaLevel - 1));
+        return Component.translatable(
+            "terrarium_expanded.customize.earth.vertical_scale_above",
+            formatVerticalMetersPerY(EarthGenConfig.MAX_ABOVE_SEA_METERS / aboveBlocks)
+        );
+    }
+
+    private static String formatVerticalMetersPerY(double metersPerY) {
+        if (metersPerY >= 1000.0) {
+            return String.format(Locale.ROOT, "%.2f km/Y", metersPerY / 1000.0);
+        }
+        return String.format(Locale.ROOT, "%.1f m/Y", metersPerY);
+    }
+
     private static PresetSettings resolveCurrentSettings(WorldCreationContext context) {
         var currentGenerator = context.selectedDimensions().overworld();
         if (!(currentGenerator instanceof NoiseBasedChunkGenerator noiseBased)) {
@@ -868,6 +944,7 @@ public final class EarthPresetEditorScreen extends Screen {
                 ecoregionBiomeSource.zoom(),
                 clampedMaxMountainY,
                 ecoregionBiomeSource.oceanFloorY(),
+                ecoregionBiomeSource.seaLevel(),
                 ecoregionBiomeSource.terrainBaseUrl(),
                 ecoregionBiomeSource.biomesBaseUrl(),
                 ecoregionBiomeSource.surfaceWaterBaseUrl(),
@@ -1021,6 +1098,70 @@ public final class EarthPresetEditorScreen extends Screen {
         refreshScrollableWidgetPositions();
     }
 
+    private static final class SeaLevelSlider extends AbstractSliderButton {
+        private int minSeaLevel;
+        private int maxSeaLevel;
+        private int seaLevel;
+        private java.util.function.Consumer<Integer> updateListener = ignored -> {
+        };
+
+        private SeaLevelSlider(int x, int y, int width, int height, int minSeaLevel, int maxSeaLevel, int seaLevel) {
+            super(x, y, width, height, Component.empty(), 0.0);
+            this.minSeaLevel = minSeaLevel;
+            this.maxSeaLevel = Math.max(minSeaLevel, maxSeaLevel);
+            setSeaLevel(seaLevel);
+        }
+
+        private void setUpdateListener(java.util.function.Consumer<Integer> updateListener) {
+            this.updateListener = updateListener == null ? ignored -> {
+            } : updateListener;
+        }
+
+        private void setRange(int minSeaLevel, int maxSeaLevel) {
+            this.minSeaLevel = minSeaLevel;
+            this.maxSeaLevel = Math.max(minSeaLevel, maxSeaLevel);
+            setSeaLevel(seaLevel);
+        }
+
+        private void setSeaLevel(int seaLevel) {
+            this.seaLevel = clamp(seaLevel, minSeaLevel, maxSeaLevel);
+            this.value = normalizedValue(this.seaLevel);
+            updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            setMessage(Component.translatable("terrarium_expanded.customize.earth.sea_level_value", seaLevel));
+        }
+
+        @Override
+        protected void applyValue() {
+            int resolvedSeaLevel = denormalizedValue(value);
+            if (resolvedSeaLevel == seaLevel) {
+                return;
+            }
+            seaLevel = resolvedSeaLevel;
+            updateMessage();
+            updateListener.accept(Integer.valueOf(seaLevel));
+        }
+
+        private double normalizedValue(int seaLevel) {
+            int range = maxSeaLevel - minSeaLevel;
+            if (range <= 0) {
+                return 0.0;
+            }
+            return (seaLevel - minSeaLevel) / (double) range;
+        }
+
+        private int denormalizedValue(double value) {
+            int range = maxSeaLevel - minSeaLevel;
+            if (range <= 0) {
+                return minSeaLevel;
+            }
+            return clamp(minSeaLevel + (int) Math.round(value * range), minSeaLevel, maxSeaLevel);
+        }
+    }
+
     private enum ValidationKind {
         NONE,
         HEIGHT,
@@ -1032,6 +1173,7 @@ public final class EarthPresetEditorScreen extends Screen {
         int zoom,
         int maxMountainY,
         int oceanFloorY,
+        int seaLevel,
         String terrainBaseUrl,
         String biomesBaseUrl,
         String surfaceWaterBaseUrl,
@@ -1047,6 +1189,7 @@ public final class EarthPresetEditorScreen extends Screen {
             EarthGenConfig.DEFAULT_ZOOM,
             EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y,
             EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y,
+            EarthGenConfig.DEFAULT_SEA_LEVEL,
             EarthGenerationProfile.DEFAULT_TERRAIN_BASE_URL,
             EarthGenerationProfile.DEFAULT_BIOMES_BASE_URL,
             EarthGenerationProfile.DEFAULT_SURFACE_WATER_BASE_URL,

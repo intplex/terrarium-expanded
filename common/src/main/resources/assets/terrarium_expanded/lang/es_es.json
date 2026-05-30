@@ -4,6 +4,10 @@
   "terrarium_expanded.customize.earth.zoom": "Zoom de la Tierra",
   "terrarium_expanded.customize.earth.max_mountain_y": "Y máxima de montañas",
   "terrarium_expanded.customize.earth.ocean_floor_y": "Y mínima del fondo oceánico",
+  "terrarium_expanded.customize.earth.sea_level": "Nivel del mar",
+  "terrarium_expanded.customize.earth.sea_level_value": "Nivel del mar: %1$s",
+  "terrarium_expanded.customize.earth.vertical_scale_below": "Bajo el mar: ~%1$s",
+  "terrarium_expanded.customize.earth.vertical_scale_above": "Sobre el mar: ~%1$s",
   "terrarium_expanded.customize.earth.spawn_latitude": "Latitud de aparición",
   "terrarium_expanded.customize.earth.spawn_longitude": "Longitud de aparición",
   "terrarium_expanded.customize.earth.terrain_base_url": "URL base del terreno",
@@ -29,7 +33,7 @@
   "terrarium_expanded.customize.earth.world_border": "Borde del mundo (margen de 32 chunks)",
   "terrarium_expanded.customize.earth.world_size": "Tamaño del mundo: %1$s x %2$s bloques",
   "terrarium_expanded.customize.earth.block_ratio": "Escala aprox.: 1 bloque ~= %1$s",
-  "terrarium_expanded.customize.earth.invalid_height_input": "La Y máxima de montañas debe ser %1$s-%2$s y la Y mínima del fondo oceánico debe ser %3$s-%4$s.",
+  "terrarium_expanded.customize.earth.invalid_height_input": "La Y máxima de montañas debe ser %1$s-%2$s, la Y mínima del fondo oceánico debe ser %3$s-%4$s y el nivel del mar debe quedar entre ambas.",
   "terrarium_expanded.customize.earth.invalid_geo_input": "La latitud de aparición debe ser %1$s-%2$s y la longitud de aparición debe ser %3$s-%4$s.",
   "terrarium_expanded.customize.earth.invalid_url_input": "Introduce URL válidas para terreno, biomas y aguas superficiales."
 }

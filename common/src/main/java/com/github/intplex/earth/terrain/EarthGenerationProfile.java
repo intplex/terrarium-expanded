@@ -9,6 +9,7 @@ public record EarthGenerationProfile(
     int zoom,
     int maxMountainY,
     int oceanFloorY,
+    int seaLevel,
     String terrainBaseUrl,
     String biomesBaseUrl,
     String surfaceWaterBaseUrl,
@@ -28,6 +29,7 @@ public record EarthGenerationProfile(
         EarthGenConfig.DEFAULT_ZOOM,
         EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y,
         EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y,
+        EarthGenConfig.DEFAULT_SEA_LEVEL,
         DEFAULT_TERRAIN_BASE_URL,
         DEFAULT_BIOMES_BASE_URL,
         DEFAULT_SURFACE_WATER_BASE_URL,
@@ -39,10 +41,15 @@ public record EarthGenerationProfile(
     );
 
     public EarthGenerationProfile(int zoom, int maxMountainY, int oceanFloorY) {
+        this(zoom, maxMountainY, oceanFloorY, EarthGenConfig.DEFAULT_SEA_LEVEL);
+    }
+
+    public EarthGenerationProfile(int zoom, int maxMountainY, int oceanFloorY, int seaLevel) {
         this(
             zoom,
             maxMountainY,
             oceanFloorY,
+            seaLevel,
             DEFAULT_TERRAIN_BASE_URL,
             DEFAULT_BIOMES_BASE_URL,
             DEFAULT_SURFACE_WATER_BASE_URL,
@@ -69,6 +76,7 @@ public record EarthGenerationProfile(
             zoom,
             maxMountainY,
             oceanFloorY,
+            EarthGenConfig.DEFAULT_SEA_LEVEL,
             terrainBaseUrl,
             biomesBaseUrl,
             surfaceWaterBaseUrl,
@@ -80,10 +88,40 @@ public record EarthGenerationProfile(
         );
     }
 
+    public EarthGenerationProfile(
+        int zoom,
+        int maxMountainY,
+        int oceanFloorY,
+        String terrainBaseUrl,
+        String biomesBaseUrl,
+        String surfaceWaterBaseUrl,
+        String terrainFixes,
+        EarthWorldgenToggles worldgenToggles,
+        boolean worldBorder,
+        double spawnLatitude,
+        double spawnLongitude
+    ) {
+        this(
+            zoom,
+            maxMountainY,
+            oceanFloorY,
+            EarthGenConfig.DEFAULT_SEA_LEVEL,
+            terrainBaseUrl,
+            biomesBaseUrl,
+            surfaceWaterBaseUrl,
+            terrainFixes,
+            worldgenToggles,
+            worldBorder,
+            spawnLatitude,
+            spawnLongitude
+        );
+    }
+
     public EarthGenerationProfile {
         zoom = EarthGenConfig.validateZoom(zoom);
-        maxMountainY = EarthGenConfig.validateMaxMountainY(maxMountainY, EarthGenConfig.ABSOLUTE_MAX_TERRAIN_Y);
-        oceanFloorY = EarthGenConfig.validateOceanFloorY(oceanFloorY);
+        seaLevel = EarthGenConfig.validateSeaLevel(seaLevel, maxMountainY, oceanFloorY);
+        maxMountainY = EarthGenConfig.validateMaxMountainY(maxMountainY, EarthGenConfig.ABSOLUTE_MAX_TERRAIN_Y, seaLevel);
+        oceanFloorY = EarthGenConfig.validateOceanFloorY(oceanFloorY, seaLevel);
         terrainBaseUrl = normalizeUrl(terrainBaseUrl, "terrain_base_url");
         biomesBaseUrl = normalizeUrl(biomesBaseUrl, "biomes_base_url");
         surfaceWaterBaseUrl = normalizeUrl(surfaceWaterBaseUrl, "surface_water_base_url");
@@ -94,10 +132,15 @@ public record EarthGenerationProfile(
     }
 
     public EarthGenerationProfile withTerrainShape(int zoom, int maxMountainY, int oceanFloorY) {
+        return withTerrainShape(zoom, maxMountainY, oceanFloorY, seaLevel);
+    }
+
+    public EarthGenerationProfile withTerrainShape(int zoom, int maxMountainY, int oceanFloorY, int seaLevel) {
         return new EarthGenerationProfile(
             zoom,
             maxMountainY,
             oceanFloorY,
+            seaLevel,
             terrainBaseUrl,
             biomesBaseUrl,
             surfaceWaterBaseUrl,
