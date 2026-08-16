@@ -509,6 +509,26 @@ class EcoregionBiomeMappingsTest {
     }
 
     @Test
+    void startupMappingUsesBiomesOPlenty12111BiomeIds() {
+        Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> mappings =
+            EcoregionBiomeMappings.requireColorToBiomeIds();
+        Set<Identifier> removedBiomeIds = Set.of(
+            Identifier.parse("biomesoplenty:aspen_glade"),
+            Identifier.parse("biomesoplenty:grassland"),
+            Identifier.parse("biomesoplenty:jacaranda_glade")
+        );
+
+        assertTrue(mappings.values().stream().noneMatch(selection -> {
+            EcoregionBiomeMappings.ProviderBiome providerBiome =
+                selection.providerBiomes().get(EcoregionBiomeMappings.BiomeProvider.BIOMES_O_PLENTY);
+            return providerBiome != null && removedBiomeIds.contains(providerBiome.biomeId());
+        }));
+        assertEquals(Identifier.parse("biomesoplenty:pumpkin_patch"), bopBiomeId(mappings, 0x005340));
+        assertEquals(Identifier.parse("biomesoplenty:lavender_field"), bopBiomeId(mappings, 0x22BE00));
+        assertEquals(Identifier.parse("biomesoplenty:subtropics"), bopBiomeId(mappings, 0xE9F079));
+    }
+
+    @Test
     void resolvedPossibleBiomesIncludeRiverAndFrozenRiver() {
         Map<Identifier, Holder<Biome>> holdersById = new java.util.HashMap<>();
         EcoregionBiomeMappings.ResolvedBiomeMapping resolved = EcoregionBiomeMappings.resolveMappings(
@@ -544,6 +564,16 @@ class EcoregionBiomeMappingsTest {
                 new EcoregionBiomeMappings.ProviderBiome(Identifier.parse("natures_spirit:maple_woodlands"), naturesSpiritPriority)
             )
         );
+    }
+
+    private static Identifier bopBiomeId(
+        Map<Integer, EcoregionBiomeMappings.BiomeSelectionIds> mappings,
+        int color
+    ) {
+        return mappings.get(color)
+            .providerBiomes()
+            .get(EcoregionBiomeMappings.BiomeProvider.BIOMES_O_PLENTY)
+            .biomeId();
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
