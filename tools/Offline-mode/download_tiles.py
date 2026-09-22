@@ -8,6 +8,7 @@ from concurrent.futures import CancelledError, FIRST_COMPLETED, ThreadPoolExecut
 from dataclasses import dataclass
 from http.client import HTTPException
 from io import BytesIO
+import math
 from pathlib import Path
 import sys
 import tempfile
@@ -27,11 +28,16 @@ DEFAULT_ENDPOINTS = {
 MAX_ATTEMPTS = 3
 REQUEST_TIMEOUT = 30
 BACKOFF_SECONDS = 1.0
-# Planning assumptions for average compressed PNG sizes, not measured source sizes.
-ESTIMATED_TILE_KIB = {
-    "terrarium": (20, 200),
-    "surface_water": (1, 100),
-    "ecoregions": (10, 1000),
+# Match SurfaceWaterCoverageSettings in the mod, including intersecting boundary rows.
+WATER_MIN_LATITUDE = -60.0
+WATER_MAX_LATITUDE = 77.0
+# Measured on 2026-09-22 from the default-source z8 download. Each tuple is
+# (PNG count, total PNG bytes, total bytes rounded per file to 4 KiB blocks).
+# Water includes only tiles intersecting the runtime's coverage, excluding gaps.
+Z8_SIZE_BASELINE = {
+    "terrarium": (65_536, 6_443_337_776, 6_577_602_560),
+    "surface_water": (36_352, 221_151_172, 326_402_048),
+    "ecoregions": (4_096, 24_206_770, 31_621_120),
 }
 
 
@@ -42,10 +48,20 @@ class TileGrid:
     axis_count: int
     image_size: int
     base_url: str
+    y_start: int = 0
+    y_stop: int | None = None
+
+    @property
+    def rows(self) -> range:
+        return range(self.y_start, self.axis_count if self.y_stop is None else self.y_stop)
 
     @property
     def count(self) -> int:
-        return self.axis_count ** 2
+        return self.axis_count * len(self.rows)
+
+    @property
+    def outside_coverage_count(self) -> int:
+        return self.axis_count ** 2 - self.count
 
 
 @dataclass(frozen=True)
@@ -111,31 +127,44 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def surface_water_rows(zoom: int) -> range:
+    def latitude(row: int) -> float:
+        mercator_n = math.pi * (1.0 - 2.0 * row / (1 << zoom))
+        return math.degrees(math.atan(math.sinh(mercator_n)))
+
+    # Keep a row whenever any part intersects the coverage, as the runtime does.
+    covered = [row for row in range(1 << zoom)
+               if not (latitude(row) < WATER_MIN_LATITUDE or latitude(row + 1) > WATER_MAX_LATITUDE)]
+    return range(covered[0], covered[-1] + 1)
+
+
 def build_plan(args: argparse.Namespace) -> list[TileGrid]:
     grids = [TileGrid("terrarium", args.zoom, 1 << args.zoom, 256, args.terrain_base_url)]
-    grids.append(TileGrid("surface_water", args.zoom, 1 << args.zoom, 256, args.surface_water_base_url))
+    water_rows = surface_water_rows(args.zoom)
+    grids.append(TileGrid("surface_water", args.zoom, 1 << args.zoom, 256, args.surface_water_base_url,
+                          water_rows.start, water_rows.stop))
     grids.append(TileGrid("ecoregions", 8, 64, 1024, args.ecoregions_base_url))
     return grids
 
 
 def print_size_warning(grids: Iterable[TileGrid]) -> None:
-    low_bytes = high_bytes = 0
+    png_bytes = disk_bytes = 0.0
     for grid in grids:
-        low_kib, high_kib = ESTIMATED_TILE_KIB[grid.layer]
-        low_bytes += grid.count * low_kib * 1024
-        high_bytes += grid.count * high_kib * 1024
-    print(f"WARNING: Rough full-download size estimate: {low_bytes / 1024 ** 3:,.1f}"
-          f"-{high_bytes / 1024 ** 3:,.1f} GiB of tile data.")
-    print("Assumed average PNG sizes: terrain 20-200 KiB, surface water 1-100 KiB, ecoregions 10-1000 KiB.")
-    print("These are planning assumptions, not measured sizes or guaranteed bounds. Allow extra disk space")
-    print("for filesystem overhead. Existing cached tiles and missing source tiles reduce new downloads.", flush=True)
+        baseline_count, baseline_png_bytes, baseline_disk_bytes = Z8_SIZE_BASELINE[grid.layer]
+        png_bytes += grid.count * baseline_png_bytes / baseline_count
+        disk_bytes += grid.count * baseline_disk_bytes / baseline_count
+    print(f"WARNING: Estimated full download: {png_bytes / 1024 ** 3:,.2f} GiB of PNG data;"
+          f" about {disk_bytes / 1024 ** 3:,.2f} GiB on disk (4 KiB blocks).")
+    print("Based on measured average tile sizes from the default-source zoom-8 download.")
+    print("Higher zooms and custom sources are projections, not guaranteed sizes. Allow extra free space.")
+    print("Estimates cover the full dataset, not ZIP size or remaining downloads; cached/missing tiles reduce transfers.", flush=True)
 
 
 def iter_tasks(grids: Iterable[TileGrid], cache_root: Path) -> Iterable[TileTask]:
     # Do not materialize millions of coordinates or futures at higher zooms.
     for grid in grids:
         for x in range(grid.axis_count):
-            for y in range(grid.axis_count):
+            for y in grid.rows:
                 yield TileTask(grid, x, y, cache_root)
 
 
@@ -277,7 +306,10 @@ def main(argv: list[str] | None = None) -> int:
     total = sum(grid.count for grid in grids)
     print(f"World zoom: {args.zoom}\nCache directory: {cache_root}")
     for grid in grids:
-        print(f"  {grid.layer} z={grid.zoom}: {grid.count:,} locations ({grid.axis_count}x{grid.axis_count}) from {grid.base_url}")
+        print(f"  {grid.layer} z={grid.zoom}: {grid.count:,} locations"
+              f" ({grid.axis_count} columns, rows {grid.rows.start}-{grid.rows.stop - 1}) from {grid.base_url}")
+        if grid.outside_coverage_count:
+            print(f"    Outside coverage: {grid.outside_coverage_count:,} water locations skipped (60 S to 77 N coverage).")
     print(f"Total: {total:,} tile locations; workers: {args.workers}", flush=True)
     print_size_warning(grids)
     if args.dry_run:
