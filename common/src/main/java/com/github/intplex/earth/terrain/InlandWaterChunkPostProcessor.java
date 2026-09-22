@@ -8,6 +8,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 
@@ -31,6 +32,12 @@ public final class InlandWaterChunkPostProcessor {
         int chunkMinX = chunkAccess.getPos().getMinBlockX();
         int chunkMinZ = chunkAccess.getPos().getMinBlockZ();
         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
+        Heightmap worldSurfaceHeightmap = chunkAccess.getOrCreateHeightmapUnprimed(
+            Heightmap.Types.WORLD_SURFACE_WG
+        );
+        Heightmap oceanFloorHeightmap = chunkAccess.getOrCreateHeightmapUnprimed(
+            Heightmap.Types.OCEAN_FLOOR_WG
+        );
 
         for (int localX = 0; localX < 16; localX++) {
             int blockX = chunkMinX + localX;
@@ -47,6 +54,8 @@ public final class InlandWaterChunkPostProcessor {
                 for (int y = startY; y <= endY; y++) {
                     mutablePos.set(blockX, y, blockZ);
                     chunkAccess.setBlockState(mutablePos, WATER, false);
+                    worldSurfaceHeightmap.update(localX, y, localZ, WATER);
+                    oceanFloorHeightmap.update(localX, y, localZ, WATER);
                 }
             }
         }

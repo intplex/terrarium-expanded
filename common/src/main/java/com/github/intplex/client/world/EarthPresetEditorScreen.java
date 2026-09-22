@@ -3,6 +3,7 @@ package com.github.intplex.client.world;
 import com.github.intplex.earth.EarthGenConfig;
 import com.github.intplex.earth.biome.BiomeIntegrationMode;
 import com.github.intplex.earth.biome.EcoregionBiomeSource;
+import com.github.intplex.earth.terrain.EarthAquiferMode;
 import com.github.intplex.earth.terrain.EarthGenerationProfile;
 import com.github.intplex.earth.terrain.EarthWorldgenToggles;
 import com.github.intplex.earth.terrain.TerrainHeightMode;
@@ -68,9 +69,8 @@ public final class EarthPresetEditorScreen extends Screen {
     private static final Component CANYONS_LABEL = Component.translatable("terrarium_expanded.customize.earth.canyons");
     private static final Component EXTRA_UNDERGROUND_LABEL =
         Component.translatable("terrarium_expanded.customize.earth.extra_underground");
-    private static final Component AQUIFERS_LABEL = Component.translatable("terrarium_expanded.customize.earth.aquifers");
-    private static final Component LAVA_AQUIFERS_LABEL =
-        Component.translatable("terrarium_expanded.customize.earth.lava_aquifers");
+    private static final Component CAVE_FLUIDS_LABEL =
+        Component.translatable("terrarium_expanded.customize.earth.cave_fluids");
     private static final Component VILLAGES_LABEL = Component.translatable("terrarium_expanded.customize.earth.villages");
     private static final Component WORLD_BORDER_LABEL =
         Component.translatable("terrarium_expanded.customize.earth.world_border");
@@ -115,8 +115,7 @@ public final class EarthPresetEditorScreen extends Screen {
     private boolean selectedCaves;
     private boolean selectedCanyons;
     private boolean selectedExtraUnderground;
-    private boolean selectedAquifers;
-    private boolean selectedLavaAquifers;
+    private EarthAquiferMode selectedAquiferMode;
     private boolean selectedVillages;
     private boolean selectedWorldBorder;
 
@@ -136,9 +135,8 @@ public final class EarthPresetEditorScreen extends Screen {
     private CycleButton<Boolean> cavesButton;
     private CycleButton<Boolean> villagesButton;
     private CycleButton<Boolean> canyonsButton;
-    private CycleButton<Boolean> aquifersButton;
+    private CycleButton<EarthAquiferMode> aquifersButton;
     private CycleButton<Boolean> extraUndergroundButton;
-    private CycleButton<Boolean> lavaAquifersButton;
     private CycleButton<Boolean> worldBorderButton;
     private Button doneButton;
     private Component validationMessage;
@@ -183,7 +181,6 @@ public final class EarthPresetEditorScreen extends Screen {
     private int toggleRow1Y;
     private int toggleRow2Y;
     private int toggleRow3Y;
-    private int toggleRow4Y;
     private int contentHeight;
 
     private int scrollOffset;
@@ -218,8 +215,7 @@ public final class EarthPresetEditorScreen extends Screen {
         this.selectedCaves = toggles.caves();
         this.selectedCanyons = toggles.canyons();
         this.selectedExtraUnderground = toggles.extraUnderground();
-        this.selectedAquifers = toggles.aquifers();
-        this.selectedLavaAquifers = toggles.lavaAquifers();
+        this.selectedAquiferMode = EarthAquiferMode.from(toggles);
         this.selectedVillages = toggles.villages();
         this.selectedWorldBorder = initialSettings.worldBorder();
     }
@@ -338,7 +334,13 @@ public final class EarthPresetEditorScreen extends Screen {
         cavesButton = createToggleButton(leftX, toggleRow1Y, halfWidth, CAVES_LABEL, selectedCaves, value -> selectedCaves = value);
         villagesButton = createToggleButton(rightX, toggleRow1Y, halfWidth, VILLAGES_LABEL, selectedVillages, value -> selectedVillages = value);
         canyonsButton = createToggleButton(leftX, toggleRow2Y, halfWidth, CANYONS_LABEL, selectedCanyons, value -> selectedCanyons = value);
-        aquifersButton = createToggleButton(rightX, toggleRow2Y, halfWidth, AQUIFERS_LABEL, selectedAquifers, value -> selectedAquifers = value);
+        aquifersButton = CycleButton.<EarthAquiferMode>builder(this::aquiferModeLabel)
+            .withValues(List.of(EarthAquiferMode.values()))
+            .create(rightX, toggleRow2Y, halfWidth, ROW_HEIGHT, CAVE_FLUIDS_LABEL, (button, value) -> {
+                selectedAquiferMode = value;
+                updateValidationState();
+            });
+        aquifersButton.setValue(selectedAquiferMode);
         extraUndergroundButton = createToggleButton(
             leftX,
             toggleRow3Y,
@@ -347,17 +349,9 @@ public final class EarthPresetEditorScreen extends Screen {
             selectedExtraUnderground,
             value -> selectedExtraUnderground = value
         );
-        lavaAquifersButton = createToggleButton(
+        worldBorderButton = createToggleButton(
             rightX,
             toggleRow3Y,
-            halfWidth,
-            LAVA_AQUIFERS_LABEL,
-            selectedLavaAquifers,
-            value -> selectedLavaAquifers = value
-        );
-        worldBorderButton = createToggleButton(
-            leftX,
-            toggleRow4Y,
             halfWidth,
             WORLD_BORDER_LABEL,
             selectedWorldBorder,
@@ -368,7 +362,6 @@ public final class EarthPresetEditorScreen extends Screen {
         addRenderableWidget(canyonsButton);
         addRenderableWidget(aquifersButton);
         addRenderableWidget(extraUndergroundButton);
-        addRenderableWidget(lavaAquifersButton);
         addRenderableWidget(worldBorderButton);
 
         doneButton = addRenderableWidget(
@@ -460,9 +453,7 @@ public final class EarthPresetEditorScreen extends Screen {
         toggleRow2Y = y;
         y += ROW_HEIGHT + ROW_GAP;
         toggleRow3Y = y;
-        y += ROW_HEIGHT + ROW_GAP;
-        toggleRow4Y = y;
-        contentHeight = (toggleRow4Y + ROW_HEIGHT) - contentTop;
+        contentHeight = (toggleRow3Y + ROW_HEIGHT) - contentTop;
     }
 
     private void updateScrollLimits() {
@@ -490,8 +481,7 @@ public final class EarthPresetEditorScreen extends Screen {
         refreshWidget(canyonsButton, toggleRow2Y);
         refreshWidget(aquifersButton, toggleRow2Y);
         refreshWidget(extraUndergroundButton, toggleRow3Y);
-        refreshWidget(lavaAquifersButton, toggleRow3Y);
-        refreshWidget(worldBorderButton, toggleRow4Y);
+        refreshWidget(worldBorderButton, toggleRow3Y);
         terrainFixesButton.active = false;
     }
 
@@ -534,6 +524,12 @@ public final class EarthPresetEditorScreen extends Screen {
         return value.booleanValue()
             ? Component.translatable("options.on")
             : Component.translatable("options.off");
+    }
+
+    private Component aquiferModeLabel(EarthAquiferMode mode) {
+        return Component.translatable(
+            "terrarium_expanded.customize.earth.aquifer_mode." + mode.serializedName()
+        );
     }
 
     private Component heightModeLabel(TerrainHeightMode mode) {
@@ -853,8 +849,8 @@ public final class EarthPresetEditorScreen extends Screen {
             selectedCaves,
             selectedCanyons,
             selectedExtraUnderground,
-            selectedAquifers,
-            selectedLavaAquifers,
+            selectedAquiferMode.aquifersEnabled(),
+            selectedAquiferMode.lavaAquifersEnabled(),
             selectedVillages
         );
     }

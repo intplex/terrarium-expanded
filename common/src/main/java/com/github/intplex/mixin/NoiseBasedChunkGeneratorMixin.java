@@ -2,28 +2,25 @@ package com.github.intplex.mixin;
 
 import com.github.intplex.earth.EarthGenConfig;
 import com.github.intplex.earth.biome.EcoregionBiomeSource;
+import com.github.intplex.earth.terrain.EarthAirCarverPolicy;
+import com.github.intplex.earth.terrain.EarthAquiferNoiseRouter;
+import com.github.intplex.earth.terrain.EarthFluidPicker;
+import com.github.intplex.earth.terrain.EarthSurfaceWaterCavePostProcessor;
+import com.github.intplex.earth.terrain.EarthTerrainEnvelopePostProcessor;
 import com.github.intplex.earth.terrain.EarthWorldgenToggles;
 import com.github.intplex.earth.terrain.InlandWaterChunkPostProcessor;
-import com.github.intplex.earth.terrain.TerrainService;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.world.level.StructureManager;
+import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.BiomeSource;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.Aquifer;
-import net.minecraft.world.level.levelgen.DensityFunction;
 import net.minecraft.world.level.levelgen.DensityFunctions;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
@@ -38,6 +35,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(NoiseBasedChunkGenerator.class)
 abstract class NoiseBasedChunkGeneratorMixin {
@@ -65,7 +63,7 @@ abstract class NoiseBasedChunkGeneratorMixin {
         List<Holder<ConfiguredWorldCarver<?>>> filtered = new ArrayList<>();
         boolean changed = false;
         for (Holder<ConfiguredWorldCarver<?>> holder : original) {
-            if (shouldKeepCarver(holder, toggles)) {
+            if (EarthAirCarverPolicy.shouldKeep(holder, toggles)) {
                 filtered.add(holder);
             } else {
                 changed = true;
@@ -74,34 +72,42 @@ abstract class NoiseBasedChunkGeneratorMixin {
         return changed ? filtered : original;
     }
 
-    @Redirect(
-        method = "applyCarvers",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/world/level/levelgen/NoiseChunk;aquifer()Lnet/minecraft/world/level/levelgen/Aquifer;"
-        )
-    )
-    private Aquifer terrariumExpanded$preserveWaterDuringCaveCarving(
-        NoiseChunk noiseChunk,
+    @Inject(method = "applyCarvers", at = @At("TAIL"))
+    private void terrariumExpanded$floodSurfaceConnectedCaves(
         WorldGenRegion worldGenRegion,
         long levelSeed,
         RandomState randomState,
         BiomeManager biomeManager,
         StructureManager structureManager,
         ChunkAccess chunkAccess,
-        GenerationStep.Carving carvingStep
+        GenerationStep.Carving carvingStep,
+        CallbackInfo ci
     ) {
-        Aquifer aquifer = noiseChunk.aquifer();
-        if (carvingStep != GenerationStep.Carving.AIR) {
-            return aquifer;
+        EcoregionBiomeSource earthBiomeSource = earthBiomeSource();
+        if (earthBiomeSource == null || carvingStep != GenerationStep.Carving.AIR) {
+            return;
         }
 
-        EarthWorldgenToggles toggles = earthWorldgenToggles();
-        if (toggles == null || !toggles.caves() || toggles.aquifers()) {
-            return aquifer;
-        }
+        NoiseBasedChunkGenerator generator = (NoiseBasedChunkGenerator) (Object) this;
+        BlockState surfaceFluid = generator.generatorSettings().value().defaultFluid();
+        boolean includeInlandWater = InlandWaterChunkPostProcessor.shouldProcess(generator);
 
-        return boundaryAwareDryCaveAquifer(aquifer, chunkAccess);
+        // Carvers run after the initial noise-envelope pass. Reassert the
+        // surface water first, then flood only cave air connected to it.
+        EarthTerrainEnvelopePostProcessor.enforceChunk(
+            chunkAccess,
+            earthBiomeSource.seaLevel(),
+            surfaceFluid
+        );
+        if (includeInlandWater) {
+            InlandWaterChunkPostProcessor.fillChunk(chunkAccess);
+        }
+        EarthSurfaceWaterCavePostProcessor.floodSurfaceConnectedCaves(
+            chunkAccess,
+            earthBiomeSource.seaLevel(),
+            surfaceFluid,
+            includeInlandWater
+        );
     }
 
     @Redirect(
@@ -132,11 +138,16 @@ abstract class NoiseBasedChunkGeneratorMixin {
         NoiseSettings sourceNoiseSettings = settings.noiseSettings();
         NoiseSettings adjustedNoiseSettings = terrariumExpanded$noiseSettingsForChunk(settings, chunkAccess);
 
-        NoiseGeneratorSettings adjustedSettings = settings;
         boolean aquifersEnabled = toggles.aquifers();
+        NoiseGeneratorSettings adjustedSettings = settings;
         int seaLevel = earthBiomeSource.seaLevel();
         boolean noiseSettingsChanged = !adjustedNoiseSettings.equals(sourceNoiseSettings);
-        if (noiseSettingsChanged || settings.seaLevel() != seaLevel || settings.aquifersEnabled() != aquifersEnabled || !settings.oreVeinsEnabled()) {
+        if (
+            noiseSettingsChanged
+                || settings.seaLevel() != seaLevel
+                || settings.aquifersEnabled() != aquifersEnabled
+                || !settings.oreVeinsEnabled()
+        ) {
             adjustedSettings = new NoiseGeneratorSettings(
                 adjustedNoiseSettings,
                 settings.defaultBlock(),
@@ -154,7 +165,7 @@ abstract class NoiseBasedChunkGeneratorMixin {
 
         Aquifer.FluidPicker adjustedFluidPicker = fluidPicker;
         if (!aquifersEnabled) {
-            adjustedFluidPicker = terrariumExpanded$earthFluidPicker(
+            adjustedFluidPicker = EarthFluidPicker.create(
                 fluidPicker,
                 adjustedSettings.seaLevel(),
                 adjustedSettings.defaultFluid(),
@@ -167,7 +178,7 @@ abstract class NoiseBasedChunkGeneratorMixin {
             );
             adjustedFluidPicker = (x, y, z) -> waterOnly;
         } else if (settings.seaLevel() != adjustedSettings.seaLevel()) {
-            adjustedFluidPicker = terrariumExpanded$earthFluidPicker(
+            adjustedFluidPicker = EarthFluidPicker.create(
                 fluidPicker,
                 adjustedSettings.seaLevel(),
                 adjustedSettings.defaultFluid(),
@@ -175,35 +186,26 @@ abstract class NoiseBasedChunkGeneratorMixin {
             );
         }
 
+        NoiseGeneratorSettings finalSettings = adjustedSettings;
+        Aquifer.FluidPicker finalFluidPicker = adjustedFluidPicker;
+        if (aquifersEnabled && !toggles.lavaAquifers()) {
+            return EarthAquiferNoiseRouter.withLavaDisabled(() -> NoiseChunk.forChunk(
+                chunkAccess,
+                randomState,
+                beardifierOrMarker,
+                finalSettings,
+                finalFluidPicker,
+                blender
+            ));
+        }
         return NoiseChunk.forChunk(
             chunkAccess,
             randomState,
             beardifierOrMarker,
-            adjustedSettings,
-            adjustedFluidPicker,
+            finalSettings,
+            finalFluidPicker,
             blender
         );
-    }
-
-    private static Aquifer.FluidPicker terrariumExpanded$earthFluidPicker(
-        Aquifer.FluidPicker delegate,
-        int seaLevel,
-        BlockState defaultFluid,
-        boolean dryUnderground
-    ) {
-        Objects.requireNonNull(delegate, "delegate");
-        Aquifer.FluidStatus airOnly = new Aquifer.FluidStatus(Integer.MIN_VALUE, Blocks.AIR.defaultBlockState());
-        Aquifer.FluidStatus surfaceFluid = new Aquifer.FluidStatus(seaLevel, defaultFluid);
-        return (x, y, z) -> {
-            int solidTopY = TerrainService.effectiveSolidTopYAtXZ(x, z);
-            if (y > solidTopY) {
-                return y <= seaLevel ? surfaceFluid : airOnly;
-            }
-            if (dryUnderground && y <= solidTopY) {
-                return airOnly;
-            }
-            return delegate.computeFluid(x, y, z);
-        };
     }
 
     @Redirect(
@@ -235,12 +237,20 @@ abstract class NoiseBasedChunkGeneratorMixin {
         CallbackInfoReturnable<CompletableFuture<ChunkAccess>> cir
     ) {
         NoiseBasedChunkGenerator generator = (NoiseBasedChunkGenerator) (Object) this;
-        if (!InlandWaterChunkPostProcessor.shouldProcess(generator)) {
+        EcoregionBiomeSource earthBiomeSource = earthBiomeSource();
+        if (earthBiomeSource == null) {
             return;
         }
 
         cir.setReturnValue(cir.getReturnValue().thenApply(chunk -> {
-            InlandWaterChunkPostProcessor.fillChunk(chunk);
+            EarthTerrainEnvelopePostProcessor.enforceChunk(
+                chunk,
+                earthBiomeSource.seaLevel(),
+                generator.generatorSettings().value().defaultFluid()
+            );
+            if (InlandWaterChunkPostProcessor.shouldProcess(generator)) {
+                InlandWaterChunkPostProcessor.fillChunk(chunk);
+            }
             return chunk;
         }));
     }
@@ -282,69 +292,4 @@ abstract class NoiseBasedChunkGeneratorMixin {
         );
     }
 
-    private static boolean shouldKeepCarver(Holder<ConfiguredWorldCarver<?>> holder, EarthWorldgenToggles toggles) {
-        Optional<ResourceKey<ConfiguredWorldCarver<?>>> key = holder.unwrapKey();
-        if (key.isEmpty()) {
-            return true;
-        }
-        String path = key.get().location().getPath();
-        if (path.equals("cave")) {
-            return toggles.caves();
-        }
-        if (path.equals("canyon")) {
-            return toggles.canyons();
-        }
-        if (path.equals("cave_extra_underground")) {
-            return toggles.extraUnderground();
-        }
-        return true;
-    }
-
-    private static Aquifer boundaryAwareDryCaveAquifer(Aquifer delegate, ChunkAccess chunkAccess) {
-        BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
-        BlockPos.MutableBlockPos neighborMutableBlockPos = new BlockPos.MutableBlockPos();
-        BlockState air = Blocks.AIR.defaultBlockState();
-        return new Aquifer() {
-            @Override
-            public BlockState computeSubstance(DensityFunction.FunctionContext functionContext, double density) {
-                BlockState carvedState = delegate.computeSubstance(functionContext, density);
-                if (carvedState == null) {
-                    return carvedState;
-                }
-
-                mutableBlockPos.set(functionContext.blockX(), functionContext.blockY(), functionContext.blockZ());
-                BlockState adjacentFluidState = adjacentFluidState(
-                    chunkAccess,
-                    mutableBlockPos,
-                    neighborMutableBlockPos
-                );
-
-                if (carvedState.getFluidState().isEmpty()) {
-                    return adjacentFluidState != null ? adjacentFluidState : carvedState;
-                }
-
-                return adjacentFluidState != null ? carvedState : air;
-            }
-
-            @Override
-            public boolean shouldScheduleFluidUpdate() {
-                return true;
-            }
-        };
-    }
-
-    private static BlockState adjacentFluidState(
-        ChunkAccess chunkAccess,
-        BlockPos.MutableBlockPos center,
-        BlockPos.MutableBlockPos mutableBlockPos
-    ) {
-        for (Direction direction : Direction.values()) {
-            mutableBlockPos.setWithOffset(center, direction);
-            BlockState neighborState = chunkAccess.getBlockState(mutableBlockPos);
-            if (!neighborState.getFluidState().isEmpty()) {
-                return neighborState.getFluidState().createLegacyBlock();
-            }
-        }
-        return null;
-    }
 }

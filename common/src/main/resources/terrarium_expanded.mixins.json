@@ -9,6 +9,7 @@
   ],
   "mixins": [
     "ChunkGeneratorMixin",
+    "NoiseChunkMixin",
     "NoiseBasedChunkGeneratorMixin"
   ],
   "injectors": {

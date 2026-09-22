@@ -43,6 +43,8 @@ The Earth preset (`data/terrarium_expanded/worldgen/world_preset/earth.json`) us
   - `lava_aquifers`
   - `villages`
 
+The world-creation editor presents `aquifers` and `lava_aquifers` as one `Cave fluids` control with three states: `Off`, `Water only`, or `Water + lava`. The two fields remain in the serialized profile for compatibility with existing worlds and datapacks. Surface water/lava lake features are separate from this control and continue to follow the selected biomes' normal feature lists.
+
 ## Runtime Architecture
 
 `TerrainServices` owns a runtime `EarthRuntimeContext`:
@@ -92,7 +94,9 @@ Terrain/runtime caches are cleared on:
    - spike suppression via `TerrainMetricsKernel.suppressIsolatedSpikes`
    - channel metrics via `TerrainMetricsKernel.computeMetricsAt`
 9. Inland-water analysis (`InlandWaterAnalysis`) computes water mask/kind/surface Y/effective solid top.
-10. Post-noise fill (`InlandWaterChunkPostProcessor`) writes water blocks for inland columns.
+10. Post-noise envelope enforcement (`EarthTerrainEnvelopePostProcessor`) removes any vanilla aquifer barriers or other noise-stage blocks above the exact mapped Earth solid top, restoring ocean fluid below sea level and air at/above sea level.
+11. Post-noise inland-water fill (`InlandWaterChunkPostProcessor`) writes water blocks for inland columns.
+12. After AIR carvers finish, the terrain envelope and inland surface water are reasserted, then `EarthSurfaceWaterCavePostProcessor` floods only air components that are hydraulically connected to an ocean, mapped lake, or mapped river. Propagation has a per-column ceiling taken from that column's mapped water surface, or its mapped terrain surface outside the water mask. This preserves the source heightmap instead of spreading the highest nearby lake sample sideways. Air above the ceiling, sealed caves, solids, lava, and other fluids are preserved.
 
 Note: if any in-bounds sample in a snapshot lacks usable surface-water data, inland-water fill is disabled for that snapshot.
 
@@ -127,6 +131,8 @@ Patch routing:
 - `initial_density_without_jaggedness` -> `terrarium_expanded:terrain_envelope`
 - `final_density` -> `terrarium_expanded:earth_surface_caves`, wrapping vanilla `initial_density_without_jaggedness` and vanilla `final_density`
 
+Vanilla noise aquifers can intentionally return solid barrier material in negative-density space between fluid bodies. Because that behavior is evaluated after the Earth density function, the envelope pass is the final authority on terrain height: cave/aquifer output may alter blocks at or below the mapped solid top, but never above it. The invariant is checked once after noise generation and again after AIR carvers, since a canyon or modded carver can remove the mapped seabed later in the pipeline.
+
 Settings:
 
 - sea level: profile `sea_level` (default `63`)
@@ -138,18 +144,26 @@ Settings:
 `generation` toggles are enforced in mixins:
 
 - `caves`, `canyons`, `extra_underground`:
-  - filter AIR carvers (`cave`, `canyon`, `cave_extra_underground`) in `NoiseBasedChunkGenerator.applyCarvers`
+  - filter AIR carvers in `NoiseBasedChunkGenerator.applyCarvers`
+  - vanilla and modded canyon/ravine carvers follow `canyons`
+  - `cave_extra_underground` follows `extra_underground`
+  - all other AIR carvers, including unregistered and otherwise-unrecognized modded carvers, follow `caves` so the default off state cannot leak caves
 - `caves`, `extra_underground`:
   - allow tagged underground biome selection below the local Earth terrain surface
 - `caves`:
-  - when enabled and `aquifers=false`, use boundary-aware dry cave carving:
-    - cave interiors default to air
-    - cave cells directly adjacent to existing fluids keep fluid to avoid dry pockets in water/lava bodies
+  - vanilla noise caves and biome-provided vanilla/modded carvers are clipped by the Earth terrain surface
+- after AIR carving, regardless of aquifer mode:
+  - an air cave or canyon that actually opens into an ocean or mapped inland-water body is filled with source water up to that body's surface
+  - every surface-water column retains its own mapped height; a higher sample cannot create a raised sheet over lower lake columns or dry shoreline
+  - connectivity, rather than the column's biome, controls this repair, so a sealed dry cave is not flooded merely because it lies beneath water
+  - fluid propagation is bounded to the generating chunk; repaired boundary cells are scheduled for Minecraft's normal cross-chunk fluid propagation
+- when `aquifers=false`:
+  - cave/carver voids below land remain dry
+  - cave/carver voids below submerged Earth columns receive the configured ocean fluid up to sea level, preventing air caves and suspended water when a cave breaches the ocean floor
 - `aquifers`:
-  - switches `NoiseGeneratorSettings.aquifersEnabled` for Earth chunks
+  - switches Minecraft's underground fluid-distribution system for Earth chunks; it changes cave fluids, not cave geometry or surface lake features
 - `lava_aquifers`:
-  - when aquifers are enabled and `lava_aquifers=false`, force water-only aquifer fluid picker
-  - when `lava_aquifers=false`, skip vanilla lava lake features (`lake_lava_underground` and `lake_lava_surface`)
+  - when aquifers are enabled and `lava_aquifers=false`, force a water-only global fluid picker and zero the noise router's separate late-stage lava conversion
 - `villages`:
   - blocks structures whose path starts with `village_` in `ChunkGenerator.tryGenerateStructure`
 
