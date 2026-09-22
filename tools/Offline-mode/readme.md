@@ -1,10 +1,16 @@
 # Offline tile downloads
 
-Download Terrarium Expanded tiles for offline use. Requires Python 3.10+ and Pillow.
+Download Terrarium Expanded tiles for offline use.
+
+## Ready-made download (z=8)
+
+[Download the zoom-8 offline cache (.7z, 6.58 GB)](http://d127t6piqu53ls.cloudfront.net/downloads/z8-offline-cache.7z), including terrain, surface-water, and ecoregion tiles.
+
+Close Minecraft and extract the archive into `path/to/minecraft/cache/` so that it contains `terrarium_expanded/`. Select **zoom 8** for your Earth world. Python is not required when using this archive.
 
 ## Usage
 
-Run from the repository root:
+To download tiles yourself, use Python 3.10+ and Pillow. Run from the repository root:
 
 ```powershell
 python -m pip install -r tools/Offline-mode/requirements.txt
