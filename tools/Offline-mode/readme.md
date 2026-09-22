@@ -11,7 +11,7 @@ python -m pip install -r tools/Offline-mode/requirements.txt
 python tools/Offline-mode/download_tiles.py
 ```
 
-Defaults to **zoom 8**, four workers, and output in `tools/Offline-mode/downloads/z8/terrarium_expanded/`. Every download run shows a rough size estimate and waits for `y` or `yes` to continue. Estimates describe the full dataset, including on resumed runs, and are not measured sizes or guaranteed bounds.
+Defaults to **zoom 8**, four workers, and output in `tools/Offline-mode/downloads/z8/terrarium_expanded/`. Every download run shows a size estimate and waits for `y` or `yes` to continue. Zoom 8 is estimated at **6.23 GiB of PNG data / 6.46 GiB on disk**, based on measured per-layer tile sizes and 4 KiB disk blocks. Estimates cover the full dataset, including on resumed runs; higher zooms and custom sources are projections. Allow extra free space. ZIP sizes will differ.
 
 Preview without downloading or choose a different zoom and output directory:
 
@@ -20,7 +20,7 @@ python tools/Offline-mode/download_tiles.py --dry-run
 python tools/Offline-mode/download_tiles.py --zoom 10 --output "path/to/downloads/z10" --workers 4
 ```
 
-Supported zooms are **8–12**. Each run includes terrain and surface-water tiles at the selected zoom, plus the fixed zoom-8 reduced ecoregion tiles. Zoom 8 covers **135,168 tile locations**; each higher zoom quadruples the terrain and water counts. Ocean temperature data and biome mappings already ship with the mod.
+Supported zooms are **8–12**. Each run includes terrain and surface-water tiles at the selected zoom, plus the fixed zoom-8 reduced ecoregion tiles. Water tiles wholly outside **60°S–77°N** are skipped, matching the mod; intersecting boundary rows are included. Zoom 8 requests **106,240 tile locations**, skipping **28,928** polar water locations. Higher zooms roughly quadruple the terrain and water counts. Ocean temperature data and biome mappings already ship with the mod.
 
 ## Install and share
 
@@ -33,7 +33,7 @@ path/to/minecraft/cache/terrarium_expanded/
     ecoregions/8/<x>/<y>.png
 ```
 
-Keep all `.png.missing` files. Use the same world zoom as the download.
+Use the same world zoom as the download. Missing markers outside water coverage are unnecessary. Keep `.png.missing` markers for gaps within coverage, including boundary rows, to prevent repeat requests; removing them does not supply the missing data.
 
 **Zoom 8 needs no other zooms.** For full offline coverage with default recovery rules, worlds at zoom 9–10 also need terrain at zoom 8; worlds at zoom 11–12 need terrain at zooms 8 and 10. Download those zooms separately and merge their `terrarium` folders into the same cache. Custom recovery rules may require additional zooms.
 
