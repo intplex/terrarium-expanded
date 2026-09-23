@@ -27,6 +27,21 @@ public final class EarthSpawnManager {
         forceSpawnAtOrigin(server, "unspecified");
     }
 
+    public static void logGenerationSettings(MinecraftServer server) {
+        ServerLevel level = server.overworld();
+        if (level == null || !(level.getChunkSource().getGenerator().getBiomeSource() instanceof EcoregionBiomeSource source)) {
+            LOGGER.info("[TX-WORLDGEN] Active overworld is not an Earth generator");
+            return;
+        }
+        EarthGenerationProfile profile = source.generationProfile();
+        LOGGER.info("[TX-WORLDGEN] Active Earth generator: zoom={} max_mountain_y={} ocean_floor_y={} sea_level={} "
+                + "biome_integration={} spawn=({}, {}) world_border={} inland_water={} generation={}. "
+                + "These settings are saved with the world; editing a preset affects new worlds.",
+            profile.zoom(), profile.maxMountainY(), profile.oceanFloorY(), profile.seaLevel(),
+            source.biomeIntegration().serializedName(), profile.spawnLatitude(), profile.spawnLongitude(),
+            profile.worldBorder(), profile.inlandWater(), profile.worldgenToggles());
+    }
+
     public static void forceSpawnAtOrigin(MinecraftServer server, String phase) {
         forceSpawnFromPreset(server, phase);
     }

@@ -1,0 +1,330 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Terrarium Expanded server Earth preset",
+  "description": "Schema for the starter world preset. Edit dimensions.minecraft:overworld.generator.biome_source before creating a world. Minecraft codecs perform runtime validation; this schema is for editor assistance. See README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minecraft:overworld": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "generator": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "const": "minecraft:noise"
+                },
+                "biome_source": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "const": "terrarium_expanded:ecoregion_tiles",
+                      "description": "Required Earth biome source. Leave unchanged."
+                    },
+                    "zoom": {
+                      "type": "integer",
+                      "minimum": 8,
+                      "maximum": 12,
+                      "default": 8,
+                      "description": "Earth map zoom. 8: 65,536 blocks across; 9: 131,072; 10: 262,144; 11: 524,288; 12: 1,048,576. Higher zoom requires more downloads and generation work."
+                    },
+                    "max_mountain_y": {
+                      "type": "integer",
+                      "minimum": 2,
+                      "maximum": 2031,
+                      "default": 256,
+                      "description": "Mountain height limit in blocks. Must exceed sea_level and fit the world's build height. Values above Y=319 require an additional mod or datapack that raises build height and supports Terrarium Expanded. Changing this value alone does not raise the build height."
+                    },
+                    "ocean_floor_y": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 2029,
+                      "default": 0,
+                      "description": "Mapped ocean floor in blocks. Must be below sea_level."
+                    },
+                    "sea_level": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 2030,
+                      "default": 63,
+                      "description": "Sea level in blocks. Must be strictly between ocean_floor_y and max_mountain_y."
+                    },
+                    "below_sea_height_mode": {
+                      "type": "string",
+                      "enum": [
+                        "even_scale",
+                        "sea_level_detail",
+                        "high_elevation_detail",
+                        "compressed_middle_heights"
+                      ],
+                      "default": "even_scale",
+                      "description": "Mapping of ocean depths. Height mapping: even_scale is linear; sea_level_detail expands detail near sea level; high_elevation_detail expands detail near the extremes; compressed_middle_heights compresses mid-range elevations."
+                    },
+                    "above_sea_height_mode": {
+                      "type": "string",
+                      "enum": [
+                        "even_scale",
+                        "sea_level_detail",
+                        "high_elevation_detail",
+                        "compressed_middle_heights"
+                      ],
+                      "default": "even_scale",
+                      "description": "Mapping of land elevations. Height mapping: even_scale is linear; sea_level_detail expands detail near sea level; high_elevation_detail expands detail near the extremes; compressed_middle_heights compresses mid-range elevations."
+                    },
+                    "terrain_fixes": {
+                      "type": "string",
+                      "enum": [
+                        "none"
+                      ],
+                      "default": "none",
+                      "description": "Reserved terrain-fix selection; none is the only implemented option."
+                    },
+                    "world_border": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Apply an Earth-sized square border centered at 0,0, inset 32 chunks from the map edges at server startup."
+                    },
+                    "spawn_latitude": {
+                      "type": "number",
+                      "minimum": -85.0511287798066,
+                      "maximum": 85.0511287798066,
+                      "default": 0.442221,
+                      "description": "Spawn latitude in degrees, north positive. Limited by the Mercator projection."
+                    },
+                    "spawn_longitude": {
+                      "type": "number",
+                      "minimum": -180,
+                      "maximum": 180,
+                      "default": 33.15015,
+                      "description": "Spawn longitude in degrees, east positive. Spawn is reapplied from the saved profile at startup."
+                    },
+                    "biome_integration": {
+                      "type": "string",
+                      "enum": [
+                        "auto",
+                        "vanilla",
+                        "biomes_o_plenty",
+                        "regions_unexplored",
+                        "natures_spirit",
+                        "expanded"
+                      ],
+                      "default": "auto",
+                      "description": "auto selects available providers using biome priorities; explicit modes require the corresponding mod for its biomes. expanded is a deprecated alias for biomes_o_plenty."
+                    },
+                    "terrain_base_url": {
+                      "type": "string",
+                      "minLength": 1,
+                      "format": "uri",
+                      "default": "https://elevation-tiles-prod.s3.amazonaws.com/terrarium",
+                      "description": "Terrarium elevation PNG tile endpoint. Leave unchanged unless hosting compatible data; the server needs network access."
+                    },
+                    "biomes_base_url": {
+                      "type": "string",
+                      "minLength": 1,
+                      "format": "uri",
+                      "default": "https://d127t6piqu53ls.cloudfront.net/tiles-reduced",
+                      "description": "Reduced WWF ecoregion PNG tile endpoint. Leave unchanged unless hosting compatible data; the server needs network access."
+                    },
+                    "surface_water_base_url": {
+                      "type": "string",
+                      "minLength": 1,
+                      "format": "uri",
+                      "default": "https://storage.googleapis.com/global-surface-water/tiles2021/seasonality",
+                      "description": "Surface-water seasonality PNG tile endpoint. Leave unchanged unless hosting compatible data; the server needs network access."
+                    },
+                    "generation": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "caves": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable caves; cave fluids are controlled separately."
+                        },
+                        "canyons": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable canyon/ravine carvers."
+                        },
+                        "extra_underground": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable extra underground cave carvers."
+                        },
+                        "aquifers": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Enable underground fluid distribution. Cave creation is controlled separately."
+                        },
+                        "lava_aquifers": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Allow underground lava when aquifers is true. Ignored when aquifers is false."
+                        },
+                        "villages": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Allow villages. Also requires generate-structures=true in server.properties. Other structures are not controlled by this toggle."
+                        }
+                      },
+                      "description": "World-generation toggles. Omitted toggles use mod defaults, not values merged from another datapack."
+                    },
+                    "inland_water": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean",
+                          "default": true,
+                          "description": "Generate inland lakes and rivers from surface-water tiles."
+                        },
+                        "min_water_months": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 12,
+                          "default": 10,
+                          "description": "Minimum months of water presence in source data; lower thresholds include more seasonal water."
+                        }
+                      },
+                      "description": "Saved with the world. Keep this object present to avoid legacy property migration for older presets."
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "settings": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                }
+              },
+              "required": [
+                "type",
+                "biome_source",
+                "settings"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "generator"
+          ]
+        },
+        "minecraft:the_nether": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "generator": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "const": "minecraft:noise"
+                },
+                "biome_source": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "const": "minecraft:multi_noise"
+                    },
+                    "preset": {
+                      "const": "minecraft:nether"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "preset"
+                  ]
+                },
+                "settings": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                }
+              },
+              "required": [
+                "type",
+                "biome_source",
+                "settings"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "generator"
+          ]
+        },
+        "minecraft:the_end": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+            },
+            "generator": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "const": "minecraft:noise"
+                },
+                "biome_source": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "type": {
+                      "const": "minecraft:the_end"
+                    }
+                  },
+                  "required": [
+                    "type"
+                  ]
+                },
+                "settings": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                }
+              },
+              "required": [
+                "type",
+                "biome_source",
+                "settings"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "generator"
+          ]
+        }
+      },
+      "required": [
+        "minecraft:overworld",
+        "minecraft:the_nether",
+        "minecraft:the_end"
+      ]
+    }
+  },
+  "required": [
+    "dimensions"
+  ]
+}

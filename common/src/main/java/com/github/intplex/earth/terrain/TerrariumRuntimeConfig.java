@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 import java.util.Properties;
 import org.slf4j.Logger;
@@ -128,7 +130,20 @@ public final class TerrariumRuntimeConfig {
 
         Path configPath = gameDir.resolve("config").resolve(FILE_NAME);
         if (!Files.exists(configPath)) {
-            return defaults();
+            try {
+                Files.createDirectories(configPath.getParent());
+                try (InputStream template = TerrariumRuntimeConfig.class.getResourceAsStream("/config/terrarium-expanded.properties")) {
+                    if (template == null) {
+                        throw new IOException("Bundled runtime config template is missing");
+                    }
+                    Files.write(configPath, template.readAllBytes(), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+                }
+            } catch (FileAlreadyExistsException ignored) {
+                // Another process created it; read their file without overwriting it.
+            } catch (IOException exception) {
+                LOGGER.warn("Could not create runtime config {}: {}; using defaults", configPath, exception.toString());
+                return defaults();
+            }
         }
 
         Properties properties = new Properties();
@@ -202,6 +217,10 @@ public final class TerrariumRuntimeConfig {
 
     private static TerrariumRuntimeConfig fromProperties(Properties properties, Path configPath) {
         logUnsupportedLegacyKeys(properties, configPath);
+        if (properties.containsKey(KEY_INLAND_WATER_ENABLED) || properties.containsKey(KEY_INLAND_WATER_MIN_WATER_MONTHS)) {
+            LOGGER.info("Legacy inland_water properties in {} are used only when decoding Earth settings without saved inland_water; "
+                + "resolved values will be stored with the world on save", configPath);
+        }
 
         int totalBudgetMb = parseBoundedInt(properties, KEY_TOTAL_BUDGET_MB, DEFAULT_TOTAL_BUDGET_MB, 16, MAX_TOTAL_BUDGET_MB, configPath);
         int tilesBudgetPercent = parseBoundedInt(

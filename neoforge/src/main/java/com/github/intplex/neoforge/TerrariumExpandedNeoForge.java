@@ -91,6 +91,7 @@ public final class TerrariumExpandedNeoForge {
 
     private void onServerStarted(ServerStartedEvent event) {
         EarthSpawnManager.forceSpawnFromPreset(event.getServer(), "neoforge_server_started");
+        EarthSpawnManager.logGenerationSettings(event.getServer());
     }
 
     private void onServerTickPost(ServerTickEvent.Post event) {

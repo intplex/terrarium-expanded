@@ -1,0 +1,13 @@
+{
+  "pack": {
+    "min_format": [
+      94,
+      1
+    ],
+    "max_format": [
+      94,
+      1
+    ],
+    "description": "Terrarium Expanded: editable server Earth preset (Minecraft 1.21.11)"
+  }
+}

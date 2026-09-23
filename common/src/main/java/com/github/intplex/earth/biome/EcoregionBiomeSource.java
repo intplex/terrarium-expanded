@@ -12,12 +12,10 @@ import com.github.intplex.earth.terrain.OceanSurfaceTemperatureService;
 import com.github.intplex.earth.terrain.TerrainService;
 import com.github.intplex.earth.terrain.TerrainServices;
 import com.github.intplex.earth.terrain.TerrainHeightMode;
-import com.github.intplex.earth.terrain.TerrainHeightModes;
 import com.github.intplex.earth.terrain.TerrariumRuntimeConfig;
 import com.github.intplex.earth.terrain.TileKey;
 import com.github.intplex.earth.terrain.WaterBodyKind;
 import com.mojang.datafixers.util.Pair;
-import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.lang.reflect.InvocationTargetException;
@@ -53,94 +51,13 @@ public final class EcoregionBiomeSource extends BiomeSource {
         TagKey.create(Registries.BIOME, TerrariumExpanded.id("is_underground"));
     public static final TagKey<Biome> COMMON_CAVE_BIOMES =
         TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath("c", "is_cave"));
-    public static final MapCodec<EcoregionBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance -> instance
-        .group(
-            RegistryOps.retrieveGetter(Registries.BIOME),
-            RegistryOps.retrieveGetter(Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST),
-            Codec.intRange(EarthGenConfig.MIN_ZOOM, EarthGenConfig.MAX_ZOOM)
-                .optionalFieldOf("zoom", EarthGenConfig.DEFAULT_ZOOM)
-                .forGetter(EcoregionBiomeSource::zoom),
-            Codec.intRange(EarthGenConfig.MIN_MAX_MOUNTAIN_Y, EarthGenConfig.ABSOLUTE_MAX_TERRAIN_Y)
-                .optionalFieldOf("max_mountain_y", EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y)
-                .forGetter(EcoregionBiomeSource::maxMountainY),
-            Codec.intRange(EarthGenConfig.MIN_TERRAIN_Y, EarthGenConfig.ABSOLUTE_MAX_TERRAIN_Y - 2)
-                .optionalFieldOf("ocean_floor_y", EarthGenConfig.DEFAULT_OCEAN_FLOOR_Y)
-                .forGetter(EcoregionBiomeSource::oceanFloorY),
-            Codec.intRange(EarthGenConfig.MIN_SEA_LEVEL, EarthGenConfig.ABSOLUTE_MAX_TERRAIN_Y - 1)
-                .optionalFieldOf("sea_level", EarthGenConfig.DEFAULT_SEA_LEVEL)
-                .forGetter(EcoregionBiomeSource::seaLevel),
-            TerrainHeightModes.CODEC
-                .forGetter(source -> new TerrainHeightModes(source.belowSeaHeightMode(), source.aboveSeaHeightMode())),
-            Codec.STRING
-                .optionalFieldOf("terrain_base_url", EarthGenerationProfile.DEFAULT_TERRAIN_BASE_URL)
-                .forGetter(EcoregionBiomeSource::terrainBaseUrl),
-            Codec.STRING
-                .optionalFieldOf("biomes_base_url", EarthGenerationProfile.DEFAULT_BIOMES_BASE_URL)
-                .forGetter(EcoregionBiomeSource::biomesBaseUrl),
-            Codec.STRING
-                .optionalFieldOf("surface_water_base_url", EarthGenerationProfile.DEFAULT_SURFACE_WATER_BASE_URL)
-                .forGetter(EcoregionBiomeSource::surfaceWaterBaseUrl),
-            Codec.STRING
-                .optionalFieldOf("terrain_fixes", EarthGenerationProfile.TERRAIN_FIXES_NONE)
-                .forGetter(EcoregionBiomeSource::terrainFixes),
-            Codec.BOOL
-                .optionalFieldOf("world_border", false)
-                .forGetter(EcoregionBiomeSource::worldBorder),
-            Codec.doubleRange(-EarthGenConfig.MAX_MERCATOR_LATITUDE, EarthGenConfig.MAX_MERCATOR_LATITUDE)
-                .optionalFieldOf("spawn_latitude", EarthGenerationProfile.DEFAULT_SPAWN_LATITUDE)
-                .forGetter(EcoregionBiomeSource::spawnLatitude),
-            Codec.doubleRange(EarthGenConfig.MIN_LONGITUDE, EarthGenConfig.MAX_LONGITUDE)
-                .optionalFieldOf("spawn_longitude", EarthGenerationProfile.DEFAULT_SPAWN_LONGITUDE)
-                .forGetter(EcoregionBiomeSource::spawnLongitude),
-            BiomeIntegrationMode.CODEC
-                .optionalFieldOf("biome_integration", BiomeIntegrationMode.AUTO)
-                .forGetter(EcoregionBiomeSource::biomeIntegration),
-            EarthWorldgenToggles.CODEC.codec()
-                .optionalFieldOf("generation", EarthWorldgenToggles.defaults())
-                .forGetter(EcoregionBiomeSource::worldgenToggles)
-        )
-        .apply(
-            instance,
-            (
-                biomeLookup,
-                biomeSourceParameterListLookup,
-                zoom,
-                maxMountainY,
-                oceanFloorY,
-                seaLevel,
-                heightModes,
-                terrainBaseUrl,
-                biomesBaseUrl,
-                surfaceWaterBaseUrl,
-                terrainFixes,
-                worldBorder,
-                spawnLatitude,
-                spawnLongitude,
-                biomeIntegration,
-                generation
-            ) ->
-            new EcoregionBiomeSource(
-                biomeLookup,
-                biomeSourceParameterListLookup,
-                new EarthGenerationProfile(
-                    zoom,
-                    maxMountainY,
-                    oceanFloorY,
-                    seaLevel,
-                    heightModes.belowSea(),
-                    heightModes.aboveSea(),
-                    terrainBaseUrl,
-                    biomesBaseUrl,
-                    surfaceWaterBaseUrl,
-                    terrainFixes,
-                    generation,
-                    worldBorder,
-                    spawnLatitude,
-                    spawnLongitude
-                ),
-                biomeIntegration
-            )
-        ));
+    public static final MapCodec<EcoregionBiomeSource> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+        RegistryOps.retrieveGetter(Registries.BIOME),
+        RegistryOps.retrieveGetter(Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST),
+        EarthGenerationProfile.CODEC.forGetter(EcoregionBiomeSource::generationProfile),
+        BiomeIntegrationMode.CODEC.optionalFieldOf("biome_integration", BiomeIntegrationMode.AUTO)
+            .forGetter(EcoregionBiomeSource::biomeIntegration)
+    ).apply(instance, EcoregionBiomeSource::new));
     static final int DEEP_OCEAN_TERRAIN_Y_THRESHOLD = EarthGenConfig.mapMetersToTerrainY(-1000.0);
     static final double POLAR_SST_THRESHOLD_C = 2.0;
     static final double COLD_SST_THRESHOLD_C = 10.0;
@@ -225,22 +142,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
         BiomeIntegrationMode biomeIntegration,
         UndergroundBiomeDelegate undergroundBiomeDelegate
     ) {
-        this.profile = new EarthGenerationProfile(
-            profile.zoom(),
-            profile.maxMountainY(),
-            profile.oceanFloorY(),
-            profile.seaLevel(),
-            profile.belowSeaHeightMode(),
-            profile.aboveSeaHeightMode(),
-            profile.terrainBaseUrl(),
-            profile.biomesBaseUrl(),
-            profile.surfaceWaterBaseUrl(),
-            profile.terrainFixes(),
-            profile.worldgenToggles(),
-            profile.worldBorder(),
-            profile.spawnLatitude(),
-            profile.spawnLongitude()
-        );
+        this.profile = Objects.requireNonNull(profile, "profile");
         this.biomeIntegration = biomeIntegration == null ? BiomeIntegrationMode.AUTO : biomeIntegration;
         this.mappings = mappings;
         this.colorSampler = samplingAdapters.colorSampler();
@@ -250,6 +152,10 @@ public final class EcoregionBiomeSource extends BiomeSource {
         this.biomeHotCache = ThreadLocal.withInitial(BiomeHotCache::new);
         this.undergroundBiomeDelegate = Objects.requireNonNull(undergroundBiomeDelegate, "undergroundBiomeDelegate");
         TerrainServices.syncEarthProfile(this.profile);
+    }
+
+    public EarthGenerationProfile generationProfile() {
+        return profile;
     }
 
     public int zoom() {

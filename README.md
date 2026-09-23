@@ -22,6 +22,18 @@ Terrarium Expanded includes integrations for:
 >
 > If those services are unavailable or blocked, world generation quality and completeness will degrade.
 
+## Running a Server
+
+See the **[server-owner setup guide](documentation/SERVER_SETUP.md)** for installation, preset customization,
+all generation options, and troubleshooting on Fabric and NeoForge.
+
+Set `level-type=terrarium_expanded:earth` in `server.properties` for every new Earth world.
+For custom settings, download the **server-earth datapack ZIP** from the matching
+[release](https://github.com/intplex/terrarium-expanded/releases), install it before creating the world,
+and edit its preset JSON. The enabled pack replaces the mod's defaults; the level type stays the same.
+The preset includes every option and an offline JSON Schema.
+Generation settings are saved with the world; changes to presets apply to new worlds.
+
 ## What The Mod Does
 
 Terrarium Expanded generates an Earth-shaped overworld from real map data instead of vanilla noise alone.
@@ -104,7 +116,8 @@ Terrarium Expanded reads runtime tuning from:
 
 - `<gameDir>/config/terrarium-expanded.properties`
 
-If the file is missing, built-in low-memory defaults are used.
+If the file is missing, the mod writes a commented template with the built-in low-memory defaults.
+Existing files are preserved. Restart after editing runtime settings.
 
 Supported keys:
 
@@ -120,8 +133,10 @@ Supported keys:
 - `tiles.recovery.prefetch_radius` (default `0`)
 - `tiles.surface_water.prefetch_radius` (default `0`)
 - `tiles.ecoregion.prefetch_radius` (default `0`)
-- `inland_water.enabled` (default `true`)
-- `inland_water.min_water_months` (default `10`, clamped to `1-12`)
+
+Configure inland water in the preset JSON using `inland_water.enabled` and
+`inland_water.min_water_months`. These generation settings are saved with the world. See the
+[Earth options reference](documentation/SERVER_SETUP.md#earth-options).
 
 Legacy cache-entry keys from older versions are no longer supported and are ignored.
 

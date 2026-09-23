@@ -300,7 +300,7 @@ public final class TerrainServices {
         runtimeContext = new EarthRuntimeContext(
             profile,
             services,
-            TerrainService.newRuntimeState(runtimeConfig())
+            TerrainService.newRuntimeState(runtimeConfig(), profile.inlandWater())
         );
         runtimeGeneration++;
         if (previous != null) {
