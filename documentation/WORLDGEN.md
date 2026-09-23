@@ -201,6 +201,19 @@ All are backed by `RemotePngTileStore` and share:
 
 All three dataset base URLs (`terrain`, `biomes`, `surface_water`) are preset-configurable.
 
+Required data failures abort sampling and propagate to chunk generation. Primary
+and supplemental elevation, ecoregion, and surface-water fetch/decode errors must
+not produce cached substitute terrain or biomes. Errors loading the bundled ocean
+temperature grid also propagate. Known-missing surface-water tiles (HTTP 404/410)
+and coordinates outside that dataset's coverage retain their no-inland-water
+behavior. Valid zero-elevation samples still participate in bathymetry recovery.
+
+Tile requests publish their shared future before scheduling work and remove it
+before notifying waiters, including on failure or executor rejection. Later
+requests can retry transient failures; this does not automatically reschedule a
+failed Minecraft generation task. Snapshot locks remain registered while any
+owner or waiter uses them, including during cache clears.
+
 ## Spawn and Border Behavior
 
 `EarthSpawnManager.forceSpawnFromPreset(...)` runs during server startup:

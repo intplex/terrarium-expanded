@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.imageio.ImageIO;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Holder;
@@ -21,8 +22,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class EcoregionBiomeSourceSharedSamplingTest {
     private static final short[] TEMPERATE_TEST_GRID = new short[180 * 360];
@@ -90,6 +95,32 @@ class EcoregionBiomeSourceSharedSamplingTest {
     private static Holder<Biome> expectedOceanFallbackBiome(EcoregionBiomeMappings.ResolvedBiomeMapping mapping, int terrainY) {
         int continentalShelfThreshold = EarthGenConfig.mapMetersToTerrainY(-200.0);
         return terrainY <= continentalShelfThreshold ? mapping.deepOceanBiome() : mapping.oceanBiome();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void ecoregionFailureDoesNotCacheOceanFallbackAndCanRetry(boolean corruptPng) throws Exception {
+        installServices(1000.0, -2000.0, 0x123456, 0xFFFFFFFF, 11);
+        AtomicBoolean unavailable = new AtomicBoolean(true);
+        EcoregionTileService ecoregions = EcoregionTileService.forTesting(new EcoregionTileService.Config(
+            tempDir.resolve("failing-ecoregions"), Executors.newSingleThreadExecutor(), key -> {
+                if (unavailable.get()) {
+                    if (corruptPng) {
+                        return new byte[] {0, 1, 2};
+                    }
+                    throw new IOException("temporary ecoregion outage");
+                }
+                return createEcoregionPng(0x123456);
+            }, 32, 0
+        ));
+        TerrainServices.overrideServicesForTesting(null, null, ecoregions, null);
+        Holder<Biome> expected = dummyBiomeHolder();
+        EcoregionBiomeSource source = createSource(mapping(Map.of(0x123456, expected)), 11);
+
+        assertThrows(IllegalStateException.class, () -> source.getNoiseBiome(0, 0, 0, null));
+        assertThrows(IllegalStateException.class, () -> source.getNoiseBiome(0, 0, 0, null));
+        unavailable.set(false);
+        assertSame(expected, source.getNoiseBiome(0, 0, 0, null));
     }
 
     private void installServices(

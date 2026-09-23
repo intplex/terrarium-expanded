@@ -25,12 +25,12 @@ class OceanBathymetryRecoveryTest {
     }
 
     @Test
-    void eligibilityRequiresZoomElevenTerrainDataAndZeroMeters() {
-        assertFalse(OceanBathymetryRecovery.shouldAttemptRecovery(10, true, 0.0));
-        assertFalse(OceanBathymetryRecovery.shouldAttemptRecovery(11, false, 0.0));
-        assertFalse(OceanBathymetryRecovery.shouldAttemptRecovery(11, true, -1.0));
-        assertTrue(OceanBathymetryRecovery.shouldAttemptRecovery(11, true, 0.0));
-        assertTrue(OceanBathymetryRecovery.shouldAttemptRecovery(12, true, 0.0));
+    void eligibilityRequiresZoomElevenAndZeroMeters() {
+        assertFalse(OceanBathymetryRecovery.shouldAttemptRecovery(10, 0.0));
+        assertFalse(OceanBathymetryRecovery.shouldAttemptRecovery(11, -1.0));
+        assertFalse(OceanBathymetryRecovery.shouldAttemptRecovery(11, 1.0));
+        assertTrue(OceanBathymetryRecovery.shouldAttemptRecovery(11, 0.0));
+        assertTrue(OceanBathymetryRecovery.shouldAttemptRecovery(12, 0.0));
     }
 
     @Test

@@ -308,13 +308,13 @@ public final class TerrainService {
         }
     }
 
-    private static final class ChunkSnapshotCache {
+    static final class ChunkSnapshotCache {
         private final long maxWeightBytes;
         private final int ttlSeconds;
         private final WeightedAccessCache<ChunkKey, TerrainChunkSnapshot> entries;
-        private final ConcurrentHashMap<ChunkKey, ReentrantLock> inFlightLocks;
+        private final ConcurrentHashMap<ChunkKey, SnapshotLock> inFlightLocks;
 
-        private ChunkSnapshotCache(long maxWeightBytes, int ttlSeconds) {
+        ChunkSnapshotCache(long maxWeightBytes, int ttlSeconds) {
             this.maxWeightBytes = Math.max(1L, maxWeightBytes);
             this.ttlSeconds = Math.max(0, ttlSeconds);
             this.inFlightLocks = new ConcurrentHashMap<>();
@@ -323,14 +323,20 @@ public final class TerrainService {
 
         TerrainChunkSnapshot getOrBuildFor(int blockX, int blockZ, ChunkSnapshotBuilder builder) {
             ChunkKey key = new ChunkKey(chunkMinForBlock(blockX), chunkMinForBlock(blockZ));
-            ReentrantLock lock;
             TerrainChunkSnapshot context = entries.getIfPresent(key);
             if (context != null) {
                 return context;
             }
-            lock = inFlightLocks.computeIfAbsent(key, ignored -> new ReentrantLock());
+            // Count owners and waiters before acquiring the lock. Removing it
+            // while another caller is waiting would allow two concurrent builds
+            // for the same chunk after a failed build or cache eviction.
+            SnapshotLock reservation = inFlightLocks.compute(key, (ignored, current) -> {
+                SnapshotLock retained = current == null ? new SnapshotLock() : current;
+                retained.users++;
+                return retained;
+            });
 
-            lock.lock();
+            reservation.lock.lock();
             try {
                 TerrainChunkSnapshot lockHit = entries.getIfPresent(key);
                 if (lockHit != null) {
@@ -344,14 +350,14 @@ public final class TerrainService {
                 entries.put(key, loaded);
                 return loaded;
             } finally {
-                lock.unlock();
-                inFlightLocks.remove(key, lock);
+                reservation.lock.unlock();
+                inFlightLocks.computeIfPresent(key, (ignored, current) -> --current.users == 0 ? null : current);
             }
         }
 
         void clear() {
             entries.clear();
-            inFlightLocks.clear();
+            // Active reservations release themselves after their last waiter.
         }
 
         long maxWeightBytes() {
@@ -369,10 +375,16 @@ public final class TerrainService {
         private static int chunkMinForBlock(int blockCoord) {
             return Math.floorDiv(blockCoord, CHUNK_WIDTH) * CHUNK_WIDTH;
         }
+
+        private static final class SnapshotLock {
+            private final ReentrantLock lock = new ReentrantLock();
+            // Accessed only from the inFlightLocks compute callbacks.
+            private int users;
+        }
     }
 
     @FunctionalInterface
-    private interface ChunkSnapshotBuilder {
+    interface ChunkSnapshotBuilder {
         TerrainChunkSnapshot build(int chunkMinX, int chunkMinZ);
     }
 }
