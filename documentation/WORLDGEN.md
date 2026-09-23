@@ -2,6 +2,10 @@
 
 This document describes the worldgen currently implemented in `common`, `fabric`, and `neoforge`.
 
+For server installation and configuration, see [SERVER_SETUP.md](SERVER_SETUP.md). Both default
+and customized servers use `terrarium_expanded:earth`. The enabled starter datapack replaces that
+bundled preset resource with an editable copy; Minecraft's normal datapack priority rules apply.
+
 ## Overview
 
 Terrarium Expanded builds Earth-like terrain/biomes from four runtime data layers:
@@ -35,6 +39,7 @@ The Earth preset (`data/terrarium_expanded/worldgen/world_preset/earth.json`) us
 - `spawn_latitude`
 - `spawn_longitude`
 - `biome_integration` (`auto`, `vanilla`, `biomes_o_plenty`, `regions_unexplored`, `natures_spirit`; legacy `expanded` reads as `biomes_o_plenty`)
+- `inland_water`: `enabled` (default `true`) and `min_water_months` (default `10`, valid `1–12`)
 - `generation` toggles:
   - `caves`
   - `canyons`
@@ -44,6 +49,14 @@ The Earth preset (`data/terrarium_expanded/worldgen/world_preset/earth.json`) us
   - `villages`
 
 The world-creation editor presents `aquifers` and `lava_aquifers` as one `Cave fluids` control with three states: `Off`, `Water only`, or `Water + lava`. The two fields remain in the serialized profile for compatibility with existing worlds and datapacks. Surface water/lava lake features are separate from this control and continue to follow the selected biomes' normal feature lists.
+
+`EarthGenerationProfile.CODEC` preserves the flat biome-source field layout and stores inland-water
+settings with the generator. Decoding a legacy source with no `inland_water` object captures the
+legacy runtime properties (or defaults) at decode time. Encoding always includes the object, even
+when its values are defaults, so subsequent loads cannot pick up different machine-local settings.
+Explicit values bypass legacy properties. The editor preserves inland-water settings while editing
+other options; they are configured through datapacks. Runtime water analysis reads the active profile.
+Legacy properties retain their clamping behavior; new serialized thresholds are validated strictly.
 
 ## Runtime Architecture
 

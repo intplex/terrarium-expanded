@@ -15,8 +15,11 @@ class TerrariumRuntimeConfigTest {
     Path tempDir;
 
     @Test
-    void missingConfigFallsBackToDefaults() {
+    void missingConfigCreatesDocumentedDefaults() throws IOException {
         TerrariumRuntimeConfig config = TerrariumRuntimeConfig.load(tempDir);
+        String template = Files.readString(tempDir.resolve("config").resolve(TerrariumRuntimeConfig.FILE_NAME));
+        assertTrue(template.contains("#"));
+        assertFalse(template.contains("inland_water."));
 
         assertEquals(TerrariumRuntimeConfig.DEFAULT_TOTAL_BUDGET_MB, config.totalBudgetMb());
         assertEquals(TerrariumRuntimeConfig.DEFAULT_TILES_BUDGET_PERCENT, config.tilesBudgetPercent());
@@ -29,6 +32,14 @@ class TerrariumRuntimeConfigTest {
         assertEquals(TerrariumRuntimeConfig.DEFAULT_ECOREGION_TILE_CONFIG, config.ecoregionTiles());
         assertEquals(TerrariumRuntimeConfig.DEFAULT_SAMPLING_CONFIG, config.sampling());
         assertEquals(TerrariumRuntimeConfig.DEFAULT_INLAND_WATER_CONFIG, config.inlandWater());
+    }
+
+    @Test
+    void existingConfigIsNotRewritten() throws IOException {
+        String contents = "# Preserve admin comments\nmemory.total_budget_mb=123\n";
+        writeConfig(contents);
+        TerrariumRuntimeConfig.load(tempDir);
+        assertEquals(contents, Files.readString(tempDir.resolve("config").resolve(TerrariumRuntimeConfig.FILE_NAME)));
     }
 
     @Test

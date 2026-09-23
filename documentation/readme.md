@@ -4,6 +4,7 @@ This folder contains technical documentation plus screenshot galleries used to s
 
 ## Contents
 
+- [SERVER_SETUP.md](SERVER_SETUP.md): server-owner installation, editable datapack, full settings reference, and troubleshooting
 - [WORLDGEN.md](WORLDGEN.md): implementation-oriented reference for the current world-generation pipeline
 - `vanilla (z=10)`: screenshot set using vanilla biome integration
 - `biomes-o-plenty (z=10)`: screenshot set using the Biomes O' Plenty integration

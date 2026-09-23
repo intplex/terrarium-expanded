@@ -16,6 +16,10 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    dependsOn rootProject.tasks.named('serverEarthDatapack')
+    inputs.dir rootProject.layout.projectDirectory.dir('datapacks/server-earth')
+    systemProperty 'terrarium.serverPackDir', rootProject.file('datapacks/server-earth').absolutePath
+    systemProperty 'terrarium.serverPackZip', rootProject.tasks.named('serverEarthDatapack', Zip).get().archiveFile.get().asFile.absolutePath
 }
 
 sourceSets {

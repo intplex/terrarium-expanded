@@ -289,8 +289,8 @@ class TerrainServicesRuntimeContextTest {
         assertEquals(18, context.terrainRuntimeState().chunkLocalCacheEntries());
         assertEquals(5, context.terrainRuntimeState().biomeLocalCacheEntries());
         assertEquals(7, context.terrainRuntimeState().threadLocalIdleSeconds());
-        assertEquals(false, context.terrainRuntimeState().inlandWaterSettings().enabled());
-        assertEquals(4, context.terrainRuntimeState().inlandWaterSettings().minWaterMonths());
+        // Fresh profiles use explicit world defaults; properties are only a decoder migration fallback.
+        assertEquals(InlandWaterSettings.DEFAULT, context.terrainRuntimeState().inlandWaterSettings());
 
         assertEquals(terrainBudget, context.services().tileService().configuredMemoryCacheMaxWeightBytes());
         assertEquals(31, context.services().tileService().configuredMemoryCacheTtlSeconds());

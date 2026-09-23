@@ -1,4 +1,5 @@
 {
+  "$schema": "../../../../schema/earth-world-preset.schema.json",
   "dimensions": {
     "minecraft:overworld": {
       "type": "minecraft:overworld",
@@ -18,7 +19,7 @@
           "terrain_fixes": "none",
           "world_border": false,
           "spawn_latitude": 0.442221,
-          "spawn_longitude": 33.150150,
+          "spawn_longitude": 33.15015,
           "biome_integration": "auto",
           "inland_water": {
             "enabled": true,

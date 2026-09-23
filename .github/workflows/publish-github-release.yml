@@ -60,6 +60,14 @@ jobs:
       - name: Ensure Gradle wrapper is executable
         run: chmod +x ./gradlew
 
+      - name: Set up Python for datapack schema validation
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install schema test dependency
+        run: python -m pip install jsonschema==4.22.0
+
       - name: Read archive base name from gradle.properties
         id: props
         run: |
@@ -77,6 +85,8 @@ jobs:
             ":neoforge:clean"
             ":fabric:remapJar"
             ":neoforge:remapJar"
+            ":serverEarthDatapack"
+            ":common:test"
             "-Pmod_version=${MOD_VERSION}"
             "-Pminecraft_version=${MINECRAFT_VERSION}"
           )
@@ -110,6 +120,10 @@ jobs:
 
           test -f "${fabric_jar}" || (echo "Missing file: ${fabric_jar}" >&2 && exit 1)
           test -f "${neoforge_jar}" || (echo "Missing file: ${neoforge_jar}" >&2 && exit 1)
+          test -f "build/distributions/terrarium-expanded-server-earth-${MOD_VERSION}-mc${MINECRAFT_VERSION}.zip"
+
+      - name: Validate server datapack schema and release ZIP
+        run: python tools/validate_server_datapack.py --zip "build/distributions/terrarium-expanded-server-earth-${MOD_VERSION}-mc${MINECRAFT_VERSION}.zip"
 
       - name: Prepare release assets with Minecraft version in filename
         run: |
@@ -123,12 +137,13 @@ jobs:
 
           cp "${fabric_src}" "${fabric_out}"
           cp "${neoforge_src}" "${neoforge_out}"
+          cp "build/distributions/terrarium-expanded-server-earth-${MOD_VERSION}-mc${MINECRAFT_VERSION}.zip" release-assets/
 
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
         with:
           name: terrarium-expanded-${{ inputs.mod_version }}-mc${{ inputs.minecraft_version }}
-          path: release-assets/*.jar
+          path: release-assets/*
           if-no-files-found: error
 
       - name: Create or update GitHub release
@@ -142,5 +157,6 @@ jobs:
           body: |
             Minecraft version: `${{ inputs.minecraft_version }}`
             Loaders: `fabric`, `neoforge`
-          files: release-assets/*.jar
+            The server-earth ZIP contains an editable datapack, offline schema, and setup instructions. See documentation/SERVER_SETUP.md in this release's source for the full server guide.
+          files: release-assets/*
           fail_on_unmatched_files: true

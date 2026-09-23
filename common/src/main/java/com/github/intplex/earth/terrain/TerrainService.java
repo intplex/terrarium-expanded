@@ -94,10 +94,10 @@ public final class TerrainService {
         return caveBiomeDepthProfile.isUndergroundBiomeDepth(blockY, solidTopY);
     }
 
-    static RuntimeState newRuntimeState(TerrariumRuntimeConfig runtimeConfig) {
+    static RuntimeState newRuntimeState(TerrariumRuntimeConfig runtimeConfig, InlandWaterSettings inlandWater) {
         TerrariumRuntimeConfig.SamplingConfig samplingConfig = runtimeConfig.sampling();
         return new RuntimeState(
-            InlandWaterSettings.loadFromRuntimeConfig(runtimeConfig),
+            inlandWater,
             SurfaceWaterCoverageSettings.DEFAULT,
             new BoundedDedupeSet<>(8192),
             new BoundedDedupeSet<>(8192),

@@ -6,6 +6,7 @@ import com.github.intplex.earth.biome.EcoregionBiomeSource;
 import com.github.intplex.earth.terrain.EarthAquiferMode;
 import com.github.intplex.earth.terrain.EarthGenerationProfile;
 import com.github.intplex.earth.terrain.EarthWorldgenToggles;
+import com.github.intplex.earth.terrain.InlandWaterSettings;
 import com.github.intplex.earth.terrain.TerrainHeightMode;
 import dev.architectury.platform.Platform;
 import java.util.ArrayList;
@@ -107,6 +108,7 @@ public final class EarthPresetEditorScreen extends Screen {
     private TerrainHeightMode selectedAboveSeaHeightMode;
     private double selectedSpawnLatitude;
     private double selectedSpawnLongitude;
+    private InlandWaterSettings selectedInlandWater;
     private String selectedTerrainBaseUrl;
     private String selectedBiomesBaseUrl;
     private String selectedSurfaceWaterBaseUrl;
@@ -206,6 +208,7 @@ public final class EarthPresetEditorScreen extends Screen {
         this.selectedAboveSeaHeightMode = TerrainHeightMode.normalize(initialSettings.aboveSeaHeightMode());
         this.selectedSpawnLatitude = initialSettings.spawnLatitude();
         this.selectedSpawnLongitude = initialSettings.spawnLongitude();
+        this.selectedInlandWater = initialSettings.inlandWater();
         this.selectedTerrainBaseUrl = initialSettings.terrainBaseUrl();
         this.selectedBiomesBaseUrl = initialSettings.biomesBaseUrl();
         this.selectedSurfaceWaterBaseUrl = initialSettings.surfaceWaterBaseUrl();
@@ -586,7 +589,8 @@ public final class EarthPresetEditorScreen extends Screen {
                 selectedWorldgenToggles(),
                 selectedWorldBorder,
                 selectedSpawnLatitude,
-                selectedSpawnLongitude
+                selectedSpawnLongitude,
+                selectedInlandWater
             );
             doneButton.active = true;
             validationMessage = null;
@@ -635,7 +639,8 @@ public final class EarthPresetEditorScreen extends Screen {
                     selectedWorldgenToggles(),
                     selectedWorldBorder,
                     selectedSpawnLatitude,
-                    selectedSpawnLongitude
+                    selectedSpawnLongitude,
+                    selectedInlandWater
                 ),
                 selectedBiomeIntegration
             );
@@ -992,7 +997,8 @@ public final class EarthPresetEditorScreen extends Screen {
                 ecoregionBiomeSource.spawnLongitude(),
                 ecoregionBiomeSource.biomeIntegration(),
                 ecoregionBiomeSource.worldgenToggles(),
-                maxTerrainYLimit
+                maxTerrainYLimit,
+                ecoregionBiomeSource.generationProfile().inlandWater()
             );
         }
         return PresetSettings.defaults();
@@ -1223,7 +1229,8 @@ public final class EarthPresetEditorScreen extends Screen {
         double spawnLongitude,
         BiomeIntegrationMode biomeIntegration,
         EarthWorldgenToggles worldgenToggles,
-        int maxTerrainYLimit
+        int maxTerrainYLimit,
+        InlandWaterSettings inlandWater
     ) {
         private static final PresetSettings DEFAULT = new PresetSettings(
             EarthGenConfig.DEFAULT_ZOOM,
@@ -1241,7 +1248,8 @@ public final class EarthPresetEditorScreen extends Screen {
             EarthGenerationProfile.DEFAULT_SPAWN_LONGITUDE,
             BiomeIntegrationMode.AUTO,
             EarthWorldgenToggles.defaults(),
-            EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y
+            EarthGenConfig.DEFAULT_MAX_MOUNTAIN_Y,
+            InlandWaterSettings.DEFAULT
         );
 
         private static PresetSettings defaults() {

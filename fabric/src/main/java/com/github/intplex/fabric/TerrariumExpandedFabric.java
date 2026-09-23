@@ -59,7 +59,10 @@ public final class TerrariumExpandedFabric implements ModInitializer {
             WeirdnessDensityFunction.CODEC.codec()
         );
         ServerLifecycleEvents.SERVER_STARTING.register(server -> EarthSpawnManager.forceSpawnFromPreset(server, "fabric_server_starting"));
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> EarthSpawnManager.forceSpawnFromPreset(server, "fabric_server_started"));
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            EarthSpawnManager.forceSpawnFromPreset(server, "fabric_server_started");
+            EarthSpawnManager.logGenerationSettings(server);
+        });
         ServerTickEvents.END_SERVER_TICK.register(WorldgenPlayerDiagnostics::updateFromServer);
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> TerrainServices.shutdown());
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> EarthCommands.register(dispatcher));
