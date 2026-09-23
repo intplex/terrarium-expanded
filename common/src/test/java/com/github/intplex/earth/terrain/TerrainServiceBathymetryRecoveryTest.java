@@ -8,12 +8,14 @@ import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TerrainServiceBathymetryRecoveryTest {
@@ -126,20 +128,24 @@ class TerrainServiceBathymetryRecoveryTest {
     }
 
     @Test
-    void missingSurfaceWaterConfirmationPreventsRecovery() throws Exception {
+    void failedSurfaceWaterConfirmationAbortsRecovery() throws Exception {
+        AtomicBoolean unavailable = new AtomicBoolean(true);
         installServices(
             11,
             0.0,
             -2000.0,
             0x000000,
             key -> {
-                throw new IOException("synthetic water fetch failure");
+                if (unavailable.get()) {
+                    throw new IOException("synthetic water fetch failure");
+                }
+                return createSurfaceWaterPng(0xFF0000AA);
             }
         );
 
-        int terrainY = TerrainService.terrainYAtXZ(0, 0);
-
-        assertEquals(EarthGenConfig.mapMetersToTerrainY(0.0), terrainY);
+        assertThrows(IllegalStateException.class, () -> TerrainService.terrainYAtXZ(0, 0));
+        unavailable.set(false);
+        assertEquals(EarthGenConfig.mapMetersToTerrainY(-2000.0), TerrainService.terrainYAtXZ(0, 0));
     }
 
     @Test
@@ -197,12 +203,16 @@ class TerrainServiceBathymetryRecoveryTest {
     }
 
     @Test
-    void badTileRecoveryFallsBackToOriginalWhenSourceTilesFail() throws Exception {
+    void badTileRecoveryAbortsWhenSourceTilesFailAndCanRetry() throws Exception {
+        AtomicBoolean unavailable = new AtomicBoolean(true);
         installServices(
             9,
             key -> createTerrariumPngForMeters(0.0),
             key -> {
-                throw new IOException("synthetic source failure");
+                if (unavailable.get()) {
+                    throw new IOException("synthetic source failure");
+                }
+                return createTerrariumPngForMeters(-200.0);
             },
             8,
             0x112233,
@@ -211,9 +221,33 @@ class TerrainServiceBathymetryRecoveryTest {
 
         int blockX = blockFromTilePixel(9, 306, 8);
         int blockZ = blockFromTilePixel(9, 200, 8);
-        int terrainY = TerrainService.terrainYAtXZ(blockX, blockZ);
+        assertThrows(IllegalStateException.class, () -> TerrainService.terrainYAtXZ(blockX, blockZ));
+        unavailable.set(false);
+        assertEquals(EarthGenConfig.mapMetersToTerrainY(-200.0), TerrainService.terrainYAtXZ(blockX, blockZ));
+    }
 
-        assertEquals(EarthGenConfig.mapMetersToTerrainY(0.0), terrainY);
+    @Test
+    void oceanRecoverySourceFailureAbortsInsteadOfUsingAnotherZoomOrZeroHeight() throws Exception {
+        AtomicBoolean unavailable = new AtomicBoolean(true);
+        installServices(
+            12,
+            key -> createTerrariumPngForMeters(0.0),
+            Map.of(
+                OceanBathymetryRecovery.SOURCE_ZOOM, key -> {
+                    if (unavailable.get()) {
+                        throw new IOException("synthetic recovery source failure");
+                    }
+                    return createTerrariumPngForMeters(-1200.0);
+                },
+                OceanBathymetryRecovery.FALLBACK_SOURCE_ZOOM, key -> createTerrariumPngForMeters(-3600.0)
+            ),
+            0x000000,
+            key -> createSurfaceWaterPng(0xFF0000AA)
+        );
+
+        assertThrows(IllegalStateException.class, () -> TerrainService.terrainYAtXZ(0, 0));
+        unavailable.set(false);
+        assertEquals(EarthGenConfig.mapMetersToTerrainY(-1200.0), TerrainService.terrainYAtXZ(0, 0));
     }
 
     private void installServices(int zoom, double activeMeters, double recoveryMeters, int ecoregionColorRgb, int surfaceWaterArgb) throws IOException {

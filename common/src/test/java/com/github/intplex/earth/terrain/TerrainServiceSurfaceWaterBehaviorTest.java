@@ -7,13 +7,17 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TerrainServiceSurfaceWaterBehaviorTest {
@@ -71,16 +75,21 @@ class TerrainServiceSurfaceWaterBehaviorTest {
         assertEquals(1, missingTileFetches.get(), "Missing tile should be attempted once for the chunk snapshot");
     }
 
-    @Test
-    void failedSurfaceWaterTileIsAttemptedOncePerChunkSnapshot() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void failedSurfaceWaterTileAbortsSnapshotAndCanRetryWithoutClearingCaches(boolean corruptPng) throws Exception {
         AtomicInteger failedTileFetches = new AtomicInteger();
+        AtomicBoolean unavailable = new AtomicBoolean(true);
         TileKey failedTile = new TileKey(127, 127);
 
         installServices(
             key -> createTerrariumPngForMeters(250.0),
             key -> {
-                if (key.equals(failedTile)) {
+                if (key.equals(failedTile) && unavailable.get()) {
                     failedTileFetches.incrementAndGet();
+                    if (corruptPng) {
+                        return new byte[] {0, 1, 2};
+                    }
                     throw new IOException("Synthetic network failure");
                 }
                 return createSurfaceWaterPng(0xFF0000AA);
@@ -88,12 +97,12 @@ class TerrainServiceSurfaceWaterBehaviorTest {
         );
 
         TerrainService.clearCaches();
-        WaterBodyKind center = TerrainService.inlandWaterKindAtXZ(0, 0);
-        WaterBodyKind nearby = TerrainService.inlandWaterKindAtXZ(8, 8);
-
-        assertEquals(WaterBodyKind.NONE, center);
-        assertEquals(WaterBodyKind.NONE, nearby);
-        assertEquals(1, failedTileFetches.get(), "Failed tile should not be repeatedly refetched while building one chunk snapshot");
+        assertThrows(IllegalStateException.class, () -> TerrainService.inlandWaterKindAtXZ(0, 0));
+        assertThrows(IllegalStateException.class, () -> TerrainService.inlandWaterKindAtXZ(0, 0));
+        assertEquals(2, failedTileFetches.get(), "Failed lookups must not be retained in the local tile cache");
+        unavailable.set(false);
+        TerrainService.snapshotIdentityForTesting(0, 0);
+        assertEquals(EarthGenConfig.mapMetersToTerrainY(250.0), TerrainService.terrainYAtXZ(0, 0));
     }
 
     private void installServices(TerrariumTileService.TileDownloader terrainDownloader, SurfaceWaterTileService.TileDownloader waterDownloader) {

@@ -10,14 +10,13 @@ public final class TerrainBathymetryRecovery {
         int blockX,
         int blockZ,
         int worldZoom,
-        boolean terrainSampleAvailable,
         double meters,
         EcoregionProbe ecoregionProbe,
         SurfaceWaterProbe surfaceWaterProbe,
         OceanBathymetryRecovery.RecoverySampleCache recoverySampleCache,
         OceanBathymetryRecovery.SourceZoomMetersSampler sampler
     ) {
-        if (!OceanBathymetryRecovery.shouldAttemptRecovery(worldZoom, terrainSampleAvailable, meters)) {
+        if (!OceanBathymetryRecovery.shouldAttemptRecovery(worldZoom, meters)) {
             return meters;
         }
 

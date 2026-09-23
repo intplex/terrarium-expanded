@@ -52,8 +52,8 @@ public final class OceanBathymetryRecovery {
         return worldZoom >= RECOVERY_MIN_WORLD_ZOOM;
     }
 
-    public static boolean shouldAttemptRecovery(int worldZoom, boolean terrainSampleAvailable, double meters) {
-        return isRecoveryActiveForZoom(worldZoom) && terrainSampleAvailable && meters == 0.0;
+    public static boolean shouldAttemptRecovery(int worldZoom, double meters) {
+        return isRecoveryActiveForZoom(worldZoom) && meters == 0.0;
     }
 
     public static boolean isEcoregionNoDataColor(int colorRgb) {

@@ -71,7 +71,7 @@ final class RemotePngTileStore<T extends WeightedCacheValue> {
             return cached;
         }
 
-        CompletableFuture<T> future = inFlight.computeIfAbsent(key, this::startLoad);
+        CompletableFuture<T> future = getOrStartLoad(key);
         try {
             return future.join();
         } catch (CompletionException completionException) {
@@ -83,10 +83,32 @@ final class RemotePngTileStore<T extends WeightedCacheValue> {
         }
     }
 
-    private CompletableFuture<T> startLoad(TileKey key) {
-        return CompletableFuture
-            .supplyAsync(() -> loadTileBlocking(key), executor)
-            .whenComplete((unused, throwable) -> inFlight.remove(key));
+    private CompletableFuture<T> getOrStartLoad(TileKey key) {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        CompletableFuture<T> existing = inFlight.putIfAbsent(key, future);
+        if (existing != null) {
+            return existing;
+        }
+
+        // Publish before scheduling: completion may run inline for an already
+        // finished load and must never modify a map inside computeIfAbsent.
+        try {
+            CompletableFuture.supplyAsync(() -> loadTileBlocking(key), executor)
+                .whenComplete((tile, failure) -> {
+                    // Remove before waking waiters so a failed request can retry.
+                    inFlight.remove(key, future);
+                    if (failure == null) {
+                        future.complete(tile);
+                    } else {
+                        future.completeExceptionally(failure);
+                    }
+                });
+        } catch (RuntimeException | Error failure) {
+            // Scheduling itself can fail, e.g. when the executor is shutting down.
+            inFlight.remove(key, future);
+            future.completeExceptionally(failure);
+        }
+        return future;
     }
 
     private T loadTileBlocking(TileKey key) {
@@ -175,7 +197,7 @@ final class RemotePngTileStore<T extends WeightedCacheValue> {
         if (memoryCache.get(key) != null) {
             return;
         }
-        inFlight.computeIfAbsent(key, this::startLoad);
+        getOrStartLoad(key);
     }
 
     private Path tilePath(TileKey key) {

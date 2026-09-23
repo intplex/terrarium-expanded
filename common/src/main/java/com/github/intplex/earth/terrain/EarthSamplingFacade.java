@@ -7,7 +7,6 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 
 public final class EarthSamplingFacade {
-    private static final String ERROR_ECOREGION_TILE_LOAD_FAILURE = errorLabel("ecoregion_tile", "load_failure");
     private static final String ERROR_SURFACE_WATER_MISSING = errorLabel("surface_water", "missing");
     private static final ThreadLocal<ChunkCacheState> CHUNK_LOCAL_CACHES = ThreadLocal.withInitial(ChunkCacheState::new);
     private static final ThreadLocal<MutableTerrainProbe> TERRAIN_PROBE_SCRATCH =
@@ -89,17 +88,6 @@ public final class EarthSamplingFacade {
         int pixelY = localCaches.ecoregionPoint().pixelY();
 
         EcoregionTile tile = ecoregionTileFromCacheOrLoad(localCaches, context, runtimeState, tileKey, blockX, blockZ);
-        if (tile == null) {
-            return new EarthSamplingResult.EcoregionProbe(
-                EarthSamplingResult.EcoregionStatus.TILE_LOAD_FAILURE,
-                0,
-                tileKey,
-                pixelX,
-                pixelY,
-                ERROR_ECOREGION_TILE_LOAD_FAILURE
-            );
-        }
-
         int colorRgb = tile.sampleColorRgb(pixelX, pixelY);
         return new EarthSamplingResult.EcoregionProbe(
             EarthSamplingResult.EcoregionStatus.SAMPLED,
@@ -197,10 +185,9 @@ public final class EarthSamplingFacade {
         int terrainPixelY = localCaches.terrainPoint().pixelY();
 
         TerrariumTile terrainTile = terrainTileFromCacheOrLoad(localCaches, context, runtimeState, terrainTileKey, blockX, blockZ);
-        boolean terrainSampleAvailable = terrainTile != null;
-        double meters = terrainSampleAvailable ? terrainTile.sampleMeters(terrainPixelX, terrainPixelY) : 0.0;
+        double meters = terrainTile.sampleMeters(terrainPixelX, terrainPixelY);
         OptionalInt sourceZoomOverride = BadTerrainTileRegistry.sourceZoomFor(zoom, terrainTileKey);
-        if (sourceZoomOverride.isPresent() && terrainSampleAvailable && meters <= 0.0) {
+        if (sourceZoomOverride.isPresent() && meters <= 0.0) {
             int sourceZoom = sourceZoomOverride.getAsInt();
             OptionalDouble replacementMeters = OceanBathymetryRecovery.sampleBilinearMeters(
                 blockX,
@@ -217,16 +204,12 @@ public final class EarthSamplingFacade {
                         blockX,
                         blockZ
                     );
-                    if (sourceTile == null) {
-                        return null;
-                    }
                     return sourceTile.sampleMeters(localX, localY);
                 },
                 OceanBathymetryRecovery.InterpolationClamp.OCEAN_ONLY
             );
             if (replacementMeters.isPresent()) {
                 meters = replacementMeters.getAsDouble();
-                terrainSampleAvailable = true;
             } else {
                 BadTerrainTileRegistry.TargetTile targetTile = new BadTerrainTileRegistry.TargetTile(zoom, terrainTileKey);
                 if (runtimeState.loggedBadTerrainReplacementFailures().markIfNew(targetTile)) {
@@ -237,10 +220,11 @@ public final class EarthSamplingFacade {
                         TerrainService.sampleContextLabel(terrainTileKey, blockX, blockZ)
                     );
                 }
+                throw new IllegalStateException("Required terrain replacement unavailable: " + targetTile + " source_zoom=" + sourceZoom);
             }
         }
 
-        boolean needsSurfaceWaterForRecovery = OceanBathymetryRecovery.shouldAttemptRecovery(zoom, terrainSampleAvailable, meters);
+        boolean needsSurfaceWaterForRecovery = OceanBathymetryRecovery.shouldAttemptRecovery(zoom, meters);
         boolean needsSurfaceWaterForInlandAnalysis = runtimeState.inlandWaterSettings().enabled();
         boolean surfaceWaterIsWater = false;
         boolean surfaceWaterDataAvailable = true;
@@ -257,7 +241,6 @@ public final class EarthSamplingFacade {
                 blockX,
                 blockZ,
                 zoom,
-                terrainSampleAvailable,
                 meters,
                 () -> resolveEcoregionGate(context, runtimeState, blockX, blockZ, hasEcoregionColorHint, ecoregionColorHint, localCaches),
                 () -> finalSurfaceWaterIsWater,
@@ -272,9 +255,6 @@ public final class EarthSamplingFacade {
                         blockX,
                         blockZ
                     );
-                    if (recoveryTile == null) {
-                        return null;
-                    }
                     return recoveryTile.sampleMeters(localX, localY);
                 }
             );
@@ -346,9 +326,6 @@ public final class EarthSamplingFacade {
         }
         TileKey ecoregionTileKey = localCaches.ecoregionPoint().tileKey();
         EcoregionTile ecoregionTile = ecoregionTileFromCacheOrLoad(localCaches, context, runtimeState, ecoregionTileKey, blockX, blockZ);
-        if (ecoregionTile == null) {
-            return TerrainBathymetryRecovery.EcoregionGate.UNAVAILABLE;
-        }
         int sampledRgb = ecoregionTile.sampleColorRgb(localCaches.ecoregionPoint().pixelX(), localCaches.ecoregionPoint().pixelY());
         return OceanBathymetryRecovery.isEcoregionNoDataColor(sampledRgb)
             ? TerrainBathymetryRecovery.EcoregionGate.NO_DATA
@@ -430,9 +407,7 @@ public final class EarthSamplingFacade {
         }
 
         T loaded = loader.load();
-        if (loaded != null) {
-            cache.put(key, loaded);
-        }
+        cache.put(key, loaded);
         return loaded;
     }
 
@@ -446,14 +421,18 @@ public final class EarthSamplingFacade {
         try {
             return context.services().tileService().requireTile(tileKey);
         } catch (RuntimeException exception) {
+            String sampleContext = TerrainService.sampleContextLabel(tileKey, blockX, blockZ);
             if (runtimeState.loggedTerrainTileFailures().markIfNew(tileKey)) {
                 TerrainService.logWarn(
-                    "Terrain tile fetch/decode failure: {} context={}",
+                    "Required terrain tile fetch/decode failure; generation aborted: {} context={}",
                     exception.toString(),
-                    TerrainService.sampleContextLabel(tileKey, blockX, blockZ)
+                    sampleContext,
+                    exception
                 );
             }
-            return null;
+            // Propagate through snapshot construction and the generation future.
+            // A missing elevation must never become a cached sea-level surface.
+            throw new IllegalStateException("Required terrain elevation unavailable; generation aborted: " + sampleContext, exception);
         }
     }
 
@@ -466,28 +445,22 @@ public final class EarthSamplingFacade {
         int blockZ
     ) {
         TerrariumTileService sourceService = context.services().terrainSourceTileService(sourceZoom);
-        if (sourceService == null) {
-            if (runtimeState.loggedTerrainTileFailures().markIfNew(tileKey)) {
-                TerrainService.logWarn(
-                    "Terrain source tile service unavailable source_zoom={} context={}",
-                    sourceZoom,
-                    TerrainService.sampleContextLabel(tileKey, blockX, blockZ)
-                );
-            }
-            return null;
-        }
         try {
+            if (sourceService == null) {
+                throw new IllegalStateException("Terrain source tile service unavailable at zoom " + sourceZoom);
+            }
             return sourceService.requireTile(tileKey);
         } catch (RuntimeException exception) {
+            String sampleContext = "source_zoom=" + sourceZoom + " " + TerrainService.sampleContextLabel(tileKey, blockX, blockZ);
             if (runtimeState.loggedTerrainTileFailures().markIfNew(tileKey)) {
                 TerrainService.logWarn(
-                    "Terrain source tile fetch/decode failure source_zoom={} error={} context={}",
-                    sourceZoom,
+                    "Required terrain source tile fetch/decode failure; generation aborted: {} context={}",
                     exception.toString(),
-                    TerrainService.sampleContextLabel(tileKey, blockX, blockZ)
+                    sampleContext,
+                    exception
                 );
             }
-            return null;
+            throw new IllegalStateException("Required terrain source elevation unavailable; generation aborted: " + sampleContext, exception);
         }
     }
 
@@ -501,14 +474,16 @@ public final class EarthSamplingFacade {
         try {
             return context.services().ecoregionTileService().requireTile(tileKey);
         } catch (RuntimeException exception) {
+            String sampleContext = TerrainService.sampleContextLabel(tileKey, blockX, blockZ);
             if (runtimeState.loggedEcoregionTileFailures().markIfNew(tileKey)) {
                 TerrainService.logWarn(
-                    "Ecoregion tile fetch/decode failure: {} context={}",
+                    "Required ecoregion tile fetch/decode failure; generation aborted: {} context={}",
                     exception.toString(),
-                    TerrainService.sampleContextLabel(tileKey, blockX, blockZ)
+                    sampleContext,
+                    exception
                 );
             }
-            return null;
+            throw new IllegalStateException("Required ecoregion data unavailable; generation aborted: " + sampleContext, exception);
         }
     }
 
@@ -532,15 +507,16 @@ public final class EarthSamplingFacade {
             runtimeState.knownMissingSurfaceWaterTiles().markIfNew(tileKey);
             return SurfaceWaterTileLookup.MISSING;
         } catch (RuntimeException exception) {
+            String sampleContext = TerrainService.sampleContextLabel(tileKey, blockX, blockZ);
             if (runtimeState.loggedFailedSurfaceWaterTiles().markIfNew(tileKey)) {
                 TerrainService.logWarn(
-                    "Surface water tile fetch/decode failure status={} error={} context={}",
-                    EarthSamplingResult.SurfaceWaterStatus.FAILED,
+                    "Required surface water tile fetch/decode failure; generation aborted: {} context={}",
                     exception.toString(),
-                    TerrainService.sampleContextLabel(tileKey, blockX, blockZ)
+                    sampleContext,
+                    exception
                 );
             }
-            return SurfaceWaterTileLookup.failed(exception.toString());
+            throw new IllegalStateException("Required surface water data unavailable; generation aborted: " + sampleContext, exception);
         }
     }
 
@@ -552,10 +528,6 @@ public final class EarthSamplingFacade {
 
         private static SurfaceWaterTileLookup available(SurfaceWaterTile tile) {
             return new SurfaceWaterTileLookup(EarthSamplingResult.SurfaceWaterStatus.AVAILABLE, tile, null);
-        }
-
-        private static SurfaceWaterTileLookup failed(String error) {
-            return new SurfaceWaterTileLookup(EarthSamplingResult.SurfaceWaterStatus.FAILED, null, error);
         }
 
         private boolean dataAvailable() {

@@ -19,8 +19,7 @@ public final class EarthSamplingResult {
 
     public enum EcoregionStatus {
         SAMPLED,
-        OUT_OF_BOUNDS,
-        TILE_LOAD_FAILURE
+        OUT_OF_BOUNDS
     }
 
     public record EcoregionProbe(
@@ -44,7 +43,6 @@ public final class EarthSamplingResult {
         OUT_OF_BOUNDS,
         OUTSIDE_COVERAGE,
         MISSING,
-        FAILED,
         NOT_REQUESTED
     }
 

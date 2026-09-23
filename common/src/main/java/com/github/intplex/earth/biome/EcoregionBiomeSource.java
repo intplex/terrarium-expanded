@@ -375,13 +375,6 @@ public final class EcoregionBiomeSource extends BiomeSource {
         );
         return switch (probe.status()) {
             case OUT_OF_BOUNDS -> OUT_OF_BOUNDS_COLOR_SAMPLE;
-            case TILE_LOAD_FAILURE -> new ColorSample(
-                0,
-                FallbackReason.TILE_LOAD_FAILURE,
-                probe.tileKey(),
-                probe.pixelX(),
-                probe.pixelY()
-            );
             case SAMPLED -> new ColorSample(
                 probe.colorRgb(),
                 FallbackReason.UNMAPPED_COLOR,
@@ -442,14 +435,11 @@ public final class EcoregionBiomeSource extends BiomeSource {
         try {
             sampledSst = OceanSurfaceTemperatureService.sampleMeanAnnualSstAtBlock(blockX, blockZ, profile.zoom());
         } catch (RuntimeException exception) {
-            LOGGER.warn(
-                "[TX-BIOME] ocean SST sampling failed block=({}, {}) zoom={} error={}; using legacy ocean fallback",
-                blockX,
-                blockZ,
-                profile.zoom(),
-                exception.toString()
+            throw new IllegalStateException(
+                "Required ocean temperature data unavailable; generation aborted: blockX=" + blockX
+                    + " blockZ=" + blockZ + " zoom=" + profile.zoom(),
+                exception
             );
-            return terrainY <= deepOceanTerrainYThreshold() ? mappings.deepOceanBiome() : mappings.oceanBiome();
         }
 
         if (sampledSst.isEmpty() || !Double.isFinite(sampledSst.getAsDouble())) {
@@ -730,8 +720,7 @@ public final class EcoregionBiomeSource extends BiomeSource {
 
     enum FallbackReason {
         UNMAPPED_COLOR,
-        OUT_OF_BOUNDS,
-        TILE_LOAD_FAILURE
+        OUT_OF_BOUNDS
     }
 
     record ColorSample(
